@@ -32,8 +32,16 @@ const userSchema = new mongoose.Schema({
   },
   isActive: {
     type: Boolean,
-    default: true
+    default: false // Require verification before activation
   },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  otpCode: String,
+  otpExpires: Date,
+  passwordResetOTP: String,
+  passwordResetExpires: Date,
   createdAt: {
     type: Date,
     default: Date.now

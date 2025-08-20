@@ -9,6 +9,14 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const teleconsultationRoutes = require('./routes/teleconsultationRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
+const doctorRoutes = require('./routes/doctorRoutes');
+const emergencyRoutes = require('./routes/emergencyRoutes');
+const pharmacyRoutes = require('./routes/pharmacyRoutes');
+const prescriptionRoutes = require('./routes/prescriptionRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 dotenv.config();
 connectDB();
@@ -49,6 +57,15 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/teleconsultation', teleconsultationRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/emergencies', emergencyRoutes);
+app.use('/api/pharmacies', pharmacyRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/medical-records', medicalRecordRoutes);
+app.use('/api/ai', aiRoutes);
+
 
 // Test route
 app.get('/', (req, res) => {

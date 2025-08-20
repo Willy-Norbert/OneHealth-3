@@ -1,6 +1,7 @@
 const Doctor = require('../models/Doctor');
 const Hospital = require('../models/Hospital');
 const Department = require('../models/Department');
+const { generateJSON } = require('../services/geminiService');
 
 // Symptom checker knowledge base (simplified for demo)
 const symptomDatabase = {
@@ -122,6 +123,16 @@ exports.symptomChecker = async (req, res) => {
     .populate('hospital', 'name location')
     .limit(5);
 
+    // AI enrichment via Gemini
+    let aiInsights = null;
+    try {
+      const schema = '{ "risk_level": "string", "possible_conditions": ["string"], "recommendations": ["string"], "specialists": ["string"], "urgency": "low|moderate|high" }';
+      const promptText = `Analyze symptoms: ${JSON.stringify({ symptoms, severity, duration, age, existingConditions })}`;
+      aiInsights = await generateJSON(promptText, schema);
+    } catch (e) {
+      aiInsights = { note: 'AI unavailable' };
+    }
+
     res.status(200).json({
       success: true,
       message: 'Symptom analysis completed',
@@ -131,6 +142,7 @@ exports.symptomChecker = async (req, res) => {
         recommendations,
         recommendedSpecialists: Array.from(recommendedSpecialists),
         nearbyDoctors,
+        aiInsights,
         disclaimer: 'This is not a medical diagnosis. Please consult a healthcare professional for proper medical advice.'
       }
     });
@@ -214,11 +226,20 @@ exports.appointmentBookingHelper = async (req, res) => {
         'You can book a regular appointment within the next few days'
     };
 
+    // AI enrichment via Gemini
+    let aiGuidance = null;
+    try {
+      const schema = '{ "recommended_specializations": ["string"], "priority": "low|normal|high", "advice": ["string"] }';
+      const promptText = `Suggest booking guidance for: ${JSON.stringify({ symptoms, preferredLocation, insuranceType, urgency })}`;
+      aiGuidance = await generateJSON(promptText, schema);
+    } catch {}
+
     res.status(200).json({
       success: true,
       message: 'Appointment booking guidance generated',
       data: {
         guidance,
+        aiGuidance,
         recommendedOptions: Object.values(hospitalGroups),
         totalDoctors: doctors.length
       }
@@ -315,10 +336,18 @@ exports.prescriptionHelper = async (req, res) => {
       });
     }
 
+    // AI enrichment via Gemini
+    let aiMedicationHelp = null;
+    try {
+      const schema = '{ "key_points": ["string"], "warnings": ["string"], "dosage_notes": "string" }';
+      const promptText = `Provide patient-safe medication guidance for ${medicationName}. Questions: ${JSON.stringify(questions || [])}`;
+      aiMedicationHelp = await generateJSON(promptText, schema);
+    } catch {}
+
     res.status(200).json({
       success: true,
       message: 'Prescription guidance provided',
-      data: response
+      data: { ...response, ai: aiMedicationHelp }
     });
   } catch (error) {
     res.status(500).json({
@@ -398,11 +427,20 @@ exports.referralSupport = async (req, res) => {
       ]
     };
 
+    // AI enrichment via Gemini
+    let aiReferral = null;
+    try {
+      const schema = '{ "specialties": ["string"], "tests": ["string"], "notes": ["string"] }';
+      const promptText = `Suggest referral plan for condition: ${condition}, current treatment: ${currentTreatment}`;
+      aiReferral = await generateJSON(promptText, schema);
+    } catch {}
+
     res.status(200).json({
       success: true,
       message: 'Referral guidance provided',
       data: {
         guidance: referralGuidance,
+        aiReferral,
         specialists,
         specializedHospitals: hospitals,
         totalSpecialists: specialists.length
@@ -480,12 +518,21 @@ exports.healthTips = async (req, res) => {
       'Limit alcohol consumption and avoid smoking'
     ];
 
+    // AI enrichment via Gemini
+    let aiTips = null;
+    try {
+      const schema = '{ "tips": ["string"], "reminders": ["string"], "lifestyle": ["string"] }';
+      const promptText = `Provide wellness tips for category: ${category}, condition: ${condition}, age: ${age}`;
+      aiTips = await generateJSON(promptText, schema);
+    } catch {}
+
     res.status(200).json({
       success: true,
       message: 'Health tips and guidance provided',
       data: {
         tips: selectedTips,
         reminders: reminders.slice(0, 3),
+        aiTips,
         disclaimer: 'These tips are for general wellness. Always consult healthcare professionals for medical advice.'
       }
     });
