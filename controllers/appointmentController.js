@@ -174,28 +174,46 @@ exports.cancelAppointment = async (req, res) => {
 exports.getAvailableTimeSlots = async (req, res) => {
   try {
     const { date, hospital, department } = req.query;
-    
+
+    if (!date) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide a valid date in YYYY-MM-DD format'
+      });
+    }
+
+    const appointmentDate = new Date(date);
+    if (isNaN(appointmentDate.getTime())) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid date format. Use YYYY-MM-DD'
+      });
+    }
+
     const allTimeSlots = [
       "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
       "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
       "04:00 PM", "04:30 PM"
     ];
-    
-    // Find booked appointments for the given date
-    const bookedAppointments = await Appointment.find({
-      appointmentDate: new Date(date),
-      hospital,
-      department,
+
+    const query = {
+      appointmentDate,
       status: { $in: ['pending', 'confirmed'] }
-    });
-    
+    };
+
+    if (hospital) query.hospital = hospital;
+    if (department) query.department = department;
+
+    const bookedAppointments = await Appointment.find(query);
     const bookedTimes = bookedAppointments.map(apt => apt.appointmentTime);
+
     const availableSlots = allTimeSlots.filter(slot => !bookedTimes.includes(slot));
-    
+
     res.status(200).json({
       status: 'success',
       data: { availableSlots }
     });
+
   } catch (error) {
     res.status(500).json({
       status: 'error',
@@ -203,6 +221,7 @@ exports.getAvailableTimeSlots = async (req, res) => {
     });
   }
 };
+
 
 // Get appointment statistics (admin)
 exports.getAppointmentStats = async (req, res) => {

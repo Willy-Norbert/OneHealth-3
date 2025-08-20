@@ -28,8 +28,17 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: List of available time slots
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
  */
 router.get('/available-slots', getAvailableTimeSlots);
+
+// Protected routes
+router.use(protect);
 
 /**
  * @swagger
@@ -44,19 +53,11 @@ router.get('/available-slots', getAvailableTimeSlots);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               date:
- *                 type: string
- *                 example: 2025-08-25
- *               time:
- *                 type: string
- *                 example: "10:00"
+ *             $ref: '#/components/schemas/Appointment'
  *     responses:
  *       201:
- *         description: Appointment created
+ *         description: Appointment created successfully
  */
-router.use(protect);
 router.post('/', createAppointment);
 
 /**
@@ -70,6 +71,12 @@ router.post('/', createAppointment);
  *     responses:
  *       200:
  *         description: List of user appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
  */
 router.get('/my-appointments', getUserAppointments);
 
@@ -90,7 +97,7 @@ router.get('/my-appointments', getUserAppointments);
  *         description: Appointment ID
  *     responses:
  *       200:
- *         description: Appointment cancelled
+ *         description: Appointment cancelled successfully
  */
 router.patch('/:id/cancel', cancelAppointment);
 
@@ -108,6 +115,12 @@ router.use(restrictTo('admin'));
  *     responses:
  *       200:
  *         description: List of all appointments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
  */
 router.get('/all', getAllAppointments);
 
@@ -135,10 +148,10 @@ router.get('/all', getAllAppointments);
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [pending, confirmed, cancelled, completed]
+ *                 enum: [pending, confirmed, cancelled, completed, no-show]
  *     responses:
  *       200:
- *         description: Appointment status updated
+ *         description: Appointment status updated successfully
  */
 router.patch('/:id', updateAppointmentStatus);
 
@@ -152,7 +165,12 @@ router.patch('/:id', updateAppointmentStatus);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Appointment stats
+ *         description: Appointment statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               additionalProperties: true
  */
 router.get('/stats', getAppointmentStats);
 

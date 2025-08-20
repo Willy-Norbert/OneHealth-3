@@ -1,5 +1,6 @@
-
 const express = require('express');
+const router = express.Router(); // <-- Add this
+
 const {
   getConsultationTypes,
   getInsuranceOptions,
@@ -9,12 +10,14 @@ const {
   getTeleconsultation,
   getDoctorTeleconsultations
 } = require('../controllers/consultationController');
+
 const {
   getAllHospitals,
   createHospital,
   updateHospital,
   deleteHospital
 } = require('../controllers/hospitalController');
+
 const { protect, restrictTo } = require('../middleware/auth');
 
 /**
