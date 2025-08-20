@@ -21,7 +21,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /appointments/available-slots:
+ * /api/appointments/available-slots:
  *   get:
  *     summary: Get available appointment time slots
  *     tags: [Appointments]
@@ -62,7 +62,7 @@ router.post('/', createAppointment);
 
 /**
  * @swagger
- * /appointments/my-appointments:
+ * /api/appointments/my-appointments:
  *   get:
  *     summary: Get logged-in user appointments
  *     tags: [Appointments]
@@ -82,7 +82,7 @@ router.get('/my-appointments', getUserAppointments);
 
 /**
  * @swagger
- * /appointments/{id}/cancel:
+ * /api/appointments/{id}/cancel:
  *   patch:
  *     summary: Cancel an appointment
  *     tags: [Appointments]
@@ -106,7 +106,7 @@ router.use(restrictTo('admin'));
 
 /**
  * @swagger
- * /appointments/all:
+ * /api/appointments/all:
  *   get:
  *     summary: Get all appointments (admin only)
  *     tags: [Appointments]
@@ -126,7 +126,7 @@ router.get('/all', getAllAppointments);
 
 /**
  * @swagger
- * /appointments/{id}:
+ * /api/appointments/{id}:
  *   patch:
  *     summary: Update appointment status (admin only)
  *     tags: [Appointments]
@@ -157,7 +157,7 @@ router.patch('/:id', updateAppointmentStatus);
 
 /**
  * @swagger
- * /appointments/stats:
+ * /api/appointments/stats:
  *   get:
  *     summary: Get appointment statistics (admin only)
  *     tags: [Appointments]
