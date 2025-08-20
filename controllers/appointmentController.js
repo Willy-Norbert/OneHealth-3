@@ -1,78 +1,7 @@
 const Appointment = require('../models/Appointment');
 const Hospital = require('../models/Hospital');
 const User = require('../models/User');
-const nodemailer = require('nodemailer');
-
-// Email configuration
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'byiringirourban20@gmail.com',
-    pass: 'zljw hslg rxpb mqpu'
-  }
-});
-
-// Send appointment confirmation email
-const sendAppointmentConfirmation = async (appointment, patient) => {
-  const mailOptions = {
-    from: 'byiringirourban20@gmail.com',
-    to: patient.email,
-    subject: 'Appointment Confirmation - ONE HEALTHLINE CONNECT',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #10B981; color: white; padding: 20px; text-align: center;">
-          <h1>Appointment Confirmed!</h1>
-        </div>
-        <div style="padding: 20px; background-color: #f9f9f9;">
-          <h2>Dear ${appointment.patientDetails.fullName},</h2>
-          <p>Your appointment has been successfully booked. Here are the details:</p>
-          
-          <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #10B981; margin-top: 0;">Appointment Details</h3>
-            <p><strong>Appointment ID:</strong> ${appointment._id}</p>
-            <p><strong>Date:</strong> ${new Date(appointment.appointmentDate).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${appointment.appointmentTime}</p>
-            <p><strong>Type:</strong> ${appointment.appointmentType === 'virtual' ? 'Virtual Consultation' : 'In-Person Visit'}</p>
-            <p><strong>Department:</strong> ${appointment.department}</p>
-            <p><strong>Reason:</strong> ${appointment.reasonForVisit}</p>
-            ${appointment.appointmentType === 'virtual' && appointment.meetingLink ? 
-              `<p><strong>Meeting Link:</strong> <a href="${appointment.meetingLink}">${appointment.meetingLink}</a></p>` : ''
-            }
-          </div>
-          
-          <div style="background-color: #EEF2FF; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #3B82F6; margin-top: 0;">Important Notes</h3>
-            <ul>
-              <li>Please arrive 15 minutes early for in-person appointments</li>
-              <li>Bring a valid ID and insurance card if applicable</li>
-              <li>You will receive a reminder 24 hours before your appointment</li>
-              ${appointment.appointmentType === 'virtual' ? 
-                '<li>Ensure you have a stable internet connection for virtual consultations</li>' : ''
-              }
-            </ul>
-          </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <p>Need to reschedule or cancel? Contact us at:</p>
-            <p><strong>Phone:</strong> +250 788 123 456</p>
-            <p><strong>Email:</strong> support@onehealthlineconnect.rw</p>
-          </div>
-          
-          <div style="background-color: #10B981; color: white; padding: 15px; text-align: center; border-radius: 8px;">
-            <p style="margin: 0;">Thank you for choosing ONE HEALTHLINE CONNECT!</p>
-          </div>
-        </div>
-      </div>
-    `
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log('Confirmation email sent successfully');
-  } catch (error) {
-    console.error('Error sending confirmation email:', error);
-  }
-};
+const { sendAppointmentEmail } = require('../services/emailService');
 
 // Create new appointment
 exports.createAppointment = async (req, res) => {
@@ -93,7 +22,11 @@ exports.createAppointment = async (req, res) => {
     await appointment.populate(['hospital', 'patient']);
     
     // Send confirmation email
-    await sendAppointmentConfirmation(appointment, req.user);
+    try {
+      await sendAppointmentEmail('confirmation', appointment, req.user);
+    } catch (error) {
+      console.error('Email send error:', error);
+    }
     
     res.status(201).json({
       status: 'success',
@@ -178,6 +111,13 @@ exports.updateAppointmentStatus = async (req, res) => {
         status: 'error',
         message: 'Appointment not found'
       });
+    }
+
+    // Send status update email
+    try {
+      await sendAppointmentEmail('update', appointment, appointment.patient);
+    } catch (error) {
+      console.error('Email send error:', error);
     }
     
     res.status(200).json({

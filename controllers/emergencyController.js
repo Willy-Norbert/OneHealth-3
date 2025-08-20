@@ -1,4 +1,5 @@
 const Emergency = require('../models/Emergency');
+const { sendEmergencyStatusEmail } = require('../services/emailService');
 
 // @desc    Create emergency request
 // @route   POST /api/emergencies
@@ -165,6 +166,13 @@ exports.updateEmergencyStatus = async (req, res) => {
         message: 'Emergency not found',
         data: null
       });
+    }
+
+    // Send status update email
+    try {
+      await sendEmergencyStatusEmail(emergency, status);
+    } catch (error) {
+      console.error('Email send error:', error.message);
     }
 
     res.status(200).json({

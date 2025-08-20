@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Pharmacy = require('../models/Pharmacy');
 const Prescription = require('../models/Prescription');
+const { sendOrderStatusEmail } = require('../services/emailService');
 
 // @desc    Get all orders with filtering
 // @route   GET /api/orders
@@ -194,6 +195,13 @@ exports.updateOrderStatus = async (req, res) => {
         message: 'Order not found',
         data: null
       });
+    }
+
+    // Send status update email
+    try {
+      await sendOrderStatusEmail(order, status);
+    } catch (error) {
+      console.error('Email send error:', error.message);
     }
 
     res.status(200).json({
