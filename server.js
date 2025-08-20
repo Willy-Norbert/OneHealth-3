@@ -34,8 +34,7 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
-        'http://localhost:5000', 
-      'https://onehealth-ebon.vercel.app',
+        'http://localhost:5000',
       'https://onehealthconnect.onrender.com',
       process.env.FRONTEND_URL
     ].filter(Boolean);
@@ -71,7 +70,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: process.env.NODE_ENV === 'production' ? 'https://yourdomain.com' : 'http://localhost:5000',
+        url: process.env.NODE_ENV === 'production' ? 'https://onehealthconnect.onrender.com' : 'http://localhost:5000',
         description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
     ],
