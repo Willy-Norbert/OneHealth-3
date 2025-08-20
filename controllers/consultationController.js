@@ -101,3 +101,78 @@ exports.updateTeleconsultationStatus = async (req, res) => {
     });
   }
 };
+
+// @desc    Get single teleconsultation
+// @route   GET /api/teleconsultation/:id
+// @access  Private (Patient/Doctor/Admin)
+exports.getTeleconsultation = async (req, res) => {
+  try {
+    const teleconsultation = await Teleconsultation.findById(req.params.id)
+      .populate(['hospital', 'consultationType', 'insurance', 'patient']);
+    
+    if (!teleconsultation) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Teleconsultation not found'
+      });
+    }
+    
+    // Check permissions
+    const isPatient = req.user._id.toString() === teleconsultation.patient._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    const isDoctor = req.user.role === 'doctor';
+    
+    if (!isPatient && !isAdmin && !isDoctor) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to view this consultation'
+      });
+    }
+    
+    res.status(200).json({
+      status: 'success',
+      data: { teleconsultation }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
+// @desc    Get doctor's teleconsultations
+// @route   GET /api/doctors/:doctorId/consultations
+// @access  Private (Doctor/Admin)
+exports.getDoctorTeleconsultations = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    
+    // Check permissions
+    const isOwnProfile = req.user._id.toString() === doctorId;
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwnProfile && !isAdmin) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to view these consultations'
+      });
+    }
+    
+    // For doctors, we need to find consultations based on hospital/department
+    // This is a simplified approach - in reality you'd have a doctorId field
+    const teleconsultations = await Teleconsultation.find({})
+      .populate(['hospital', 'consultationType', 'insurance', 'patient'])
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      status: 'success',
+      data: { teleconsultations }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};

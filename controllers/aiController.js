@@ -119,7 +119,7 @@ exports.symptomChecker = async (req, res) => {
       specialization: { $in: Array.from(recommendedSpecialists) },
       isActive: true
     })
-    .populate('user', 'fullName')
+    .populate('user', 'name')
     .populate('hospital', 'name location')
     .limit(5);
 
@@ -127,10 +127,11 @@ exports.symptomChecker = async (req, res) => {
     let aiInsights = null;
     try {
       const schema = '{ "risk_level": "string", "possible_conditions": ["string"], "recommendations": ["string"], "specialists": ["string"], "urgency": "low|moderate|high" }';
-      const promptText = `Analyze symptoms: ${JSON.stringify({ symptoms, severity, duration, age, existingConditions })}`;
+      const promptText = `Analyze symptoms: ${JSON.stringify({ symptoms, severity, duration, age, existingConditions })}. Provide medical insights but emphasize this is not a diagnosis.`;
       aiInsights = await generateJSON(promptText, schema);
     } catch (e) {
-      aiInsights = { note: 'AI unavailable' };
+      console.error('AI analysis error:', e.message);
+      aiInsights = { note: 'AI analysis unavailable' };
     }
 
     res.status(200).json({
@@ -192,7 +193,7 @@ exports.appointmentBookingHelper = async (req, res) => {
     };
 
     const doctors = await Doctor.find(query)
-      .populate('user', 'fullName')
+      .populate('user', 'name')
       .populate('hospital', 'name location contact')
       .populate('department', 'name')
       .sort({ 'rating.average': -1 })
@@ -230,9 +231,11 @@ exports.appointmentBookingHelper = async (req, res) => {
     let aiGuidance = null;
     try {
       const schema = '{ "recommended_specializations": ["string"], "priority": "low|normal|high", "advice": ["string"] }';
-      const promptText = `Suggest booking guidance for: ${JSON.stringify({ symptoms, preferredLocation, insuranceType, urgency })}`;
+      const promptText = `Suggest booking guidance for: symptoms: ${symptoms?.join(',') || 'none'}, location: ${preferredLocation}, insurance: ${insuranceType}, urgency: ${urgency}`;
       aiGuidance = await generateJSON(promptText, schema);
-    } catch {}
+    } catch (e) {
+      console.error('AI guidance error:', e.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -342,7 +345,9 @@ exports.prescriptionHelper = async (req, res) => {
       const schema = '{ "key_points": ["string"], "warnings": ["string"], "dosage_notes": "string" }';
       const promptText = `Provide patient-safe medication guidance for ${medicationName}. Questions: ${JSON.stringify(questions || [])}`;
       aiMedicationHelp = await generateJSON(promptText, schema);
-    } catch {}
+    } catch (e) {
+      console.error('AI medication help error:', e.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -398,7 +403,7 @@ exports.referralSupport = async (req, res) => {
       specialization: { $in: recommendedSpecialties },
       isActive: true
     })
-    .populate('user', 'fullName')
+    .populate('user', 'name')
     .populate('hospital', 'name location contact')
     .sort({ experience: -1, 'rating.average': -1 })
     .limit(10);
@@ -433,7 +438,9 @@ exports.referralSupport = async (req, res) => {
       const schema = '{ "specialties": ["string"], "tests": ["string"], "notes": ["string"] }';
       const promptText = `Suggest referral plan for condition: ${condition}, current treatment: ${currentTreatment}`;
       aiReferral = await generateJSON(promptText, schema);
-    } catch {}
+    } catch (e) {
+      console.error('AI referral error:', e.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -500,46 +507,38 @@ exports.healthTips = async (req, res) => {
         ]
       };
 
-      if (conditionTips[condition.toLowerCase()]) {
-        filteredTips.push(...conditionTips[condition.toLowerCase()]);
+      const conditionLower = condition.toLowerCase();
+      if (conditionTips[conditionLower]) {
+        filteredTips.push(...conditionTips[conditionLower]);
       }
     }
 
-    // Randomize and limit tips
-    const shuffledTips = filteredTips.sort(() => 0.5 - Math.random());
-    const selectedTips = shuffledTips.slice(0, 5);
-
-    // Add general wellness reminders
-    const reminders = [
-      'Schedule regular health checkups',
-      'Stay up to date with vaccinations',
-      'Practice good hygiene habits',
-      'Get adequate sleep (7-9 hours per night)',
-      'Limit alcohol consumption and avoid smoking'
-    ];
+    // Randomize and limit results
+    const shuffledTips = filteredTips.sort(() => 0.5 - Math.random()).slice(0, 5);
 
     // AI enrichment via Gemini
-    let aiTips = null;
+    let aiHealthTips = null;
     try {
-      const schema = '{ "tips": ["string"], "reminders": ["string"], "lifestyle": ["string"] }';
-      const promptText = `Provide wellness tips for category: ${category}, condition: ${condition}, age: ${age}`;
-      aiTips = await generateJSON(promptText, schema);
-    } catch {}
+      const schema = '{ "tips": [{"title": "string", "content": "string", "category": "string"}] }';
+      const promptText = `Generate personalized health tips for: category: ${category}, condition: ${condition}, age: ${age}, interests: ${interests?.join(',') || 'general'}`;
+      aiHealthTips = await generateJSON(promptText, schema);
+    } catch (e) {
+      console.error('AI health tips error:', e.message);
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Health tips and guidance provided',
+      message: 'Health tips generated',
       data: {
-        tips: selectedTips,
-        reminders: reminders.slice(0, 3),
-        aiTips,
-        disclaimer: 'These tips are for general wellness. Always consult healthcare professionals for medical advice.'
+        tips: shuffledTips,
+        aiGeneratedTips: aiHealthTips?.tips || [],
+        disclaimer: 'These tips are for general guidance only. Consult your healthcare provider for personalized medical advice.'
       }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error providing health tips',
+      message: 'Error generating health tips',
       data: { error: error.message }
     });
   }

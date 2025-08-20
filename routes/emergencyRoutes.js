@@ -87,9 +87,12 @@ const router = express.Router();
 // Protected routes
 router.use(protect);
 router.post('/', createEmergency);
+router.get('/:id', getEmergency);
+router.get('/patients/:patientId', getPatientEmergencies);
+
+// Admin/Responder routes
 router.get('/', restrictTo('admin'), getAllEmergencies);
 router.get('/near', restrictTo('admin'), getEmergenciesNear);
-router.get('/:id', getEmergency);
 router.put('/:id/status', restrictTo('admin'), updateEmergencyStatus);
 router.put('/:id/assign', restrictTo('admin'), assignResponder);
 
