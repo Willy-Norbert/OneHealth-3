@@ -97,6 +97,48 @@ async function sendEmergencyStatusEmail(emergency, statusOverride) {
   return sendEmail({ to, subject: `Emergency ${status}`, html });
 }
 
+async function sendRoleChangeEmail(user, oldRole, newRole) {
+  const html = baseTemplate('Role Update Notification', `
+    <p>Dear ${user.name},</p>
+    <p>Your account role has been updated by our administrators.</p>
+    <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;"><strong>Previous Role:</strong> ${oldRole.charAt(0).toUpperCase() + oldRole.slice(1)}</p>
+      <p style="margin: 0;"><strong>New Role:</strong> ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}</p>
+    </div>
+    <p>This change may affect your access permissions within the system. Please log in to your account to see the updated features available to you.</p>
+    <p>If you have any questions about this change, please contact our support team.</p>
+  `);
+  return sendEmail({ to: user.email, subject: 'Your Account Role Has Been Updated', html });
+}
+
+async function sendHospitalApprovalEmail(user, hospital, isApproved) {
+  const title = isApproved ? 'Hospital Application Approved!' : 'Hospital Application Update';
+  const body = isApproved ? `
+    <p>Dear ${user.name},</p>
+    <p>We're excited to inform you that your hospital registration for <strong>${hospital.name}</strong> has been approved!</p>
+    <div style="background: #ecfdf5; border: 1px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="color: #059669; margin-top: 0;">What's Next?</h3>
+      <ul>
+        <li>Your hospital is now visible to patients and doctors</li>
+        <li>You can manage your departments and staff</li>
+        <li>Patients can book appointments at your facility</li>
+        <li>You have access to hospital management features</li>
+      </ul>
+    </div>
+    <p>Thank you for joining the One Healthline Connect network. We look forward to serving patients together!</p>
+  ` : `
+    <p>Dear ${user.name},</p>
+    <p>Thank you for your interest in joining One Healthline Connect. After careful review, we need additional information before we can approve your hospital registration for <strong>${hospital.name}</strong>.</p>
+    <div style="background: #fef2f2; border: 1px solid #f87171; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;">Please contact our support team for more details about the requirements for hospital registration.</p>
+    </div>
+    <p>We appreciate your understanding and look forward to working with you.</p>
+  `;
+  
+  const html = baseTemplate(title, body);
+  return sendEmail({ to: user.email, subject: title, html });
+}
+
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
@@ -104,4 +146,6 @@ module.exports = {
   sendAppointmentEmail,
   sendOrderStatusEmail,
   sendEmergencyStatusEmail,
+  sendRoleChangeEmail,
+  sendHospitalApprovalEmail,
 };

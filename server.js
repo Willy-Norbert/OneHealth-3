@@ -8,6 +8,8 @@ const swaggerUi = require('swagger-ui-express');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const hospitalRoutes = require('./routes/hospitalRoutes');
 const teleconsultationRoutes = require('./routes/teleconsultationRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
@@ -95,6 +97,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/teleconsultation', teleconsultationRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/departments', departmentRoutes);

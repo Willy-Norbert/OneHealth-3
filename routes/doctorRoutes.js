@@ -90,8 +90,8 @@ router.get('/profile/:userId', getDoctorByUserId);
 
 // Protected routes
 router.use(protect);
-router.post('/', restrictTo('admin'), createDoctor);
-router.put('/:id', updateDoctor); // Admin or doctor themselves
-router.delete('/:id', restrictTo('admin'), deleteDoctor);
+router.post('/', restrictTo('admin', 'hospital'), createDoctor);
+router.put('/:id', updateDoctor); // Admin, hospital owner, or doctor themselves
+router.delete('/:id', restrictTo('admin', 'hospital'), deleteDoctor);
 
 module.exports = router;

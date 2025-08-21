@@ -80,8 +80,7 @@ router.get('/:id', getDepartment);
 
 // Admin routes
 router.use(protect);
-router.use(restrictTo('admin'));
-router.post('/', createDepartment);
+router.post('/', restrictTo('admin', 'hospital'), createDepartment);
 router.put('/:id', updateDepartment);
 router.delete('/:id', deleteDepartment);
 
