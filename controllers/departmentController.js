@@ -28,6 +28,8 @@ exports.getAllDepartments = async (req, res) => {
       data: { error: error.message }
     });
   }
+  console.log('Get all departments called');
+  console.log('Query params:', req.query);
 };
 
 // @desc    Get single department

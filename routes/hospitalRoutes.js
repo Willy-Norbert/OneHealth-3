@@ -309,21 +309,21 @@ const router = express.Router();
  *         description: Admin access required
  */
 
-// Protect all routes
-router.use(protect);
-
 // Public hospital routes (approved hospitals)
 router.get('/', getAllHospitals);
 router.get('/:id', getHospital);
 
+
+
+
 // Hospital creation - Admin or Hospital role
-router.post('/', restrictTo('admin', 'hospital'), createHospital);
+router.get('/', getAllHospitals);
+router.get('/:id', getHospital);
 
-// Hospital management
-router.put('/:id', updateHospital); // Admin or hospital owner (checked in controller)
-router.delete('/:id', restrictTo('admin'), deleteHospital);
-
-// Admin-only routes
-router.patch('/:id/approve', restrictTo('admin'), approveHospital);
+// Protected routes
+router.post('/', protect, restrictTo('admin', 'hospital'), createHospital);
+router.put('/:id', protect, restrictTo('admin', 'hospital'), updateHospital);
+router.delete('/:id', protect, restrictTo('admin'), deleteHospital);
+router.patch('/:id/approve', protect, restrictTo('admin'), approveHospital);
 
 module.exports = router;

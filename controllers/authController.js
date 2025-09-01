@@ -66,6 +66,10 @@ const login = async (req, res) => {
         status: 'fail',
         message: 'Please provide email and password!',
       });
+      console.log('Login attempt with missing credentials');
+      console.log(`Email: ${email}`);
+      console.log(`Password: ${password ? 'Provided' : 'Not Provided'}`);
+      console.log(`Request Body: ${JSON.stringify(req.body)}`);
     }
 
     // Check if user exists and password is correct
@@ -77,7 +81,7 @@ const login = async (req, res) => {
         message: 'Incorrect email or password',
       });
     }
-
+    console.log(`User ${user.email} logged in successfully`);
     // Check if user is active
     if (!user.isActive) {
       return res.status(401).json({
@@ -86,6 +90,7 @@ const login = async (req, res) => {
       });
     }
 
+    
     createSendToken(user, 200, res);
   } catch (error) {
     console.error('Login error:', error);

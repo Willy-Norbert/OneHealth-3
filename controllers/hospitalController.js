@@ -1,28 +1,29 @@
 const Hospital = require('../models/Hospital');
 const { sendHospitalApprovalEmail } = require('../services/emailService');
 
+// Get all hospitals
 exports.getAllHospitals = async (req, res) => {
   try {
     const { page = 1, limit = 10, approved } = req.query;
     const skip = (page - 1) * limit;
 
     let filter = { isActive: true };
-    
+
     // If user is hospital role, only show their own hospital
-    if (req.user.role === 'hospital') {
+    if (req.user?.role === 'hospital') {
       filter.userId = req.user._id;
     }
-    
+
     // Admin can filter by approval status
-    if (req.user.role === 'admin' && approved !== undefined) {
+    if (req.user?.role === 'admin' && approved !== undefined) {
       filter.isApproved = approved === 'true';
-    } else if (req.user.role !== 'admin') {
+    } else if (!req.user || req.user.role !== 'admin') {
       // Non-admin users only see approved hospitals
       filter.isApproved = true;
     }
 
     const hospitals = await Hospital.find(filter)
-      .populate('userId', 'name email')
+      .populate('userId', 'name email role')
       .populate('departments', 'name')
       .skip(skip)
       .limit(parseInt(limit))
@@ -45,6 +46,7 @@ exports.getAllHospitals = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve hospitals',
@@ -53,21 +55,28 @@ exports.getAllHospitals = async (req, res) => {
   }
 };
 
+// Create hospital
 exports.createHospital = async (req, res) => {
   try {
     const hospitalData = { ...req.body };
-    
+
     // Only admin can create hospitals with approval
-    if (req.user.role === 'admin') {
+    if (req.user?.role === 'admin') {
       hospitalData.isApproved = hospitalData.isApproved !== undefined ? hospitalData.isApproved : true;
-    } else {
+    } else if (req.user?.role === 'hospital') {
       // Hospital users creating their own profile
       hospitalData.userId = req.user._id;
       hospitalData.isApproved = false; // Requires admin approval
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: 'Only Admin or Hospital role can create hospitals',
+        data: null
+      });
     }
 
     const hospital = await Hospital.create(hospitalData);
-    await hospital.populate('userId', 'name email');
+    await hospital.populate('userId', 'name email role');
 
     res.status(201).json({
       success: true,
@@ -83,10 +92,11 @@ exports.createHospital = async (req, res) => {
   }
 };
 
+// Update hospital
 exports.updateHospital = async (req, res) => {
   try {
     const hospital = await Hospital.findById(req.params.id);
-    
+
     if (!hospital) {
       return res.status(404).json({
         success: false,
@@ -96,10 +106,10 @@ exports.updateHospital = async (req, res) => {
     }
 
     // Check permissions
-    const isAdmin = req.user.role === 'admin';
-    const isHospitalOwner = req.user.role === 'hospital' && 
-                           hospital.userId && 
-                           hospital.userId.toString() === req.user._id.toString();
+    const isAdmin = req.user?.role === 'admin';
+    const isHospitalOwner = req.user?.role === 'hospital' && 
+                            hospital.userId && 
+                            hospital.userId.toString() === req.user._id.toString();
 
     if (!isAdmin && !isHospitalOwner) {
       return res.status(403).json({
@@ -109,9 +119,9 @@ exports.updateHospital = async (req, res) => {
       });
     }
 
-    // Hospital users cannot change approval status
+    // Hospital users cannot change approval status or userId
     const updateData = { ...req.body };
-    if (req.user.role === 'hospital') {
+    if (req.user?.role === 'hospital') {
       delete updateData.isApproved;
       delete updateData.userId;
     }
@@ -120,7 +130,7 @@ exports.updateHospital = async (req, res) => {
       req.params.id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('userId', 'name email');
+    ).populate('userId', 'name email role');
 
     res.status(200).json({
       success: true,
@@ -136,10 +146,11 @@ exports.updateHospital = async (req, res) => {
   }
 };
 
+// Delete (deactivate) hospital
 exports.deleteHospital = async (req, res) => {
   try {
     const hospital = await Hospital.findById(req.params.id);
-    
+
     if (!hospital) {
       return res.status(404).json({
         success: false,
@@ -148,12 +159,15 @@ exports.deleteHospital = async (req, res) => {
       });
     }
 
-    // Only admin can delete hospitals
-    const updatedHospital = await Hospital.findByIdAndUpdate(
-      req.params.id,
-      { isActive: false },
-      { new: true }
-    );
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+        data: null
+      });
+    }
+
+    await Hospital.findByIdAndUpdate(req.params.id, { isActive: false });
 
     res.status(200).json({
       success: true,
@@ -169,10 +183,11 @@ exports.deleteHospital = async (req, res) => {
   }
 };
 
+// Get single hospital
 exports.getHospital = async (req, res) => {
   try {
     const hospital = await Hospital.findById(req.params.id)
-      .populate('userId', 'name email')
+      .populate('userId', 'name email role')
       .populate('departments', 'name description consultationFee');
 
     if (!hospital) {
@@ -184,11 +199,10 @@ exports.getHospital = async (req, res) => {
     }
 
     // Check permissions for non-approved hospitals
-    if (!hospital.isApproved && req.user.role !== 'admin') {
-      const isHospitalOwner = req.user.role === 'hospital' && 
-                             hospital.userId && 
-                             hospital.userId.toString() === req.user._id.toString();
-      
+    if (!hospital.isApproved && req.user?.role !== 'admin') {
+      const isHospitalOwner = req.user?.role === 'hospital' && 
+                              hospital.userId && 
+                              hospital.userId.toString() === req.user._id.toString();
       if (!isHospitalOwner) {
         return res.status(403).json({
           success: false,
@@ -212,15 +226,24 @@ exports.getHospital = async (req, res) => {
   }
 };
 
+// Approve or reject hospital (Admin only)
 exports.approveHospital = async (req, res) => {
   try {
     const { isApproved } = req.body;
-    
+
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+        data: null
+      });
+    }
+
     const hospital = await Hospital.findByIdAndUpdate(
       req.params.id,
       { isApproved },
       { new: true }
-    ).populate('userId', 'name email');
+    ).populate('userId', 'name email role');
 
     if (!hospital) {
       return res.status(404).json({
