@@ -1,7 +1,9 @@
 const express = require('express');
 const {
   createAppointment,
+  getAppointment,
   getUserAppointments,
+  getAppointmentsByUserId,
   getAllAppointments,
   updateAppointmentStatus,
   cancelAppointment,
@@ -79,6 +81,85 @@ router.post('/', createAppointment);
  *                 $ref: '#/components/schemas/Appointment'
  */
 router.get('/my-appointments', getUserAppointments);
+
+/**
+ * @swagger
+ * /api/appointments/{id}:
+ *   get:
+ *     summary: Get single appointment by ID
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     appointment:
+ *                       $ref: '#/components/schemas/Appointment'
+ *       404:
+ *         description: Appointment not found
+ *       403:
+ *         description: Not authorized to view this appointment
+ */
+router.get('/:id', getAppointment);
+
+/**
+ * @swagger
+ * /api/appointments/user/{userId}:
+ *   get:
+ *     summary: Get appointments for specific user
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, cancelled, completed, no-show]
+ *         description: Filter by appointment status
+ *     responses:
+ *       200:
+ *         description: User appointments retrieved successfully
+ *       403:
+ *         description: Not authorized to view these appointments
+ */
+router.get('/user/:userId', getAppointmentsByUserId);
 
 /**
  * @swagger

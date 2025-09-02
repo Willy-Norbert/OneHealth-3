@@ -92,6 +92,7 @@ const appointmentSchema = new mongoose.Schema({
   payment: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
   slotLockId: { type: String },
   meetingLink: String, // For virtual appointments
+  roomName: String, // Jitsi room name
   reminderSent: {
     type: Boolean,
     default: false

@@ -4,6 +4,7 @@ const User = require('../models/User');
 const SlotLock = require('../models/SlotLock');
 const { getAvailableSlots } = require('../services/hospitalAvailability');
 const { sendAppointmentEmail } = require('../services/emailService');
+const { generateAppointmentMeeting } = require('../services/jitsiService');
 const Joi = require('joi');
 const crypto = require('crypto');
 // Create new appointment
@@ -76,6 +77,19 @@ exports.createAppointment = async (req, res) => {
     const appointment = await Appointment.create(appointmentData);
     await appointment.populate(['hospital', 'patient']);
 
+    // Generate Jitsi meeting link for virtual appointments
+    if (appointment.appointmentType === 'virtual') {
+      try {
+        const jitsiDetails = generateAppointmentMeeting(appointment, req.user, false);
+        appointment.meetingLink = jitsiDetails.meetingLink;
+        appointment.roomName = jitsiDetails.roomName;
+        await appointment.save();
+      } catch (jitsiError) {
+        console.error('Jitsi link generation error:', jitsiError);
+        // Continue without failing the appointment creation
+      }
+    }
+
     // Send confirmation email (best-effort)
     try { await sendAppointmentEmail('confirmation', appointment, req.user); } catch (err) { console.error('Email send error:', err); }
 
@@ -89,6 +103,48 @@ exports.createAppointment = async (req, res) => {
   }
 };
 
+// Get single appointment by ID
+exports.getAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const appointment = await Appointment.findById(id)
+      .populate(['hospital', 'patient', 'doctor']);
+    
+    if (!appointment) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Appointment not found'
+      });
+    }
+    
+    // Check authorization - only patient, doctor, hospital staff, or admin can view
+    const canView = (
+      appointment.patient._id.toString() === req.user._id.toString() ||
+      (appointment.doctor && appointment.doctor._id.toString() === req.user._id.toString()) ||
+      req.user.role === 'admin' ||
+      req.user.role === 'hospital'
+    );
+    
+    if (!canView) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to view this appointment'
+      });
+    }
+    
+    res.status(200).json({
+      status: 'success',
+      data: { appointment }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 // Get user appointments
 exports.getUserAppointments = async (req, res) => {
   try {
@@ -99,6 +155,48 @@ exports.getUserAppointments = async (req, res) => {
     res.status(200).json({
       status: 'success',
       data: { appointments }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
+// Get appointments for specific user (by userId)
+exports.getAppointmentsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 10, status } = req.query;
+    
+    // Authorization check
+    if (req.user._id.toString() !== userId && req.user.role !== 'admin' && req.user.role !== 'hospital') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to view these appointments'
+      });
+    }
+    
+    const query = { patient: userId };
+    if (status) query.status = status;
+    
+    const appointments = await Appointment.find(query)
+      .populate(['hospital', 'patient', 'doctor'])
+      .sort({ appointmentDate: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const total = await Appointment.countDocuments(query);
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        appointments,
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total
+      }
     });
   } catch (error) {
     res.status(500).json({
