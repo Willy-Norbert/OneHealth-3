@@ -132,9 +132,20 @@ exports.createAppointment = async (req, res) => {
 
     if (!normalizedAvailableSlots.includes(normalizedTime)) {
       console.log('❌ Slot not found in available slots!');
+      
+      // Check if it's because the hospital is closed that day
+      if (availableSlots.length === 0) {
+        const dateObj = new Date(appointmentDate);
+        const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        return res.status(409).json({ 
+          status: 'error', 
+          message: `The hospital is closed on ${dayName}s. Please select a different date when the hospital is open.` 
+        });
+      }
+      
       return res.status(409).json({ 
         status: 'error', 
-        message: 'The requested time slot is not available. Please choose from the available time slots.' 
+        message: `The time slot ${appointmentTime} is not available. Available slots: ${availableSlots.join(', ') || 'None'}` 
       });
     }
 

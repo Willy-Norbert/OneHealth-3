@@ -5,7 +5,16 @@ const SlotLock = require('../models/SlotLock');
 
 // Helper to generate HH:MM AM/PM time labels at 30-min intervals
 function generateSlotsFromWorkingHours(workingHoursForDay) {
-  if (!workingHoursForDay || !workingHoursForDay.start || !workingHoursForDay.end) return [];
+  // Handle closed days
+  if (!workingHoursForDay || 
+      !workingHoursForDay.start || 
+      !workingHoursForDay.end ||
+      workingHoursForDay.start.toLowerCase() === 'closed' ||
+      workingHoursForDay.end.toLowerCase() === 'closed') {
+    console.log('🚫 Hospital is closed on this day');
+    return [];
+  }
+  
   const toMinutes = (t) => {
     // expects 'HH:MM' in 24h format or 'HH:MM AM/PM'
     const ampmMatch = /(AM|PM)$/i.test(t);
@@ -31,6 +40,7 @@ function generateSlotsFromWorkingHours(workingHoursForDay) {
   for (let t = startMins; t + 30 <= endMins; t += 30) {
     slots.push(toLabel(t));
   }
+  console.log(`⏰ Generated ${slots.length} slots for working hours ${workingHoursForDay.start} - ${workingHoursForDay.end}:`, slots);
   return slots;
 }
 
