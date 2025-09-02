@@ -75,6 +75,8 @@ const router = express.Router();
  */
 
 // Public routes
+// ✅ Route to get departments by hospital
+router.get('/hospital/:hospitalId', getDepartmentsByHospital);
 router.get('/', getAllDepartments);
 router.get('/:id', getDepartment);
 

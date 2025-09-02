@@ -16,14 +16,16 @@ const MedicalRecord = require('./models/MedicalRecord');
 const Teleconsultation = require('./models/Teleconsultation');
 
 // --- CONSULTATION TYPE MODEL ---
-const ConsultationType = mongoose.models.ConsultationType || mongoose.model(
-  'ConsultationType',
-  new mongoose.Schema({
-    name: { type: String, required: true },
-    description: String,
-    baseFee: { type: Number, default: 0 },
-  })
-);
+const ConsultationType =
+  mongoose.models.ConsultationType ||
+  mongoose.model(
+    'ConsultationType',
+    new mongoose.Schema({
+      name: { type: String, required: true },
+      description: String,
+      baseFee: { type: Number, default: 0 },
+    })
+  );
 
 // --- CONFIG ---
 const hashPassword = (pwd) => bcrypt.hashSync(pwd, 10);
@@ -64,7 +66,10 @@ async function seed() {
         name: 'Kigali University Hospital',
         location: 'Kigali',
         address: 'KG 7 Ave, Kigali',
-        contact: { phone: '+250788123456', email: 'info@kigaliuniversityhospital.rw' },
+        contact: {
+          phone: '+250788123456',
+          email: 'info@kigaliuniversityhospital.rw',
+        },
         services: ['Emergency Care', 'Surgery', 'General Medicine', 'Radiology'],
         workingHours: {
           monday: { start: '08:00', end: '18:00' },
@@ -144,10 +149,9 @@ async function seed() {
 
     // --- LINK DEPARTMENTS TO HOSPITALS ---
     for (const dept of departments) {
-      await Hospital.findByIdAndUpdate(
-        dept.hospital,
-        { $push: { departments: dept._id } }
-      );
+      await Hospital.findByIdAndUpdate(dept.hospital, {
+        $push: { departments: dept._id },
+      });
     }
 
     // --- INSURANCE ---
@@ -158,60 +162,102 @@ async function seed() {
       { name: 'Sanlam', type: 'Private', coveragePercentage: 75 },
     ]);
 
-    // --- USERS ---
+    // --- USERS (ADMINS) ---
     const adminUsers = await User.insertMany([
-      { name: 'Platform Admin', email: 'admin@onehealth.rw', password: hashPassword('Admin#123'), role: 'admin', isActive: true, isVerified: true },
-      { name: 'Kigali Hosp Admin', email: 'kgh-admin@onehealth.rw', password: hashPassword('Admin#123'), role: 'hospital', isActive: true, isVerified: true },
-      { name: 'RCH Admin', email: 'rch-admin@onehealth.rw', password: hashPassword('Admin#123'), role: 'hospital', isActive: true, isVerified: true },
-      { name: 'Sunrise Admin', email: 'sunrise-admin@onehealth.rw', password: hashPassword('Admin#123'), role: 'hospital', isActive: true, isVerified: true },
+      {
+        name: 'Platform Admin',
+        email: 'admin@onehealth.rw',
+        password: hashPassword('Admin#123'),
+        role: 'admin',
+        isActive: true,
+        isVerified: true,
+      },
+      {
+        name: 'Kigali Hosp Admin',
+        email: 'kgh-admin@onehealth.rw',
+        password: hashPassword('Admin#123'),
+        role: 'hospital',
+        isActive: true,
+        isVerified: true,
+      },
+      {
+        name: 'RCH Admin',
+        email: 'rch-admin@onehealth.rw',
+        password: hashPassword('Admin#123'),
+        role: 'hospital',
+        isActive: true,
+        isVerified: true,
+      },
+      {
+        name: 'Sunrise Admin',
+        email: 'sunrise-admin@onehealth.rw',
+        password: hashPassword('Admin#123'),
+        role: 'hospital',
+        isActive: true,
+        isVerified: true,
+      },
     ]);
-    console.log('Admin login: admin@onehealth.rw | Password: Admin#123');
+    console.log(
+      'Admin login: admin@onehealth.rw | Password: Admin#123'
+    );
 
     // --- DOCTORS ---
-    const doctorUsersPayload = [];
-    const doctorsPayload = [];
+    const doctors = [];
 
-    departments.forEach((dept, i) => {
+    for (const dept of departments) {
       for (let j = 0; j < 2; j++) {
-        const userEmail = `doctor${i * 2 + j + 1}@onehealth.rw`;
-        const userName = `Dr. ${dept.name} ${j + 1}`;
-        doctorUsersPayload.push({
-          name: userName,
-          email: userEmail,
+        // create doctor user
+        const doctorUser = await User.create({
+          name: `Dr. ${dept.name} ${j + 1}`,
+          email: `doctor_${dept.name
+            .toLowerCase()
+            .replace(/\s+/g, '')}${j + 1}@onehealth.rw`,
           password: hashPassword('Doctor#123'),
           role: 'doctor',
           isActive: true,
           isVerified: true,
         });
-      }
-    });
 
-    const doctorUsers = await User.insertMany(doctorUsersPayload);
-
-    let userIdx = 0;
-    departments.forEach((dept) => {
-      for (let j = 0; j < 2; j++) {
-        doctorsPayload.push({
-          user: doctorUsers[userIdx]._id,
+        // create doctor profile
+        const doctor = await Doctor.create({
+          user: doctorUser._id,
           licenseNumber: `LIC-${dept._id.toString().slice(-4)}-${j + 1}`,
           specialization: dept.name,
           hospital: dept.hospital,
           department: dept._id,
           consultationFee: dept.consultationFee,
         });
-        userIdx++;
-      }
-    });
 
-    const doctors = await Doctor.insertMany(doctorsPayload);
-    doctors.forEach((d, i) => {
-      console.log(`Doctor login: ${doctorUsers[i].email} | Password: Doctor#123`);
-    });
+        // push into hospital and department
+        await Hospital.findByIdAndUpdate(dept.hospital, {
+          $push: { doctors: doctor._id },
+        });
+        await Department.findByIdAndUpdate(dept._id, {
+          $push: { doctors: doctor._id },
+        });
+
+        doctors.push(doctor);
+
+        console.log(
+          `Doctor login: ${doctorUser.email} | Password: Doctor#123`
+        );
+      }
+    }
 
     // --- PATIENTS ---
     const patientNames = [
-      'John Patient', 'Mary Patient', 'Paul Patient', 'Alice Patient', 'Eric Patient', 'Grace Patient',
-      'Irene Patient', 'Noah Patient', 'Olivia Patient', 'Ethan Patient', 'Mason Patient', 'Sophia Patient',
+      'John Patient',
+      'Mary Patient',
+      'Paul Patient',
+      'Alice Patient',
+      'Eric Patient',
+      'Grace Patient',
+      'Irene Patient',
+      'Noah Patient',
+      'Olivia Patient',
+      'Ethan Patient',
+      'Mason Patient',
+      'Sophia Patient',
     ];
     const patients = await User.insertMany(
       patientNames.map((n, i) => ({
@@ -224,16 +270,31 @@ async function seed() {
       }))
     );
     patients.forEach((p, i) => {
-      console.log(`Patient login: ${p.email} | Password: Patient#123`);
+      console.log(
+        `Patient login: ${p.email} | Password: Patient#123`
+      );
     });
 
     // --- PHARMACIES ---
     const pharmacies = await Pharmacy.insertMany([
       {
         name: 'CityCare Pharmacy',
-        location: { address: 'KG 15 Ave', city: 'Kigali', district: 'Gasabo', coordinates: { latitude: -1.944, longitude: 30.061 } },
-        contact: { phone: '+250780000001', email: 'contact@citycarepharma.rw', website: 'https://citycare.rw' },
-        services: ['Prescription Filling', 'Over-the-counter Medications', 'Home Delivery'],
+        location: {
+          address: 'KG 15 Ave',
+          city: 'Kigali',
+          district: 'Gasabo',
+          coordinates: { latitude: -1.944, longitude: 30.061 },
+        },
+        contact: {
+          phone: '+250780000001',
+          email: 'contact@citycarepharma.rw',
+          website: 'https://citycare.rw',
+        },
+        services: [
+          'Prescription Filling',
+          'Over-the-counter Medications',
+          'Home Delivery',
+        ],
         insuranceAccepted: [insurance[0]._id, insurance[2]._id],
         licenseNumber: 'PHARM-0001',
         deliveryRadius: 12,
@@ -241,15 +302,29 @@ async function seed() {
       },
       {
         name: 'Valley Drugs',
-        location: { address: 'MS 8 Rd', city: 'Musanze', district: 'Musanze', coordinates: { latitude: -1.504, longitude: 29.636 } },
+        location: {
+          address: 'MS 8 Rd',
+          city: 'Musanze',
+          district: 'Musanze',
+          coordinates: { latitude: -1.504, longitude: 29.636 },
+        },
         contact: { phone: '+250780000002', email: 'info@valleydrugs.rw' },
-        services: ['Prescription Filling', 'Medical Supplies', 'Online Ordering'],
+        services: [
+          'Prescription Filling',
+          'Medical Supplies',
+          'Online Ordering',
+        ],
         insuranceAccepted: [insurance[1]._id, insurance[3]._id],
         licenseNumber: 'PHARM-0002',
       },
       {
         name: 'Sunrise Pharma',
-        location: { address: 'HY 2 St', city: 'Huye', district: 'Huye', coordinates: { latitude: -2.602, longitude: 29.740 } },
+        location: {
+          address: 'HY 2 St',
+          city: 'Huye',
+          district: 'Huye',
+          coordinates: { latitude: -2.602, longitude: 29.740 },
+        },
         contact: { phone: '+250780000003', email: 'hello@sunrisepharma.rw' },
         services: ['Prescription Filling', 'Vaccination Services'],
         insuranceAccepted: [insurance[0]._id, insurance[1]._id],
@@ -257,9 +332,18 @@ async function seed() {
       },
       {
         name: 'Downtown Meds',
-        location: { address: 'KN 1 Rd', city: 'Kigali', district: 'Nyarugenge', coordinates: { latitude: -1.943, longitude: 30.059 } },
+        location: {
+          address: 'KN 1 Rd',
+          city: 'Kigali',
+          district: 'Nyarugenge',
+          coordinates: { latitude: -1.943, longitude: 30.059 },
+        },
         contact: { phone: '+250780000004' },
-        services: ['Over-the-counter Medications', 'Online Ordering', 'Home Delivery'],
+        services: [
+          'Over-the-counter Medications',
+          'Online Ordering',
+          'Home Delivery',
+        ],
         insuranceAccepted: [insurance[2]._id],
         licenseNumber: 'PHARM-0004',
       },
@@ -267,19 +351,32 @@ async function seed() {
 
     // --- CONSULTATION TYPES ---
     const consultTypes = await ConsultationType.insertMany([
-      { name: 'General Teleconsultation', description: '15-min video call', baseFee: 5000 },
-      { name: 'Specialist Teleconsultation', description: '30-min video call', baseFee: 10000 },
-      { name: 'Follow-up Call', description: '10-min phone call', baseFee: 3000 },
+      {
+        name: 'General Teleconsultation',
+        description: '15-min video call',
+        baseFee: 5000,
+      },
+      {
+        name: 'Specialist Teleconsultation',
+        description: '30-min video call',
+        baseFee: 10000,
+      },
+      {
+        name: 'Follow-up Call',
+        description: '10-min phone call',
+        baseFee: 3000,
+      },
     ]);
 
     console.log('✅ Seed completed successfully!');
     console.log(`Hospitals: ${hospitals.length}`);
     console.log(`Departments: ${departments.length}`);
-    console.log(`Users: ${adminUsers.length + doctorUsers.length + patients.length}`);
+    console.log(
+      `Users: ${adminUsers.length + doctors.length + patients.length}`
+    );
     console.log(`Doctors: ${doctors.length}`);
     console.log(`Pharmacies: ${pharmacies.length}`);
     console.log(`Consultation Types: ${consultTypes.length}`);
-
   } catch (error) {
     console.error('❌ Seed error:', error);
   } finally {

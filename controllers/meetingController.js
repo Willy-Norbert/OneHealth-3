@@ -328,11 +328,3 @@ const canCreateMeeting = (user, participants, roleContext) => {
       return false;
   }
 };
-
-module.exports = {
-  createMeeting,
-  getMeeting,
-  getUserMeetings,
-  deleteMeeting,
-  updateMeetingStatus
-};

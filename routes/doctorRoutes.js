@@ -84,6 +84,7 @@ const router = express.Router();
  */
 
 // Public routes
+router.get('/department/:departmentId', getDoctorsByDepartment);
 router.get('/', getAllDoctors);
 router.get('/:id', getDoctor);
 router.get('/profile/:userId', getDoctorByUserId);

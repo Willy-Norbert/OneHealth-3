@@ -15,27 +15,12 @@ const appointmentSchema = new mongoose.Schema({
     ref: 'Hospital',
     required: true
   },
-  department: {
-    type: String,
-    required: true,
-    enum: [
-      'General Medicine',
-      'Cardiology',
-      'Pediatrics',
-      'Gynecology',
-      'Orthopedics',
-      'Dermatology',
-      'Neurology',
-      'Psychiatry',
-      'Emergency',
-      'Surgery',
-      'Oncology',
-      'Ophthalmology',
-      'ENT',
-      'Urology',
-      'Endocrinology'
-    ]
-  },
+ department: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Department',
+  required: true
+}
+,
   appointmentType: {
     type: String,
     enum: ['virtual', 'in-person'],

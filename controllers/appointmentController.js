@@ -10,12 +10,14 @@ const crypto = require('crypto');
 // Create new appointment
 exports.createAppointment = async (req, res) => {
   try {
+    // Validate input
     const schema = Joi.object({
       hospital: Joi.string().required(),
       department: Joi.string().required(),
+      doctor: Joi.string().optional(),
       appointmentType: Joi.string().valid('virtual', 'in-person').required(),
-      appointmentDate: Joi.string().required(), // YYYY-MM-DD
-      appointmentTime: Joi.string().required(), // e.g., 09:30 AM
+      appointmentDate: Joi.string().required(),
+      appointmentTime: Joi.string().required(),
       reasonForVisit: Joi.string().required(),
       patientDetails: Joi.object({
         fullName: Joi.string().required(),
@@ -37,26 +39,56 @@ exports.createAppointment = async (req, res) => {
     const { error, value } = schema.validate(req.body);
     if (error) return res.status(400).json({ status: 'error', message: error.message });
 
-    const { hospital, department, appointmentDate, appointmentTime } = value;
+    const { hospital, department, appointmentDate, appointmentTime, doctor } = value;
 
-    // Validate against availability service
-    const available = await getAvailableSlots({ hospitalId: hospital, date: appointmentDate, department });
-    if (!available.includes(appointmentTime)) {
+    // Normalize time
+    const normalizeTime = (timeStr) => {
+      if (!timeStr) return '';
+      const [time, modifier] = timeStr.split(' ');
+      if (!modifier) return time;
+      let [hours, minutes] = time.split(':').map(Number);
+      if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+      if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+
+    const normalizedTime = normalizeTime(appointmentTime);
+
+    // Remove expired locks for this slot
+    await SlotLock.deleteMany({
+      hospital,
+      department,
+      appointmentDate: new Date(appointmentDate),
+      appointmentTime: normalizedTime,
+      expiresAt: { $lte: new Date() },
+    });
+
+    // Get available slots
+    let available = await getAvailableSlots({ hospitalId: hospital, date: appointmentDate, departmentId: department });
+
+    if (doctor) {
+      available = available.filter(slot => slot.doctorId === doctor);
+    }
+
+    available = available.map(slot => normalizeTime(slot.time || slot));
+
+    if (!available.includes(normalizedTime)) {
       return res.status(409).json({ status: 'error', message: 'Requested slot is not available' });
     }
 
-    // Acquire slot lock (prevents race conditions)
+    // Acquire slot lock
     const lockId = crypto.randomUUID();
-    const lockExpires = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes hold
+    const lockExpires = new Date(Date.now() + 1000 * 60 * 30); // 30 min
     try {
       await SlotLock.create({
         hospital,
         department,
         appointmentDate: new Date(appointmentDate),
-        appointmentTime,
+        appointmentTime: normalizedTime,
         lockId,
         expiresAt: lockExpires,
       });
+      
     } catch (e) {
       if (e.code === 11000) {
         return res.status(409).json({ status: 'error', message: 'Slot just got booked/locked. Please choose another.' });
@@ -64,20 +96,23 @@ exports.createAppointment = async (req, res) => {
       throw e;
     }
 
+    // Create appointment
     const appointmentData = {
       ...value,
       patient: req.user._id,
       status: 'pending',
       paymentStatus: 'pending',
       slotLockId: lockId,
-      // consultationFee defaulting
+      doctor: doctor || undefined,
+      department,
       consultationFee: value.consultationFee || (value.appointmentType === 'virtual' ? 25000 : 30000),
+      appointmentTime: normalizedTime,
     };
 
     const appointment = await Appointment.create(appointmentData);
-    await appointment.populate(['hospital', 'patient']);
+    await appointment.populate(['hospital', 'patient', ...(doctor ? ['doctor'] : []), 'department']);
 
-    // Generate Jitsi meeting link for virtual appointments
+    // Virtual meeting link
     if (appointment.appointmentType === 'virtual') {
       try {
         const jitsiDetails = generateAppointmentMeeting(appointment, req.user, false);
@@ -86,11 +121,10 @@ exports.createAppointment = async (req, res) => {
         await appointment.save();
       } catch (jitsiError) {
         console.error('Jitsi link generation error:', jitsiError);
-        // Continue without failing the appointment creation
       }
     }
 
-    // Send confirmation email (best-effort)
+    // Send confirmation email
     try { await sendAppointmentEmail('confirmation', appointment, req.user); } catch (err) { console.error('Email send error:', err); }
 
     res.status(201).json({
@@ -98,10 +132,14 @@ exports.createAppointment = async (req, res) => {
       message: 'Appointment booked. Proceed to payment to confirm.',
       data: { appointment },
     });
+
   } catch (error) {
+    console.error('Appointment creation error:', error);
     res.status(400).json({ status: 'error', message: error.message });
   }
 };
+
+
 
 // Get single appointment by ID
 exports.getAppointment = async (req, res) => {
