@@ -64,6 +64,7 @@ const hospitalSchema = new mongoose.Schema({
     saturday: { start: String, end: String },
     sunday: { start: String, end: String }
   },
+  externalApiUrl: { type: String },
   isApproved: {
     type: Boolean,
     default: false

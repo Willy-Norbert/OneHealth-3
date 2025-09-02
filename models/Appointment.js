@@ -89,6 +89,8 @@ const appointmentSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
   },
+  payment: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
+  slotLockId: { type: String },
   meetingLink: String, // For virtual appointments
   reminderSent: {
     type: Boolean,

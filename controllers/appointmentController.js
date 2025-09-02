@@ -1,43 +1,91 @@
 const Appointment = require('../models/Appointment');
 const Hospital = require('../models/Hospital');
 const User = require('../models/User');
+const SlotLock = require('../models/SlotLock');
+const { getAvailableSlots } = require('../services/hospitalAvailability');
 const { sendAppointmentEmail } = require('../services/emailService');
-
+const Joi = require('joi');
+const crypto = require('crypto');
 // Create new appointment
 exports.createAppointment = async (req, res) => {
   try {
+    const schema = Joi.object({
+      hospital: Joi.string().required(),
+      department: Joi.string().required(),
+      appointmentType: Joi.string().valid('virtual', 'in-person').required(),
+      appointmentDate: Joi.string().required(), // YYYY-MM-DD
+      appointmentTime: Joi.string().required(), // e.g., 09:30 AM
+      reasonForVisit: Joi.string().required(),
+      patientDetails: Joi.object({
+        fullName: Joi.string().required(),
+        email: Joi.string().email().required(),
+        phoneNumber: Joi.string().required(),
+        age: Joi.number().required(),
+        gender: Joi.string().valid('Male', 'Female').required(),
+        address: Joi.string().allow(''),
+        emergencyContact: Joi.object({
+          name: Joi.string().allow(''),
+          phone: Joi.string().allow(''),
+          relationship: Joi.string().allow(''),
+        }).unknown(true),
+      }).required(),
+      consultationFee: Joi.number().optional(),
+      insuranceInfo: Joi.object({ provider: Joi.string().allow(''), policyNumber: Joi.string().allow('') }).optional(),
+    });
+
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ status: 'error', message: error.message });
+
+    const { hospital, department, appointmentDate, appointmentTime } = value;
+
+    // Validate against availability service
+    const available = await getAvailableSlots({ hospitalId: hospital, date: appointmentDate, department });
+    if (!available.includes(appointmentTime)) {
+      return res.status(409).json({ status: 'error', message: 'Requested slot is not available' });
+    }
+
+    // Acquire slot lock (prevents race conditions)
+    const lockId = crypto.randomUUID();
+    const lockExpires = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes hold
+    try {
+      await SlotLock.create({
+        hospital,
+        department,
+        appointmentDate: new Date(appointmentDate),
+        appointmentTime,
+        lockId,
+        expiresAt: lockExpires,
+      });
+    } catch (e) {
+      if (e.code === 11000) {
+        return res.status(409).json({ status: 'error', message: 'Slot just got booked/locked. Please choose another.' });
+      }
+      throw e;
+    }
+
     const appointmentData = {
-      ...req.body,
-      patient: req.user._id
+      ...value,
+      patient: req.user._id,
+      status: 'pending',
+      paymentStatus: 'pending',
+      slotLockId: lockId,
+      // consultationFee defaulting
+      consultationFee: value.consultationFee || (value.appointmentType === 'virtual' ? 25000 : 30000),
     };
 
-    // Set consultation fee based on appointment type and department
-    if (!appointmentData.consultationFee) {
-      appointmentData.consultationFee = appointmentData.appointmentType === 'virtual' ? 25000 : 30000;
-    }
-
     const appointment = await Appointment.create(appointmentData);
-    
-    // Populate references
     await appointment.populate(['hospital', 'patient']);
-    
-    // Send confirmation email
-    try {
-      await sendAppointmentEmail('confirmation', appointment, req.user);
-    } catch (error) {
-      console.error('Email send error:', error);
-    }
-    
+
+    // Send confirmation email (best-effort)
+    try { await sendAppointmentEmail('confirmation', appointment, req.user); } catch (err) { console.error('Email send error:', err); }
+
     res.status(201).json({
       status: 'success',
-      message: 'Appointment booked successfully! Confirmation email sent.',
-      data: { appointment }
+      message: 'Appointment booked. Proceed to payment to confirm.',
+      data: { appointment },
     });
   } catch (error) {
-    res.status(400).json({
-      status: 'error',
-      message: error.message
-    });
+    res.status(400).json({ status: 'error', message: error.message });
   }
 };
 
@@ -170,55 +218,23 @@ exports.cancelAppointment = async (req, res) => {
   }
 };
 
-// Get available time slots
+// Get available time slots (uses external API with fallback)
 exports.getAvailableTimeSlots = async (req, res) => {
   try {
-    const { date, hospital, department } = req.query;
-
-    if (!date) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Please provide a valid date in YYYY-MM-DD format'
-      });
-    }
-
-    const appointmentDate = new Date(date);
-    if (isNaN(appointmentDate.getTime())) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid date format. Use YYYY-MM-DD'
-      });
-    }
-
-    const allTimeSlots = [
-      "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-      "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
-      "04:00 PM", "04:30 PM"
-    ];
-
-    const query = {
-      appointmentDate,
-      status: { $in: ['pending', 'confirmed'] }
-    };
-
-    if (hospital) query.hospital = hospital;
-    if (department) query.department = department;
-
-    const bookedAppointments = await Appointment.find(query);
-    const bookedTimes = bookedAppointments.map(apt => apt.appointmentTime);
-
-    const availableSlots = allTimeSlots.filter(slot => !bookedTimes.includes(slot));
-
-    res.status(200).json({
-      status: 'success',
-      data: { availableSlots }
+    const querySchema = Joi.object({
+      date: Joi.string().required(),
+      hospital: Joi.string().required(),
+      department: Joi.string().required(),
     });
+    const { error, value } = querySchema.validate(req.query);
+    if (error) return res.status(400).json({ status: 'error', message: error.message });
 
+    const { date, hospital, department } = value;
+    const availableSlots = await getAvailableSlots({ hospitalId: hospital, date, department });
+
+    return res.status(200).json({ status: 'success', data: { availableSlots } });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      message: error.message
-    });
+    return res.status(500).json({ status: 'error', message: error.message });
   }
 };
 

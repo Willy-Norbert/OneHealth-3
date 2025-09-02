@@ -21,6 +21,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const insuranceRoutes = require('./routes/insuranceRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 dotenv.config();
 connectDB();
@@ -118,6 +119,7 @@ app.use('/orders', orderRoutes);
 app.use('/medical-records', medicalRecordRoutes);
 app.use('/ai', aiRoutes);
 app.use('/insurance', insuranceRoutes);
+app.use('/payments', paymentRoutes);
 
 // Test route
 app.get('/', (req, res) => {
