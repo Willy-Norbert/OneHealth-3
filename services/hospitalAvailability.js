@@ -66,7 +66,35 @@ exports.getAvailableSlots = async ({ hospitalId, date, department }) => {
     baseSlots = generateSlotsFromWorkingHours(wh);
   }
 
-  // Remove already booked and locked
+  // Helper to normalize time formats for consistent comparison
+  const normalizeTimeToAMPM = (timeStr) => {
+    if (!timeStr) return '';
+    
+    // If already in AM/PM format, return as-is
+    if (/(AM|PM)$/i.test(timeStr)) return timeStr;
+    
+    // Convert 24-hour format to AM/PM
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
+  };
+
+  const normalizeTo24Hour = (timeStr) => {
+    if (!timeStr) return '';
+    
+    // If already in 24-hour format, return as-is
+    if (!/\s?(AM|PM)$/i.test(timeStr)) return timeStr;
+    
+    // Convert AM/PM to 24-hour format
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+    if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  // Remove already booked and locked (normalize times for comparison)
   const [booked, locks] = await Promise.all([
     Appointment.find({
       hospital: hospitalId,
@@ -82,11 +110,14 @@ exports.getAvailableSlots = async ({ hospitalId, date, department }) => {
     }).select('appointmentTime'),
   ]);
 
-  const blockedTimes = new Set([
-    ...booked.map((a) => a.appointmentTime),
-    ...locks.map((l) => l.appointmentTime),
+  // Convert all stored times (24-hour) to AM/PM format for comparison
+  const blockedTimesAMPM = new Set([
+    ...booked.map((a) => normalizeTimeToAMPM(a.appointmentTime)),
+    ...locks.map((l) => normalizeTimeToAMPM(l.appointmentTime)),
   ]);
 
-  const availableSlots = baseSlots.filter((s) => !blockedTimes.has(s));
+  // Filter out blocked slots (baseSlots are in AM/PM format)
+  const availableSlots = baseSlots.filter((slot) => !blockedTimesAMPM.has(slot));
+  
   return availableSlots;
 };
