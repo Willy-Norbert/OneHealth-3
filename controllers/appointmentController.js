@@ -98,17 +98,27 @@ exports.createAppointment = async (req, res) => {
     }
 
     // Step 4: Verify slot is in available slots list (from external API or working hours)
+    console.log('🎯 Checking if slot is available for:', {
+      hospital, 
+      date: appointmentDate, 
+      department,
+      requestedTime: normalizedTime
+    });
+    
     let availableSlots = await getAvailableSlots({ 
       hospitalId: hospital, 
       date: appointmentDate, 
-      departmentId: department 
+      department: department 
     });
+
+    console.log('📊 Available slots received:', availableSlots);
 
     // Filter by doctor if specified
     if (doctor) {
       availableSlots = availableSlots.filter(slot => 
         !slot.doctorId || slot.doctorId === doctor
       );
+      console.log('👨‍⚕️ Doctor-filtered slots:', availableSlots);
     }
 
     // Normalize available slots for comparison
@@ -116,7 +126,12 @@ exports.createAppointment = async (req, res) => {
       normalizeTime(slot.time || slot)
     );
 
+    console.log('🔄 Normalized available slots:', normalizedAvailableSlots);
+    console.log('🔍 Looking for normalized time:', normalizedTime);
+    console.log('❓ Is slot available?', normalizedAvailableSlots.includes(normalizedTime));
+
     if (!normalizedAvailableSlots.includes(normalizedTime)) {
+      console.log('❌ Slot not found in available slots!');
       return res.status(409).json({ 
         status: 'error', 
         message: 'The requested time slot is not available. Please choose from the available time slots.' 

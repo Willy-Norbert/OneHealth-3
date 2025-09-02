@@ -47,23 +47,30 @@ async function fetchExternalSlots(externalApiUrl, { date, department }) {
 }
 
 exports.getAvailableSlots = async ({ hospitalId, date, department }) => {
+  console.log('🔍 getAvailableSlots called with:', { hospitalId, date, department });
+  
   const hospital = await Hospital.findById(hospitalId);
   if (!hospital) throw new Error('Hospital not found');
 
   const dateObj = new Date(date);
   if (Number.isNaN(dateObj.getTime())) throw new Error('Invalid date');
+  
+  console.log('📅 Date object created:', dateObj);
 
   // Try external first
   let baseSlots = [];
   if (hospital.externalApiUrl) {
     baseSlots = await fetchExternalSlots(hospital.externalApiUrl, { date, department });
+    console.log('🌐 External slots fetched:', baseSlots);
   }
 
   // Fallback to local working hours
   if (!baseSlots || baseSlots.length === 0) {
     const day = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     const wh = hospital.workingHours?.[day];
+    console.log('🏥 Using local working hours for', day, ':', wh);
     baseSlots = generateSlotsFromWorkingHours(wh);
+    console.log('⏰ Generated base slots:', baseSlots);
   }
 
   // Helper to normalize time formats for consistent comparison
@@ -110,14 +117,20 @@ exports.getAvailableSlots = async ({ hospitalId, date, department }) => {
     }).select('appointmentTime'),
   ]);
 
+  console.log('📋 Booked appointments:', booked.map(a => a.appointmentTime));
+  console.log('🔒 Active locks:', locks.map(l => l.appointmentTime));
+
   // Convert all stored times (24-hour) to AM/PM format for comparison
   const blockedTimesAMPM = new Set([
     ...booked.map((a) => normalizeTimeToAMPM(a.appointmentTime)),
     ...locks.map((l) => normalizeTimeToAMPM(l.appointmentTime)),
   ]);
 
+  console.log('🚫 Blocked times (AM/PM):', Array.from(blockedTimesAMPM));
+
   // Filter out blocked slots (baseSlots are in AM/PM format)
   const availableSlots = baseSlots.filter((slot) => !blockedTimesAMPM.has(slot));
   
+  console.log('✅ Final available slots:', availableSlots);
   return availableSlots;
 };
