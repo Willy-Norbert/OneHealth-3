@@ -14,7 +14,7 @@ const departmentSchema = new mongoose.Schema({
       'Dermatology',
       'Neurology',
       'Psychiatry',
-      'Emergency',
+      'Emergency Medicine',
       'Surgery',
       'Oncology',
       'Ophthalmology',

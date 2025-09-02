@@ -9,6 +9,11 @@ exports.getAllHospitals = async (req, res) => {
 
     let filter = { isActive: true };
 
+    // Debugging logs
+    console.log("===== Fetching Hospitals =====");
+    console.log("Query Params:", req.query);
+    console.log("User Info:", req.user ? { id: req.user._id, role: req.user.role } : "No user");
+
     // If user is hospital role, only show their own hospital
     if (req.user?.role === 'hospital') {
       filter.userId = req.user._id;
@@ -22,6 +27,8 @@ exports.getAllHospitals = async (req, res) => {
       filter.isApproved = true;
     }
 
+    console.log("Applied Filter:", filter);
+
     const hospitals = await Hospital.find(filter)
       .populate('userId', 'name email role')
       .populate('departments', 'name')
@@ -30,6 +37,8 @@ exports.getAllHospitals = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const total = await Hospital.countDocuments(filter);
+
+    console.log("Hospitals Fetched:", hospitals.length, "/", total);
 
     res.status(200).json({
       success: true,
@@ -46,7 +55,7 @@ exports.getAllHospitals = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching hospitals:", error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve hospitals',
@@ -54,6 +63,7 @@ exports.getAllHospitals = async (req, res) => {
     });
   }
 };
+
 
 // Create hospital
 exports.createHospital = async (req, res) => {

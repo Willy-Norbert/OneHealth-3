@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 
 // MODELS
 const Department = require('./models/Department');
@@ -16,8 +15,8 @@ const Order = require('./models/Order');
 const MedicalRecord = require('./models/MedicalRecord');
 const Teleconsultation = require('./models/Teleconsultation');
 
-// Minimal inline model for ConsultationType
-const ConsultationType = mongoose.model(
+// --- CONSULTATION TYPE MODEL ---
+const ConsultationType = mongoose.models.ConsultationType || mongoose.model(
   'ConsultationType',
   new mongoose.Schema({
     name: { type: String, required: true },
@@ -29,7 +28,7 @@ const ConsultationType = mongoose.model(
 // --- CONFIG ---
 const hashPassword = (pwd) => bcrypt.hashSync(pwd, 10);
 
-// Connect to MongoDB
+// --- CONNECT TO MONGO ---
 mongoose
   .connect(
     'mongodb+srv://wiseacademy:01402@cluster0.bsxehn0.mongodb.net/onehealth?retryWrites=true&w=majority&appName=Cluster0'
@@ -39,15 +38,6 @@ mongoose
 
 // --- HELPERS ---
 const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
-const now = new Date();
-const daysFromNow = (d) => new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
-const isoTime = (h, m = 0) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-const genders = ['Male', 'Female'];
-const departmentsEnum = [
-  'General Medicine', 'Cardiology', 'Pediatrics', 'Gynecology', 'Orthopedics',
-  'Dermatology', 'Neurology', 'Psychiatry', 'Emergency', 'Surgery', 'Oncology', 'Ophthalmology', 'ENT', 'Urology', 'Endocrinology'
-];
 
 async function seed() {
   try {
@@ -65,7 +55,7 @@ async function seed() {
       Hospital.deleteMany({}),
       Teleconsultation.deleteMany({}),
       ConsultationType.deleteMany({}),
-      User.deleteMany({})
+      User.deleteMany({}),
     ]);
 
     // --- HOSPITALS ---
@@ -133,7 +123,7 @@ async function seed() {
       ['Pediatrics', 6000, 1],
       ['Surgery', 15000, 1],
       ['Orthopedics', 12000, 2],
-      ['Emergency', 8000, 2],
+      ['Emergency Medicine', 8000, 2],
       ['Dermatology', 7000, 3],
       ['Ophthalmology', 9000, 3],
       ['Neurology', 11000, 0],
@@ -152,6 +142,14 @@ async function seed() {
       }))
     );
 
+    // --- LINK DEPARTMENTS TO HOSPITALS ---
+    for (const dept of departments) {
+      await Hospital.findByIdAndUpdate(
+        dept.hospital,
+        { $push: { departments: dept._id } }
+      );
+    }
+
     // --- INSURANCE ---
     const insurance = await Insurance.insertMany([
       { name: 'Mutuelle de Santé', type: 'Public', coveragePercentage: 80 },
@@ -161,7 +159,6 @@ async function seed() {
     ]);
 
     // --- USERS ---
-    // Admins
     const adminUsers = await User.insertMany([
       { name: 'Platform Admin', email: 'admin@onehealth.rw', password: hashPassword('Admin#123'), role: 'admin', isActive: true, isVerified: true },
       { name: 'Kigali Hosp Admin', email: 'kgh-admin@onehealth.rw', password: hashPassword('Admin#123'), role: 'hospital', isActive: true, isVerified: true },
@@ -170,21 +167,48 @@ async function seed() {
     ]);
     console.log('Admin login: admin@onehealth.rw | Password: Admin#123');
 
-    // Doctors
-    const doctorUserPayload = Array.from({ length: 10 }).map((_, i) => ({
-      name: `Dr. User ${i + 1}`,
-      email: `doctor${i + 1}@onehealth.rw`,
-      password: hashPassword('Doctor#123'),
-      role: 'doctor',
-      isActive: true,
-      isVerified: true,
-    }));
-    const doctorUsers = await User.insertMany(doctorUserPayload);
-    doctorUsers.forEach((u, i) => {
-      console.log(`Doctor login: ${u.email} | Password: Doctor#123`);
+    // --- DOCTORS ---
+    const doctorUsersPayload = [];
+    const doctorsPayload = [];
+
+    departments.forEach((dept, i) => {
+      for (let j = 0; j < 2; j++) {
+        const userEmail = `doctor${i * 2 + j + 1}@onehealth.rw`;
+        const userName = `Dr. ${dept.name} ${j + 1}`;
+        doctorUsersPayload.push({
+          name: userName,
+          email: userEmail,
+          password: hashPassword('Doctor#123'),
+          role: 'doctor',
+          isActive: true,
+          isVerified: true,
+        });
+      }
     });
 
-    // Patients
+    const doctorUsers = await User.insertMany(doctorUsersPayload);
+
+    let userIdx = 0;
+    departments.forEach((dept) => {
+      for (let j = 0; j < 2; j++) {
+        doctorsPayload.push({
+          user: doctorUsers[userIdx]._id,
+          licenseNumber: `LIC-${dept._id.toString().slice(-4)}-${j + 1}`,
+          specialization: dept.name,
+          hospital: dept.hospital,
+          department: dept._id,
+          consultationFee: dept.consultationFee,
+        });
+        userIdx++;
+      }
+    });
+
+    const doctors = await Doctor.insertMany(doctorsPayload);
+    doctors.forEach((d, i) => {
+      console.log(`Doctor login: ${doctorUsers[i].email} | Password: Doctor#123`);
+    });
+
+    // --- PATIENTS ---
     const patientNames = [
       'John Patient', 'Mary Patient', 'Paul Patient', 'Alice Patient', 'Eric Patient', 'Grace Patient',
       'Irene Patient', 'Noah Patient', 'Olivia Patient', 'Ethan Patient', 'Mason Patient', 'Sophia Patient',
@@ -252,7 +276,7 @@ async function seed() {
     console.log(`Hospitals: ${hospitals.length}`);
     console.log(`Departments: ${departments.length}`);
     console.log(`Users: ${adminUsers.length + doctorUsers.length + patients.length}`);
-    console.log(`Doctors: ${doctorUsers.length}`);
+    console.log(`Doctors: ${doctors.length}`);
     console.log(`Pharmacies: ${pharmacies.length}`);
     console.log(`Consultation Types: ${consultTypes.length}`);
 
