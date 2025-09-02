@@ -7,7 +7,7 @@ const { sendAppointmentEmail } = require('../services/emailService');
 const { generateAppointmentMeeting } = require('../services/jitsiService');
 const Joi = require('joi');
 const crypto = require('crypto');
-// Create new appointment
+// Create new appointment with robust slot availability checking
 exports.createAppointment = async (req, res) => {
   try {
     // Validate input
@@ -41,7 +41,7 @@ exports.createAppointment = async (req, res) => {
 
     const { hospital, department, appointmentDate, appointmentTime, doctor } = value;
 
-    // Normalize time
+    // Normalize time to 24-hour format (HH:MM)
     const normalizeTime = (timeStr) => {
       if (!timeStr) return '';
       const [time, modifier] = timeStr.split(' ');
@@ -53,50 +53,102 @@ exports.createAppointment = async (req, res) => {
     };
 
     const normalizedTime = normalizeTime(appointmentTime);
+    const appointmentDateObj = new Date(appointmentDate);
 
-    // Remove expired locks for this slot
+    // Step 1: Clean up expired locks for this specific slot
     await SlotLock.deleteMany({
       hospital,
       department,
-      appointmentDate: new Date(appointmentDate),
+      appointmentDate: appointmentDateObj,
       appointmentTime: normalizedTime,
       expiresAt: { $lte: new Date() },
     });
 
-    // Get available slots
-    let available = await getAvailableSlots({ hospitalId: hospital, date: appointmentDate, departmentId: department });
+    // Step 2: Check if slot is already booked (existing appointments)
+    const existingAppointment = await Appointment.findOne({
+      hospital,
+      department,
+      appointmentDate: appointmentDateObj,
+      appointmentTime: normalizedTime,
+      status: { $in: ['pending', 'confirmed'] }, // Only check active appointments
+      ...(doctor && { doctor }) // If doctor specified, check doctor-specific slot
+    });
 
+    if (existingAppointment) {
+      return res.status(409).json({ 
+        status: 'error', 
+        message: 'This time slot is already booked. Please choose another time.' 
+      });
+    }
+
+    // Step 3: Check if slot is currently locked by another user
+    const existingLock = await SlotLock.findOne({
+      hospital,
+      department,
+      appointmentDate: appointmentDateObj,
+      appointmentTime: normalizedTime,
+      expiresAt: { $gt: new Date() }, // Only active (non-expired) locks
+    });
+
+    if (existingLock) {
+      return res.status(409).json({ 
+        status: 'error', 
+        message: 'This time slot is currently being booked by another user. Please choose another time or try again in a few minutes.' 
+      });
+    }
+
+    // Step 4: Verify slot is in available slots list (from external API or working hours)
+    let availableSlots = await getAvailableSlots({ 
+      hospitalId: hospital, 
+      date: appointmentDate, 
+      departmentId: department 
+    });
+
+    // Filter by doctor if specified
     if (doctor) {
-      available = available.filter(slot => slot.doctorId === doctor);
+      availableSlots = availableSlots.filter(slot => 
+        !slot.doctorId || slot.doctorId === doctor
+      );
     }
 
-    available = available.map(slot => normalizeTime(slot.time || slot));
+    // Normalize available slots for comparison
+    const normalizedAvailableSlots = availableSlots.map(slot => 
+      normalizeTime(slot.time || slot)
+    );
 
-    if (!available.includes(normalizedTime)) {
-      return res.status(409).json({ status: 'error', message: 'Requested slot is not available' });
+    if (!normalizedAvailableSlots.includes(normalizedTime)) {
+      return res.status(409).json({ 
+        status: 'error', 
+        message: 'The requested time slot is not available. Please choose from the available time slots.' 
+      });
     }
 
-    // Acquire slot lock
+    // Step 5: Attempt to acquire slot lock (with atomic operation to prevent race conditions)
     const lockId = crypto.randomUUID();
-    const lockExpires = new Date(Date.now() + 1000 * 60 * 30); // 30 min
+    const lockExpires = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
+    
+    let slotLock;
     try {
-      await SlotLock.create({
+      slotLock = await SlotLock.create({
         hospital,
         department,
-        appointmentDate: new Date(appointmentDate),
+        appointmentDate: appointmentDateObj,
         appointmentTime: normalizedTime,
         lockId,
         expiresAt: lockExpires,
       });
-      
-    } catch (e) {
-      if (e.code === 11000) {
-        return res.status(409).json({ status: 'error', message: 'Slot just got booked/locked. Please choose another.' });
+    } catch (lockError) {
+      // Handle duplicate key error (11000) - someone else just locked this slot
+      if (lockError.code === 11000) {
+        return res.status(409).json({ 
+          status: 'error', 
+          message: 'This time slot was just booked by another user. Please choose another time.' 
+        });
       }
-      throw e;
+      throw lockError; // Re-throw other errors
     }
 
-    // Create appointment
+    // Step 6: Create appointment with lock protection
     const appointmentData = {
       ...value,
       patient: req.user._id,
@@ -107,12 +159,20 @@ exports.createAppointment = async (req, res) => {
       department,
       consultationFee: value.consultationFee || (value.appointmentType === 'virtual' ? 25000 : 30000),
       appointmentTime: normalizedTime,
+      appointmentDate: appointmentDateObj,
     };
 
-    const appointment = await Appointment.create(appointmentData);
-    await appointment.populate(['hospital', 'patient', ...(doctor ? ['doctor'] : []), 'department']);
+    let appointment;
+    try {
+      appointment = await Appointment.create(appointmentData);
+      await appointment.populate(['hospital', 'patient', ...(doctor ? ['doctor'] : []), 'department']);
+    } catch (appointmentError) {
+      // If appointment creation fails, cleanup the lock
+      await SlotLock.findByIdAndDelete(slotLock._id);
+      throw appointmentError;
+    }
 
-    // Virtual meeting link
+    // Step 7: Generate virtual meeting link for teleconsultations
     if (appointment.appointmentType === 'virtual') {
       try {
         const jitsiDetails = generateAppointmentMeeting(appointment, req.user, false);
@@ -121,21 +181,31 @@ exports.createAppointment = async (req, res) => {
         await appointment.save();
       } catch (jitsiError) {
         console.error('Jitsi link generation error:', jitsiError);
+        // Don't fail the appointment creation for Jitsi errors
       }
     }
 
-    // Send confirmation email
-    try { await sendAppointmentEmail('confirmation', appointment, req.user); } catch (err) { console.error('Email send error:', err); }
+    // Step 8: Send confirmation email
+    try { 
+      await sendAppointmentEmail('confirmation', appointment, req.user); 
+    } catch (emailError) { 
+      console.error('Email send error:', emailError);
+      // Don't fail the appointment creation for email errors
+    }
 
+    // Step 9: Return success response
     res.status(201).json({
       status: 'success',
-      message: 'Appointment booked. Proceed to payment to confirm.',
+      message: 'Appointment booked successfully. Proceed to payment to confirm.',
       data: { appointment },
     });
 
   } catch (error) {
     console.error('Appointment creation error:', error);
-    res.status(400).json({ status: 'error', message: error.message });
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Internal server error. Please try again later.' 
+    });
   }
 };
 
