@@ -72,7 +72,7 @@ async function fixHospitalLinks() {
 
 // Run if called directly
 if (require.main === module) {
-  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hospital-management')
+  mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://wiseacademy:01402@cluster0.bsxehn0.mongodb.net/onehealth?retryWrites=true&w=majority&appName=Cluster0')
     .then(() => {
       console.log('📦 Connected to MongoDB');
       return fixHospitalLinks();

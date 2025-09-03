@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require("uuid");
 
 // MODELS
 const Department = require('./models/Department');
@@ -271,38 +272,46 @@ async function seed() {
     for (let i = 0; i < patients.length; i++) {
       const patient = patients[i];
       const profile = await Patient.create({
-        user: patient._id,
-        dateOfBirth: new Date(1985 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-        gender: i % 2 === 0 ? 'Male' : 'Female',
-        bloodType: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'][Math.floor(Math.random() * 8)],
-        phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`,
-        address: {
-          street: `Street ${i + 1}`,
-          city: ['Kigali', 'Huye', 'Musanze', 'Nyagatare'][Math.floor(Math.random() * 4)],
-          district: 'District ' + (i % 3 + 1),
-          province: ['Kigali', 'Southern', 'Northern', 'Eastern'][Math.floor(Math.random() * 4)],
-          country: 'Rwanda'
-        },
-        emergencyContact: {
-          name: `Emergency Contact ${i + 1}`,
-          relationship: ['Spouse', 'Parent', 'Sibling', 'Friend'][Math.floor(Math.random() * 4)],
-          phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`
-        },
-        allergies: i % 3 === 0 ? ['Penicillin'] : i % 3 === 1 ? ['Nuts', 'Shellfish'] : [],
-        chronicConditions: i % 4 === 0 ? ['Hypertension'] : i % 4 === 1 ? ['Diabetes'] : [],
-        insurance: {
-          provider: insurance[i % insurance.length].name,
-          policyNumber: `POL-${String(Math.floor(Math.random() * 900000) + 100000)}`,
-          coveragePercentage: insurance[i % insurance.length].coveragePercentage
-        },
-        primaryHospital: hospitals[i % hospitals.length]._id,
-        visitedHospitals: [{
-          hospital: hospitals[i % hospitals.length]._id,
-          firstVisit: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-          lastVisit: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-          totalVisits: Math.floor(Math.random() * 10) + 1
-        }]
-      });
+  patientId: `P-${i + 1}-${uuidv4().slice(0, 6)}`, // Unique patientId
+  user: patient._id,
+  dateOfBirth: new Date(
+    1985 + Math.floor(Math.random() * 20),
+    Math.floor(Math.random() * 12),
+    Math.floor(Math.random() * 28)
+  ),
+  gender: i % 2 === 0 ? 'Male' : 'Female',
+  bloodType: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'][Math.floor(Math.random() * 8)],
+  phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`,
+  address: {
+    street: `Street ${i + 1}`,
+    city: ['Kigali', 'Huye', 'Musanze', 'Nyagatare'][Math.floor(Math.random() * 4)],
+    district: 'District ' + (i % 3 + 1),
+    province: ['Kigali', 'Southern', 'Northern', 'Eastern'][Math.floor(Math.random() * 4)],
+    country: 'Rwanda',
+  },
+  emergencyContact: {
+    name: `Emergency Contact ${i + 1}`,
+    relationship: ['Spouse', 'Parent', 'Sibling', 'Friend'][Math.floor(Math.random() * 4)],
+    phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`,
+  },
+  allergies: i % 3 === 0 ? ['Penicillin'] : i % 3 === 1 ? ['Nuts', 'Shellfish'] : [],
+  chronicConditions: i % 4 === 0 ? ['Hypertension'] : i % 4 === 1 ? ['Diabetes'] : [],
+  insurance: {
+    provider: insurance[i % insurance.length].name,
+    policyNumber: `POL-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+    coveragePercentage: insurance[i % insurance.length].coveragePercentage,
+  },
+  primaryHospital: hospitals[i % hospitals.length]._id,
+  visitedHospitals: [
+    {
+      hospital: hospitals[i % hospitals.length]._id,
+      firstVisit: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+      lastVisit: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+      totalVisits: Math.floor(Math.random() * 10) + 1,
+    },
+  ],
+});
+
       patientProfiles.push(profile);
     }
 
