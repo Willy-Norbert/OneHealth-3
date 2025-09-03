@@ -16,7 +16,23 @@ exports.getAllDoctors = async (req, res) => {
     const { hospital, department, specialization, isActive } = req.query;
     
     const filter = {};
-    if (hospital) filter.hospital = hospital;
+    
+    // Hospital-role users can only see doctors from their hospital
+    if (req.user?.role === 'hospital') {
+      if (req.hospitalId) {
+        filter.hospital = req.hospitalId;
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'Hospital profile not found',
+          data: null
+        });
+      }
+    } else {
+      // Other users can filter by hospital
+      if (hospital) filter.hospital = hospital;
+    }
+    
     if (department) filter.department = department;
     if (specialization) filter.specialization = specialization;
     if (isActive !== undefined) filter.isActive = isActive === 'true';
@@ -87,7 +103,7 @@ exports.getDoctor = async (req, res) => {
 
 // @desc    Create new doctor
 // @route   POST /api/doctors
-// @access  Private (Admin only)
+// @access  Private (Admin or Hospital)
 exports.createDoctor = async (req, res) => {
   try {
     // Verify user exists and has doctor role
@@ -108,8 +124,31 @@ exports.createDoctor = async (req, res) => {
       });
     }
 
-    // Verify hospital and department exist
-    const hospital = await Hospital.findById(req.body.hospital);
+    // Determine hospital ID based on user role
+    let hospitalId;
+    if (req.user.role === 'hospital') {
+      // Hospital users can only create doctors for their own hospital
+      if (!req.hospitalId) {
+        return res.status(403).json({
+          success: false,
+          message: 'Hospital profile not found',
+          data: null
+        });
+      }
+      hospitalId = req.hospitalId;
+    } else if (req.user.role === 'admin') {
+      // Admin can specify hospital
+      hospitalId = req.body.hospital;
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admin or hospital users can create doctors',
+        data: null
+      });
+    }
+
+    // Verify hospital exists
+    const hospital = await Hospital.findById(hospitalId);
     if (!hospital) {
       return res.status(400).json({
         success: false,
@@ -137,7 +176,10 @@ exports.createDoctor = async (req, res) => {
       });
     }
 
-    const doctor = await Doctor.create(req.body);
+    const doctor = await Doctor.create({
+      ...req.body,
+      hospital: hospitalId
+    });
     await doctor.populate([
       { path: 'user', select: 'fullName email phoneNumber' },
       { path: 'hospital', select: 'name location' },

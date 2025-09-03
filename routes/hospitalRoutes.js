@@ -1,5 +1,6 @@
 const express = require('express');
 const { protect, restrictTo } = require('../middleware/auth');
+const { getHospitalId, ensureHospitalLink } = require('../middleware/hospitalMiddleware');
 const {
   getAllHospitals,
   getHospital,
@@ -324,14 +325,14 @@ router.get('/', getAllHospitals);
 router.get('/:id', getHospital);
 
 // Protected routes
-router.post('/', protect, restrictTo('admin','hospital', 'hospital'), createHospital);
-router.put('/:id', protect, restrictTo('admin','hospital', 'hospital'), updateHospital);
-router.delete('/:id', protect, restrictTo('admin','hospital'), deleteHospital);
-router.patch('/:id/approve', protect, restrictTo('admin','hospital'), approveHospital);
+router.post('/', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), createHospital);
+router.put('/:id', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), updateHospital);
+router.delete('/:id', protect, restrictTo('admin'), deleteHospital);
+router.patch('/:id/approve', protect, restrictTo('admin'), approveHospital);
 
 // Hospital management routes
-router.get('/:id/doctors', protect, restrictTo('admin','hospital', 'hospital'), getHospitalDoctors);
-router.post('/:id/doctors', protect, restrictTo('admin','hospital', 'hospital'), createHospitalDoctor);
-router.get('/:id/appointments', protect, restrictTo('admin','hospital', 'hospital'), getHospitalAppointments);
+router.get('/:id/doctors', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalDoctors);
+router.post('/:id/doctors', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), createHospitalDoctor);
+router.get('/:id/appointments', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalAppointments);
 
 module.exports = router;

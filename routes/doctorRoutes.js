@@ -9,6 +9,7 @@ const {
   getDoctorByUserId
 } = require('../controllers/doctorController');
 const { protect, restrictTo } = require('../middleware/auth');
+const { getHospitalId, ensureHospitalLink } = require('../middleware/hospitalMiddleware');
 
 const router = express.Router();
 
@@ -91,7 +92,7 @@ router.get('/:id', getDoctor);
 
 
 // Protected routes
-router.use(protect);
+router.use(protect, getHospitalId, ensureHospitalLink);
 router.post('/', restrictTo('admin', 'hospital'), createDoctor);
 router.put('/:id', updateDoctor); // Admin, hospital owner, or doctor themselves
 router.delete('/:id', restrictTo('admin', 'hospital'), deleteDoctor);

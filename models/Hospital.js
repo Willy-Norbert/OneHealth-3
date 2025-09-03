@@ -5,7 +5,9 @@ const hospitalSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: false // Can be null for hospitals created by admin
+    required: false, // Can be null for hospitals created by admin
+    unique: true,
+    sparse: true // Allows multiple null values but enforces uniqueness for non-null values
   },
   name: {
     type: String,

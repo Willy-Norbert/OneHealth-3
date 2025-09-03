@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema({
   hospital: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Hospital',
-    required: false
+    required: function() {
+      return this.role === 'hospital';
+    }
   },
   isActive: {
     type: Boolean,
