@@ -313,26 +313,48 @@ const router = express.Router();
  *         description: Admin access required
  */
 
-// Public hospital routes (approved hospitals)
-router.get('/', getAllHospitals);
-router.get('/:id', getHospital);
+router.get('/', getAllHospitals);       // List all hospitals
+router.get('/:id', getHospital);        // Get hospital by ID
 
+// ==================
+// My hospital (logged-in user)
+// ==================
+router.get('/me', protect, async (req, res) => {
+  try {
+    const hospital = await require('../models/Hospital').findOne({ userId: req.user._id }).populate('departments');
+    if (!hospital) return res.status(404).json({ message: 'Hospital not found for this user' });
+    res.status(200).json({ success: true, data: { hospital } });
+  } catch (error) {
+    console.error('Get my hospital error:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching hospital' });
+  }
+});
 
-
-
-// Hospital creation - Admin or Hospital role
-router.get('/', getAllHospitals);
-router.get('/:id', getHospital);
-
+// ==================
 // Protected routes
+// ==================
+
+// Create hospital (Admin or Hospital role)
 router.post('/', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), createHospital);
+
+// Update hospital (Admin or Hospital owner)
 router.put('/:id', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), updateHospital);
+
+// Delete hospital (Admin only)
 router.delete('/:id', protect, restrictTo('admin'), deleteHospital);
+
+// Approve hospital (Admin only)
 router.patch('/:id/approve', protect, restrictTo('admin'), approveHospital);
 
+// ==================
 // Hospital management routes
+// ==================
+
+// Doctors
 router.get('/:id/doctors', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalDoctors);
 router.post('/:id/doctors', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), createHospitalDoctor);
+
+// Appointments
 router.get('/:id/appointments', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalAppointments);
 
 module.exports = router;
