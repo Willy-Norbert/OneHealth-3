@@ -66,6 +66,20 @@ router.get('/my-appointments', getUserAppointments);
 
 /**
  * @swagger
+ * /api/appointments/hospital:
+ *   get:
+ *     summary: Get appointments for the hospital user's hospital
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of hospital appointments
+ */
+router.get('/hospital', restrictTo('hospital', 'admin'), getAllAppointments);
+
+/**
+ * @swagger
  * /api/appointments:
  *   post:
  *     summary: Create a new appointment

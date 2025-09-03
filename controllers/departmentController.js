@@ -177,13 +177,51 @@ exports.getDepartmentsByHospital = async (req, res) => {
   try {
     console.log('=== GET DEPARTMENTS BY HOSPITAL ===');
     console.log('Hospital ID:', req.params.hospitalId);
+    console.log('User:', req.user?.role || 'public');
+    
+    const { hospitalId } = req.params;
+    
+    // Validate ObjectId format
+    if (!hospitalId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log('❌ Invalid ObjectId format:', hospitalId);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid hospital ID format',
+        data: null
+      });
+    }
+
+    // First verify hospital exists and is accessible
+    const hospital = await Hospital.findById(hospitalId);
+    if (!hospital) {
+      console.log('❌ Hospital not found:', hospitalId);
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found',
+        data: null
+      });
+    }
+
+    // Check hospital access permissions
+    const canAccess = hospital.isApproved || 
+      req.user?.role === 'admin' || 
+      (req.user?.role === 'hospital' && hospital.userId?.toString() === req.user._id?.toString());
+
+    if (!canAccess) {
+      console.log('❌ Hospital not approved or insufficient permissions');
+      return res.status(403).json({
+        success: false,
+        message: 'Hospital not approved or insufficient permissions',
+        data: null
+      });
+    }
     
     const departments = await Department.find({ 
-      hospital: req.params.hospitalId,
+      hospital: hospitalId,
       isActive: true 
     }).sort({ name: 1 });
 
-    console.log(`Found ${departments.length} departments for hospital ${req.params.hospitalId}`);
+    console.log(`✅ Found ${departments.length} departments for hospital ${hospitalId}`);
 
     res.status(200).json({
       success: true,
@@ -191,7 +229,7 @@ exports.getDepartmentsByHospital = async (req, res) => {
       data: { departments, count: departments.length }
     });
   } catch (error) {
-    console.error('Error in getDepartmentsByHospital:', error);
+    console.error('❌ Error in getDepartmentsByHospital:', error);
     res.status(500).json({
       success: false,
       message: 'Error retrieving hospital departments',

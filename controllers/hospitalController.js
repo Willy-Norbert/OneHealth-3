@@ -1,4 +1,5 @@
 const Hospital = require('../models/Hospital');
+const Appointment = require('../models/Appointment');
 const { sendHospitalApprovalEmail } = require('../services/emailService');
 
 // Get all hospitals
@@ -196,17 +197,36 @@ exports.deleteHospital = async (req, res) => {
 // Get single hospital
 exports.getHospital = async (req, res) => {
   try {
-    const hospital = await Hospital.findById(req.params.id)
+    console.log('=== GET HOSPITAL BY ID ===');
+    console.log('Hospital ID:', req.params.id);
+    console.log('User role:', req.user?.role || 'public');
+
+    const { id } = req.params;
+    
+    // Validate ObjectId format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log('❌ Invalid ObjectId format:', id);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid hospital ID format',
+        data: null
+      });
+    }
+
+    const hospital = await Hospital.findById(id)
       .populate('userId', 'name email role')
       .populate('departments', 'name description consultationFee');
 
     if (!hospital) {
+      console.log('❌ Hospital not found:', id);
       return res.status(404).json({
         success: false,
         message: 'Hospital not found',
         data: null
       });
     }
+
+    console.log('✅ Hospital found:', hospital.name, 'Approved:', hospital.isApproved);
 
     // For approved hospitals, allow public access
     if (hospital.isApproved) {
@@ -219,6 +239,7 @@ exports.getHospital = async (req, res) => {
 
     // For non-approved hospitals, check permissions
     if (!req.user) {
+      console.log('❌ Hospital not approved and no user authentication');
       return res.status(403).json({
         success: false,
         message: 'Hospital not approved for public access',
@@ -227,6 +248,7 @@ exports.getHospital = async (req, res) => {
     }
 
     if (req.user.role === 'admin') {
+      console.log('✅ Admin access granted');
       return res.status(200).json({
         success: true,
         message: 'Hospital retrieved successfully',
@@ -240,6 +262,7 @@ exports.getHospital = async (req, res) => {
                             hospital.userId.toString() === req.user._id.toString();
     
     if (isHospitalOwner) {
+      console.log('✅ Hospital owner access granted');
       return res.status(200).json({
         success: true,
         message: 'Hospital retrieved successfully',
@@ -247,6 +270,7 @@ exports.getHospital = async (req, res) => {
       });
     }
 
+    console.log('❌ User not authorized to view this hospital');
     return res.status(403).json({
       success: false,
       message: 'Not authorized to view this hospital',
@@ -254,11 +278,11 @@ exports.getHospital = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in getHospital:', error);
+    console.error('❌ Error in getHospital:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve hospital',
-      data: null
+      data: { error: error.message }
     });
   }
 };

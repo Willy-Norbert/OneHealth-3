@@ -378,7 +378,8 @@ exports.getAllAppointments = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, hospital } = req.query;
 
-    console.log('🔍 GET ALL APPOINTMENTS - User:', req.user.role, req.user._id);
+console.log('🔍 GET ALL APPOINTMENTS - User:', req.user.role, req.user._id);
+    console.log('🔍 Route path:', req.route.path);
     console.log('🔍 Received query for appointments:', { page, limit, status, hospital });
 
     const query = {};
