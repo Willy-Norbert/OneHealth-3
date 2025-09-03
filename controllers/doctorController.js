@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Doctor = require('../models/Doctor');
 const User = require('../models/User');
 const Hospital = require('../models/Hospital');
@@ -239,13 +240,26 @@ exports.deleteDoctor = async (req, res) => {
 // @access  Public
 exports.getDoctorsByDepartment = async (req, res) => {
   try {
+    const { departmentId } = req.params;
+
+    // Validate departmentId
+    if (!mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid department ID',
+        data: null
+      });
+    }
+
+    // Find active doctors in department
     const doctors = await Doctor.find({ 
-      department: req.params.departmentId,
+      department: departmentId,
       isActive: true 
     })
-    .populate('user', 'fullName')
-    .populate('hospital', 'name')
-    .sort({ 'rating.average': -1 });
+    .populate('user', 'fullName email phoneNumber')
+    .populate('hospital', 'name location')
+    .populate('department', 'name')
+    .sort({ createdAt: -1 }); // safer than rating.average
 
     res.status(200).json({
       success: true,
@@ -253,6 +267,7 @@ exports.getDoctorsByDepartment = async (req, res) => {
       data: { doctors, count: doctors.length }
     });
   } catch (error) {
+    console.error('Error retrieving department doctors:', error);
     res.status(500).json({
       success: false,
       message: 'Error retrieving department doctors',

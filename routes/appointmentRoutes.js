@@ -44,26 +44,6 @@ router.use(protect);
 
 /**
  * @swagger
- * /appointments:
- *   post:
- *     summary: Create a new appointment
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Appointment'
- *     responses:
- *       201:
- *         description: Appointment created successfully
- */
-router.post('/', createAppointment);
-
-/**
- * @swagger
  * /api/appointments/my-appointments:
  *   get:
  *     summary: Get logged-in user appointments
@@ -84,41 +64,23 @@ router.get('/my-appointments', getUserAppointments);
 
 /**
  * @swagger
- * /api/appointments/{id}:
- *   get:
- *     summary: Get single appointment by ID
+ * /api/appointments:
+ *   post:
+ *     summary: Create a new appointment
  *     tags: [Appointments]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Appointment ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Appointment'
  *     responses:
- *       200:
- *         description: Appointment retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   type: object
- *                   properties:
- *                     appointment:
- *                       $ref: '#/components/schemas/Appointment'
- *       404:
- *         description: Appointment not found
- *       403:
- *         description: Not authorized to view this appointment
+ *       201:
+ *         description: Appointment created successfully
  */
-router.get('/:id', getAppointment);
+router.post('/', createAppointment);
 
 /**
  * @swagger
@@ -183,7 +145,7 @@ router.get('/user/:userId', getAppointmentsByUserId);
 router.patch('/:id/cancel', cancelAppointment);
 
 // Admin routes
-router.use(restrictTo('admin'));
+router.use(restrictTo('admin','hospital'));
 
 /**
  * @swagger
@@ -204,6 +166,63 @@ router.use(restrictTo('admin'));
  *                 $ref: '#/components/schemas/Appointment'
  */
 router.get('/all', getAllAppointments);
+
+/**
+ * @swagger
+ * /api/appointments/stats:
+ *   get:
+ *     summary: Get appointment statistics (admin only)
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Appointment statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               additionalProperties: true
+ */
+router.get('/stats', getAppointmentStats);
+
+/**
+ * @swagger
+ * /api/appointments/{id}:
+ *   get:
+ *     summary: Get single appointment by ID
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     appointment:
+ *                       $ref: '#/components/schemas/Appointment'
+ *       404:
+ *         description: Appointment not found
+ *       403:
+ *         description: Not authorized to view this appointment
+ */
+router.get('/:id', getAppointment);
 
 /**
  * @swagger
@@ -235,24 +254,5 @@ router.get('/all', getAllAppointments);
  *         description: Appointment status updated successfully
  */
 router.patch('/:id', updateAppointmentStatus);
-
-/**
- * @swagger
- * /api/appointments/stats:
- *   get:
- *     summary: Get appointment statistics (admin only)
- *     tags: [Appointments]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Appointment statistics
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               additionalProperties: true
- */
-router.get('/stats', getAppointmentStats);
 
 module.exports = router;

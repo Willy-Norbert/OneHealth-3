@@ -85,9 +85,10 @@ const router = express.Router();
 
 // Public routes
 router.get('/department/:departmentId', getDoctorsByDepartment);
+router.get('/profile/:userId', getDoctorByUserId);
 router.get('/', getAllDoctors);
 router.get('/:id', getDoctor);
-router.get('/profile/:userId', getDoctorByUserId);
+
 
 // Protected routes
 router.use(protect);

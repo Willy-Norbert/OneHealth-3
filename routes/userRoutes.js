@@ -276,10 +276,10 @@ const router = express.Router();
 router.use(protect);
 
 // User management routes
-router.get('/', restrictTo('admin'), getAllUsers);
+router.get('/', restrictTo('admin','hospital'), getAllUsers);
 router.get('/:id', getUser); // Admin or user themselves
-router.put('/:id/role', restrictTo('admin'), updateUserRole);
+router.put('/:id/role', restrictTo('admin','hospital'), updateUserRole);
 router.put('/:id/profile', updateUserProfile); // User themselves only
-router.delete('/:id', restrictTo('admin'), deleteUser);
+router.delete('/:id', restrictTo('admin','hospital'), deleteUser);
 
 module.exports = router;

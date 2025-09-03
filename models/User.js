@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -30,9 +29,14 @@ const userSchema = new mongoose.Schema({
     enum: ['patient', 'doctor', 'admin', 'hospital'],
     default: 'patient'
   },
+  hospital: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hospital',
+    required: false
+  },
   isActive: {
     type: Boolean,
-    default: false // Require verification before activation
+    default: false
   },
   isVerified: {
     type: Boolean,
@@ -61,4 +65,5 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Correct model name without space
 module.exports = mongoose.model('User', userSchema);

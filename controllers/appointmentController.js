@@ -19,6 +19,11 @@ exports.createAppointment = async (req, res) => {
       appointmentDate: Joi.string().required(),
       appointmentTime: Joi.string().required(),
       reasonForVisit: Joi.string().required(),
+      insurance: Joi.string().optional(), // Add this line
+  insuranceInfo: Joi.object({ 
+    provider: Joi.string().allow(''), 
+    policyNumber: Joi.string().allow('') 
+  }).optional(),
       patientDetails: Joi.object({
         fullName: Joi.string().required(),
         email: Joi.string().email().required(),
@@ -54,6 +59,8 @@ exports.createAppointment = async (req, res) => {
 
     const normalizedTime = normalizeTime(appointmentTime);
     const appointmentDateObj = new Date(appointmentDate);
+    appointmentDateObj.setUTCHours(0,0,0,0);
+
 
     // Step 1: Clean up expired locks for this specific slot
     await SlotLock.deleteMany({
@@ -63,6 +70,11 @@ exports.createAppointment = async (req, res) => {
       appointmentTime: normalizedTime,
       expiresAt: { $lte: new Date() },
     });
+
+console.log('🗂 Active SlotLocks for hospital/department:', 
+  await SlotLock.find({ hospital, department, expiresAt: { $gt: new Date() } })
+);
+
 
     // Step 2: Check if slot is already booked (existing appointments)
     const existingAppointment = await Appointment.findOne({
@@ -188,6 +200,9 @@ exports.createAppointment = async (req, res) => {
       appointmentDate: appointmentDateObj,
     };
 
+console.log("📝 Final appointmentData:", appointmentData);
+console.log("👤 Authenticated user:", req.user);
+
     let appointment;
     try {
       appointment = await Appointment.create(appointmentData);
@@ -220,11 +235,25 @@ exports.createAppointment = async (req, res) => {
     }
 
     // Step 9: Return success response
-    res.status(201).json({
-      status: 'success',
-      message: 'Appointment booked successfully. Proceed to payment to confirm.',
-      data: { appointment },
-    });
+ // AFTER appointment creation and any necessary population
+res.status(201).json({
+  status: 'success',
+  message: 'Appointment booked successfully.',
+  data: {
+    appointment: {
+      _id: appointment._id,
+      hospital: appointment.hospital,    // make sure populated
+      patient: appointment.patient,      // make sure populated
+      doctor: appointment.doctor || null,
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.appointmentTime,
+      consultationFee: appointment.consultationFee,
+      meetingLink: appointment.meetingLink || null, // optional for virtual
+      status: appointment.status,
+    },
+  },
+});
+
 
   } catch (error) {
     console.error('Appointment creation error:', error);
@@ -316,10 +345,14 @@ exports.getAppointmentsByUserId = async (req, res) => {
     if (status) query.status = status;
     
     const appointments = await Appointment.find(query)
-      .populate(['hospital', 'patient', 'doctor'])
-      .sort({ appointmentDate: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
+  .populate([
+    { path: 'patient', select: 'fullName email phoneNumber' },
+    { path: 'doctor', select: 'fullName' },
+    { path: 'hospital', select: 'name location' }
+  ])
+  .sort({ appointmentDate: -1 })
+  .limit(limit * 1)
+  .skip((page - 1) * limit);
     
     const total = await Appointment.countDocuments(query);
     
@@ -341,35 +374,50 @@ exports.getAppointmentsByUserId = async (req, res) => {
 };
 
 // Get all appointments (admin)
+// Get all appointments (admin)
 exports.getAllAppointments = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, hospital } = req.query;
-    
+
+    console.log('🔍 Received query for appointments:', { page, limit, status, hospital });
+
     const query = {};
     if (status) query.status = status;
     if (hospital) query.hospital = hospital;
-    
+
+    console.log('➡️ Constructed database query:', query);
+
+    // Fetch appointments with population including patient fullName and doctor fullName
     const appointments = await Appointment.find(query)
-      .populate(['patient', 'hospital'])
+      .populate([
+        { path: 'patient', select: 'fullName email phoneNumber' },
+        { path: 'doctor', select: 'fullName' },
+        { path: 'hospital', select: 'name location' }
+      ])
       .sort({ appointmentDate: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
-    
+
+    console.log('✅ Successfully fetched appointments:', appointments.length);
+
+    // Count total documents
     const total = await Appointment.countDocuments(query);
-    
+    console.log('✅ Successfully counted total appointments:', total);
+
     res.status(200).json({
       status: 'success',
-      data: { 
+      data: {
         appointments,
         totalPages: Math.ceil(total / limit),
-        currentPage: page,
+        currentPage: parseInt(page),
         total
       }
     });
   } catch (error) {
+    console.error('❌ Error in getAllAppointments:', error);
     res.status(500).json({
       status: 'error',
-      message: error.message
+      message: 'Internal server error. Please try again later.'
     });
   }
 };
