@@ -98,7 +98,7 @@ const swaggerOptions = {
 
 const specs = swaggerJsdoc(swaggerOptions);
 app.use(
-  '/api-docs',
+  '-docs',
   swaggerUi.serve,
   swaggerUi.setup(specs, {
     customCss: '.swagger-ui .topbar { display: none }',
@@ -106,24 +106,24 @@ app.use(
   })
 );
 
-// ✅ Routes with /api prefix
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/hospitals', hospitalRoutes);
-app.use('/api/teleconsultation', teleconsultationRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/meetings', meetingRoutes);
-app.use('/api/departments', departmentRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/emergencies', emergencyRoutes);
-app.use('/api/pharmacies', pharmacyRoutes);
-app.use('/api/prescriptions', prescriptionRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/medical-records', medicalRecordRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/insurance', insuranceRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/patients', patientRoutes);
+// ✅ Routes with  prefix
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/hospitals', hospitalRoutes);
+app.use('/teleconsultation', teleconsultationRoutes);
+app.use('/appointments', appointmentRoutes);
+app.use('/meetings', meetingRoutes);
+app.use('/departments', departmentRoutes);
+app.use('/doctors', doctorRoutes);
+app.use('/emergencies', emergencyRoutes);
+app.use('/pharmacies', pharmacyRoutes);
+app.use('/prescriptions', prescriptionRoutes);
+app.use('/orders', orderRoutes);
+app.use('/medical-records', medicalRecordRoutes);
+app.use('/ai', aiRoutes);
+app.use('/insurance', insuranceRoutes);
+app.use('/payments', paymentRoutes);
+app.use('/patients', patientRoutes);
 
 // Test route
 app.get('/', (req, res) => {
@@ -131,7 +131,7 @@ app.get('/', (req, res) => {
 });
 
 // API test endpoint
-app.get('/api/test', (req, res) => {
+app.get('/test', (req, res) => {
   res.json({
     success: true,
     message: 'API is working properly',
