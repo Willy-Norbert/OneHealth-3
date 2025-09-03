@@ -208,26 +208,53 @@ exports.getHospital = async (req, res) => {
       });
     }
 
-    // Check permissions for non-approved hospitals
-    if (!hospital.isApproved && req.user?.role !== 'admin') {
-      const isHospitalOwner = req.user?.role === 'hospital' && 
-                              hospital.userId && 
-                              hospital.userId.toString() === req.user._id.toString();
-      if (!isHospitalOwner) {
-        return res.status(403).json({
-          success: false,
-          message: 'Hospital not approved or not authorized',
-          data: null
-        });
-      }
+    // For approved hospitals, allow public access
+    if (hospital.isApproved) {
+      return res.status(200).json({
+        success: true,
+        message: 'Hospital retrieved successfully',
+        data: { hospital }
+      });
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'Hospital retrieved successfully',
-      data: { hospital }
+    // For non-approved hospitals, check permissions
+    if (!req.user) {
+      return res.status(403).json({
+        success: false,
+        message: 'Hospital not approved for public access',
+        data: null
+      });
+    }
+
+    if (req.user.role === 'admin') {
+      return res.status(200).json({
+        success: true,
+        message: 'Hospital retrieved successfully',
+        data: { hospital }
+      });
+    }
+
+    // Check if user is the hospital owner
+    const isHospitalOwner = req.user.role === 'hospital' && 
+                            hospital.userId && 
+                            hospital.userId.toString() === req.user._id.toString();
+    
+    if (isHospitalOwner) {
+      return res.status(200).json({
+        success: true,
+        message: 'Hospital retrieved successfully',
+        data: { hospital }
+      });
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'Not authorized to view this hospital',
+      data: null
     });
+
   } catch (error) {
+    console.error('Error in getHospital:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve hospital',

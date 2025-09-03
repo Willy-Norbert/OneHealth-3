@@ -313,12 +313,7 @@ const router = express.Router();
  *         description: Admin access required
  */
 
-router.get('/', getAllHospitals);       // List all hospitals
-router.get('/:id', getHospital);        // Get hospital by ID
-
-// ==================
-// My hospital (logged-in user)
-// ==================
+// My hospital route (must be before /:id to avoid conflicts)
 router.get('/me', protect, async (req, res) => {
   try {
     const hospital = await require('../models/Hospital').findOne({ userId: req.user._id }).populate('departments');
@@ -329,6 +324,10 @@ router.get('/me', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error fetching hospital' });
   }
 });
+
+// Public routes
+router.get('/', getAllHospitals);       // List all hospitals  
+router.get('/:id', getHospital);        // Get hospital by ID
 
 // ==================
 // Protected routes

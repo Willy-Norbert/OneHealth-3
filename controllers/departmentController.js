@@ -171,14 +171,19 @@ exports.deleteDepartment = async (req, res) => {
 };
 
 // @desc    Get departments by hospital
-// @route   GET /api/hospitals/:hospitalId/departments
+// @route   GET /api/departments/hospital/:hospitalId
 // @access  Public
 exports.getDepartmentsByHospital = async (req, res) => {
   try {
+    console.log('=== GET DEPARTMENTS BY HOSPITAL ===');
+    console.log('Hospital ID:', req.params.hospitalId);
+    
     const departments = await Department.find({ 
       hospital: req.params.hospitalId,
       isActive: true 
     }).sort({ name: 1 });
+
+    console.log(`Found ${departments.length} departments for hospital ${req.params.hospitalId}`);
 
     res.status(200).json({
       success: true,
@@ -186,6 +191,7 @@ exports.getDepartmentsByHospital = async (req, res) => {
       data: { departments, count: departments.length }
     });
   } catch (error) {
+    console.error('Error in getDepartmentsByHospital:', error);
     res.status(500).json({
       success: false,
       message: 'Error retrieving hospital departments',
