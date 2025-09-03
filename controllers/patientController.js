@@ -401,11 +401,11 @@ async function checkPatientAccess(user, patient) {
   return false;
 }
 
-module.exports = {
-  getAllPatients,
-  getPatient,
-  createPatient,
-  updatePatient,
-  getPatientsByHospital,
-  addHospitalVisit
-};
+// module.exports = {
+//   getAllPatients,
+//   getPatient,
+//   createPatient,
+//   updatePatient,
+//   getPatientsByHospital,
+//   addHospitalVisit
+// };
