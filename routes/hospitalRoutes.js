@@ -6,7 +6,10 @@ const {
   createHospital,
   updateHospital,
   deleteHospital,
-  approveHospital
+  approveHospital,
+  getHospitalDoctors,
+  createHospitalDoctor,
+  getHospitalAppointments
 } = require('../controllers/hospitalController');
 
 const router = express.Router();
@@ -325,5 +328,10 @@ router.post('/', protect, restrictTo('admin', 'hospital'), createHospital);
 router.put('/:id', protect, restrictTo('admin', 'hospital'), updateHospital);
 router.delete('/:id', protect, restrictTo('admin'), deleteHospital);
 router.patch('/:id/approve', protect, restrictTo('admin'), approveHospital);
+
+// Hospital management routes
+router.get('/:id/doctors', protect, restrictTo('admin', 'hospital'), getHospitalDoctors);
+router.post('/:id/doctors', protect, restrictTo('admin', 'hospital'), createHospitalDoctor);
+router.get('/:id/appointments', protect, restrictTo('admin', 'hospital'), getHospitalAppointments);
 
 module.exports = router;

@@ -285,3 +285,275 @@ exports.approveHospital = async (req, res) => {
     });
   }
 };
+
+// @desc    Get hospital's doctors
+// @route   GET /api/hospitals/:id/doctors
+// @access  Private (Hospital owner or Admin)
+exports.getHospitalDoctors = async (req, res) => {
+  try {
+    console.log('=== GET HOSPITAL DOCTORS ===');
+    console.log('Hospital ID:', req.params.id);
+    console.log('User:', req.user.role, req.user._id);
+
+    const hospital = await Hospital.findById(req.params.id);
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found',
+        data: null
+      });
+    }
+
+    // Check permissions
+    const isAdmin = req.user?.role === 'admin';
+    const isHospitalOwner = req.user?.role === 'hospital' && 
+                            hospital.userId && 
+                            hospital.userId.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isHospitalOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this hospital\'s doctors',
+        data: null
+      });
+    }
+
+    const { page = 1, limit = 10, department } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filter = { hospital: req.params.id, isActive: true };
+    if (department) filter.department = department;
+
+    const Doctor = require('../models/Doctor');
+    const doctors = await Doctor.find(filter)
+      .populate('user', 'name email phone')
+      .populate('department', 'name')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Doctor.countDocuments(filter);
+
+    console.log(`Found ${doctors.length} doctors for hospital`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Hospital doctors retrieved successfully',
+      data: {
+        doctors,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalDoctors: total,
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error in getHospitalDoctors:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve hospital doctors',
+      data: null
+    });
+  }
+};
+
+// @desc    Create doctor for hospital
+// @route   POST /api/hospitals/:id/doctors
+// @access  Private (Hospital owner or Admin)
+exports.createHospitalDoctor = async (req, res) => {
+  try {
+    console.log('=== CREATE HOSPITAL DOCTOR ===');
+    console.log('Hospital ID:', req.params.id);
+    console.log('Doctor data:', req.body);
+    console.log('User:', req.user.role, req.user._id);
+
+    const hospital = await Hospital.findById(req.params.id);
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found',
+        data: null
+      });
+    }
+
+    // Check permissions
+    const isAdmin = req.user?.role === 'admin';
+    const isHospitalOwner = req.user?.role === 'hospital' && 
+                            hospital.userId && 
+                            hospital.userId.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isHospitalOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to create doctors for this hospital',
+        data: null
+      });
+    }
+
+    // Create user first if not provided
+    let doctorUser;
+    if (req.body.user) {
+      // Use existing user
+      const User = require('../models/User');
+      doctorUser = await User.findById(req.body.user);
+      if (!doctorUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'User not found',
+          data: null
+        });
+      }
+      if (doctorUser.role !== 'doctor') {
+        return res.status(400).json({
+          success: false,
+          message: 'User must have doctor role',
+          data: null
+        });
+      }
+    } else {
+      // Create new user for doctor
+      const User = require('../models/User');
+      const { doctorInfo } = req.body;
+      if (!doctorInfo || !doctorInfo.name || !doctorInfo.email || !doctorInfo.password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Doctor user information (name, email, password) is required',
+          data: null
+        });
+      }
+
+      doctorUser = await User.create({
+        name: doctorInfo.name,
+        email: doctorInfo.email,
+        password: doctorInfo.password,
+        role: 'doctor',
+        isActive: true,
+        isVerified: true
+      });
+    }
+
+    // Verify department belongs to this hospital
+    const Department = require('../models/Department');
+    const department = await Department.findById(req.body.department);
+    if (!department || department.hospital.toString() !== req.params.id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department must belong to the hospital',
+        data: null
+      });
+    }
+
+    // Create doctor profile
+    const Doctor = require('../models/Doctor');
+    const doctorData = {
+      ...req.body,
+      user: doctorUser._id,
+      hospital: req.params.id
+    };
+
+    const doctor = await Doctor.create(doctorData);
+    await doctor.populate([
+      { path: 'user', select: 'name email phone' },
+      { path: 'hospital', select: 'name location' },
+      { path: 'department', select: 'name' }
+    ]);
+
+    console.log('Doctor created successfully:', doctor._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Doctor created successfully',
+      data: { doctor }
+    });
+  } catch (error) {
+    console.error('Error in createHospitalDoctor:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message,
+      data: null
+    });
+  }
+};
+
+// @desc    Get hospital appointments
+// @route   GET /api/hospitals/:id/appointments
+// @access  Private (Hospital owner or Admin)
+exports.getHospitalAppointments = async (req, res) => {
+  try {
+    console.log('=== GET HOSPITAL APPOINTMENTS ===');
+    console.log('Hospital ID:', req.params.id);
+    console.log('User:', req.user.role, req.user._id);
+
+    const hospital = await Hospital.findById(req.params.id);
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hospital not found',
+        data: null
+      });
+    }
+
+    // Check permissions
+    const isAdmin = req.user?.role === 'admin';
+    const isHospitalOwner = req.user?.role === 'hospital' && 
+                            hospital.userId && 
+                            hospital.userId.toString() === req.user._id.toString();
+
+    if (!isAdmin && !isHospitalOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this hospital\'s appointments',
+        data: null
+      });
+    }
+
+    const { page = 1, limit = 10, status, date, department } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filter = { hospital: req.params.id };
+    if (status) filter.status = status;
+    if (department) filter.department = department;
+    if (date) {
+      const dateObj = new Date(date);
+      dateObj.setUTCHours(0, 0, 0, 0);
+      const nextDay = new Date(dateObj);
+      nextDay.setDate(nextDay.getDate() + 1);
+      filter.appointmentDate = { $gte: dateObj, $lt: nextDay };
+    }
+
+    const appointments = await Appointment.find(filter)
+      .populate('patient', 'name email phone')
+      .populate('doctor', 'specialization')
+      .populate('department', 'name')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ appointmentDate: -1, appointmentTime: -1 });
+
+    const total = await Appointment.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      message: 'Hospital appointments retrieved successfully',
+      data: {
+        appointments,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalAppointments: total,
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error in getHospitalAppointments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve hospital appointments',
+      data: null
+    });
+  }
+};

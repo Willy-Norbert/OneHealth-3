@@ -8,7 +8,9 @@ const {
   updateAppointmentStatus,
   cancelAppointment,
   getAvailableTimeSlots,
-  getAppointmentStats
+  getAppointmentStats,
+  reassignAppointment,
+  getHospitalStats
 } = require('../controllers/appointmentController');
 const { protect, restrictTo } = require('../middleware/auth');
 
@@ -228,7 +230,7 @@ router.get('/:id', getAppointment);
  * @swagger
  * /api/appointments/{id}:
  *   patch:
- *     summary: Update appointment status (admin only)
+ *     summary: Update appointment status (admin/hospital only)
  *     tags: [Appointments]
  *     security:
  *       - bearerAuth: []
@@ -254,5 +256,97 @@ router.get('/:id', getAppointment);
  *         description: Appointment status updated successfully
  */
 router.patch('/:id', updateAppointmentStatus);
+
+/**
+ * @swagger
+ * /api/appointments/{id}/reassign:
+ *   patch:
+ *     summary: Reassign appointment to different doctor (hospital/admin only)
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Appointment ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [doctorId]
+ *             properties:
+ *               doctorId:
+ *                 type: string
+ *                 example: "64f8b2c8e1234567890abcde"
+ *               reason:
+ *                 type: string
+ *                 example: "Doctor schedule conflict"
+ *     responses:
+ *       200:
+ *         description: Appointment reassigned successfully
+ *       400:
+ *         description: Invalid doctor or doctor not in same hospital/department
+ *       403:
+ *         description: Not authorized to reassign this appointment
+ *       404:
+ *         description: Appointment not found
+ */
+router.patch('/:id/reassign', reassignAppointment);
+
+/**
+ * @swagger
+ * /api/appointments/hospital-stats:
+ *   get:
+ *     summary: Get hospital dashboard statistics (hospital only)
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Hospital statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     hospital:
+ *                       type: object
+ *                       properties:
+ *                         name:
+ *                           type: string
+ *                         location:
+ *                           type: string
+ *                     appointments:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: number
+ *                         byStatus:
+ *                           type: array
+ *                         monthly:
+ *                           type: number
+ *                         today:
+ *                           type: number
+ *                     departments:
+ *                       type: array
+ *                     patients:
+ *                       type: number
+ *                     doctors:
+ *                       type: number
+ *       403:
+ *         description: Hospital access required
+ */
+router.get('/hospital-stats', restrictTo('hospital'), getHospitalStats);
 
 module.exports = router;

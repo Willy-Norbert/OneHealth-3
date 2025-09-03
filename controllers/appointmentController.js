@@ -373,17 +373,32 @@ exports.getAppointmentsByUserId = async (req, res) => {
   }
 };
 
-// Get all appointments (admin)
-// Get all appointments (admin)
+// Get all appointments (admin and hospital)
 exports.getAllAppointments = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, hospital } = req.query;
 
+    console.log('🔍 GET ALL APPOINTMENTS - User:', req.user.role, req.user._id);
     console.log('🔍 Received query for appointments:', { page, limit, status, hospital });
 
     const query = {};
     if (status) query.status = status;
-    if (hospital) query.hospital = hospital;
+
+    // Hospital role can only see their own appointments
+    if (req.user.role === 'hospital') {
+      const hospitalDoc = await Hospital.findOne({ userId: req.user._id });
+      if (!hospitalDoc) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Hospital profile not found'
+        });
+      }
+      query.hospital = hospitalDoc._id;
+      console.log('🏥 Hospital filter applied:', hospitalDoc._id);
+    } else if (hospital && req.user.role === 'admin') {
+      // Admin can filter by specific hospital
+      query.hospital = hospital;
+    }
 
     console.log('➡️ Constructed database query:', query);
 
@@ -572,6 +587,240 @@ exports.getAppointmentStats = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: error.message
+    });
+  }
+};
+
+// @desc    Reassign appointment to different doctor
+// @route   PATCH /api/appointments/:id/reassign
+// @access  Private (Hospital or Admin)
+exports.reassignAppointment = async (req, res) => {
+  try {
+    console.log('=== REASSIGN APPOINTMENT ===');
+    console.log('Appointment ID:', req.params.id);
+    console.log('New doctor ID:', req.body.doctorId);
+    console.log('User:', req.user.role, req.user._id);
+
+    const { doctorId, reason } = req.body;
+
+    if (!doctorId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Doctor ID is required for reassignment'
+      });
+    }
+
+    // Find the appointment
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('hospital')
+      .populate('patient', 'name email')
+      .populate('doctor', 'specialization');
+
+    if (!appointment) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Appointment not found'
+      });
+    }
+
+    // Check authorization - only hospital staff or admin can reassign
+    let canReassign = false;
+    if (req.user.role === 'admin') {
+      canReassign = true;
+    } else if (req.user.role === 'hospital') {
+      const hospitalDoc = await Hospital.findOne({ userId: req.user._id });
+      canReassign = hospitalDoc && appointment.hospital._id.toString() === hospitalDoc._id.toString();
+    }
+
+    if (!canReassign) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Not authorized to reassign this appointment'
+      });
+    }
+
+    // Verify new doctor exists and belongs to the same hospital/department
+    const Doctor = require('../models/Doctor');
+    const newDoctor = await Doctor.findById(doctorId)
+      .populate('user', 'name email');
+
+    if (!newDoctor) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New doctor not found'
+      });
+    }
+
+    if (newDoctor.hospital.toString() !== appointment.hospital._id.toString()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New doctor must belong to the same hospital'
+      });
+    }
+
+    if (newDoctor.department.toString() !== appointment.department.toString()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New doctor must belong to the same department'
+      });
+    }
+
+    // Store old doctor info for logging
+    const oldDoctor = appointment.doctor;
+
+    // Update appointment
+    appointment.doctor = doctorId;
+    appointment.notes = appointment.notes + 
+      `\n[${new Date().toISOString()}] Reassigned from Dr. ${oldDoctor?.specialization || 'Unassigned'} to Dr. ${newDoctor.specialization}` +
+      (reason ? ` - Reason: ${reason}` : '');
+
+    await appointment.save();
+    await appointment.populate(['hospital', 'patient', 'doctor', 'department']);
+
+    console.log('✅ Appointment reassigned successfully');
+
+    // Send notification email (optional)
+    try {
+      const { sendAppointmentEmail } = require('../services/emailService');
+      await sendAppointmentEmail('reassignment', appointment, appointment.patient);
+    } catch (emailError) {
+      console.error('Failed to send reassignment email:', emailError);
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Appointment reassigned successfully',
+      data: { appointment }
+    });
+  } catch (error) {
+    console.error('Error in reassignAppointment:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to reassign appointment'
+    });
+  }
+};
+
+// @desc    Get hospital dashboard statistics
+// @route   GET /api/appointments/hospital-stats
+// @access  Private (Hospital only)
+exports.getHospitalStats = async (req, res) => {
+  try {
+    console.log('=== GET HOSPITAL STATS ===');
+    console.log('User:', req.user.role, req.user._id);
+
+    if (req.user.role !== 'hospital') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Hospital access required'
+      });
+    }
+
+    // Get hospital
+    const hospitalDoc = await Hospital.findOne({ userId: req.user._id });
+    if (!hospitalDoc) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Hospital profile not found'
+      });
+    }
+
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+
+    // Get appointments stats for this hospital
+    const appointmentStats = await Appointment.aggregate([
+      { $match: { hospital: hospitalDoc._id } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Get monthly appointments
+    const monthlyAppointments = await Appointment.countDocuments({
+      hospital: hospitalDoc._id,
+      createdAt: { $gte: startOfMonth }
+    });
+
+    // Get today's appointments
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayAppointments = await Appointment.countDocuments({
+      hospital: hospitalDoc._id,
+      appointmentDate: { $gte: todayStart, $lte: todayEnd }
+    });
+
+    // Get department-wise stats
+    const departmentStats = await Appointment.aggregate([
+      { $match: { hospital: hospitalDoc._id } },
+      {
+        $group: {
+          _id: '$department',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'departmentInfo'
+        }
+      },
+      {
+        $project: {
+          departmentName: { $arrayElemAt: ['$departmentInfo.name', 0] },
+          count: 1
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Get patient count (patients who have visited this hospital)
+    const Patient = require('../models/Patient');
+    const patientCount = await Patient.countDocuments({
+      'visitedHospitals.hospital': hospitalDoc._id,
+      isActive: true
+    });
+
+    // Get doctor count
+    const Doctor = require('../models/Doctor');
+    const doctorCount = await Doctor.countDocuments({
+      hospital: hospitalDoc._id,
+      isActive: true
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Hospital statistics retrieved successfully',
+      data: {
+        hospital: {
+          name: hospitalDoc.name,
+          location: hospitalDoc.location
+        },
+        appointments: {
+          total: appointmentStats.reduce((sum, stat) => sum + stat.count, 0),
+          byStatus: appointmentStats,
+          monthly: monthlyAppointments,
+          today: todayAppointments
+        },
+        departments: departmentStats,
+        patients: patientCount,
+        doctors: doctorCount
+      }
+    });
+  } catch (error) {
+    console.error('Error in getHospitalStats:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to retrieve hospital statistics'
     });
   }
 };

@@ -14,6 +14,7 @@ const Prescription = require('./models/Prescription');
 const Order = require('./models/Order');
 const MedicalRecord = require('./models/MedicalRecord');
 const Teleconsultation = require('./models/Teleconsultation');
+const Patient = require('./models/Patient');
 
 // --- CONSULTATION TYPE MODEL ---
 const ConsultationType =
@@ -45,6 +46,7 @@ async function seed() {
   try {
     // --- CLEAN DATABASE ---
     await Promise.all([
+      Patient.deleteMany({}),
       Appointment.deleteMany({}),
       Emergency.deleteMany({}),
       MedicalRecord.deleteMany({}),
@@ -264,6 +266,103 @@ async function seed() {
       console.log(`Patient login: ${p.email} | Password: Patient#123`);
     });
 
+    // --- PATIENT PROFILES ---
+    const patientProfiles = [];
+    for (let i = 0; i < patients.length; i++) {
+      const patient = patients[i];
+      const profile = await Patient.create({
+        user: patient._id,
+        dateOfBirth: new Date(1985 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
+        gender: i % 2 === 0 ? 'Male' : 'Female',
+        bloodType: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'][Math.floor(Math.random() * 8)],
+        phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`,
+        address: {
+          street: `Street ${i + 1}`,
+          city: ['Kigali', 'Huye', 'Musanze', 'Nyagatare'][Math.floor(Math.random() * 4)],
+          district: 'District ' + (i % 3 + 1),
+          province: ['Kigali', 'Southern', 'Northern', 'Eastern'][Math.floor(Math.random() * 4)],
+          country: 'Rwanda'
+        },
+        emergencyContact: {
+          name: `Emergency Contact ${i + 1}`,
+          relationship: ['Spouse', 'Parent', 'Sibling', 'Friend'][Math.floor(Math.random() * 4)],
+          phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`
+        },
+        allergies: i % 3 === 0 ? ['Penicillin'] : i % 3 === 1 ? ['Nuts', 'Shellfish'] : [],
+        chronicConditions: i % 4 === 0 ? ['Hypertension'] : i % 4 === 1 ? ['Diabetes'] : [],
+        insurance: {
+          provider: insurance[i % insurance.length].name,
+          policyNumber: `POL-${String(Math.floor(Math.random() * 900000) + 100000)}`,
+          coveragePercentage: insurance[i % insurance.length].coveragePercentage
+        },
+        primaryHospital: hospitals[i % hospitals.length]._id,
+        visitedHospitals: [{
+          hospital: hospitals[i % hospitals.length]._id,
+          firstVisit: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
+          lastVisit: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+          totalVisits: Math.floor(Math.random() * 10) + 1
+        }]
+      });
+      patientProfiles.push(profile);
+    }
+
+    console.log(`Created ${patientProfiles.length} patient profiles`);
+
+    // --- SAMPLE APPOINTMENTS ---
+    const sampleAppointments = [];
+    for (let i = 0; i < 20; i++) {
+      const randomPatient = patients[Math.floor(Math.random() * patients.length)];
+      const randomHospital = hospitals[Math.floor(Math.random() * hospitals.length)];
+      const hospitalDepts = departments.filter(d => d.hospital.toString() === randomHospital._id.toString());
+      const randomDept = hospitalDepts[Math.floor(Math.random() * hospitalDepts.length)];
+      const deptDoctors = doctors.filter(d => d.department.toString() === randomDept._id.toString());
+      const randomDoctor = deptDoctors[Math.floor(Math.random() * deptDoctors.length)];
+
+      const appointmentDate = new Date();
+      appointmentDate.setDate(appointmentDate.getDate() + Math.floor(Math.random() * 30));
+      
+      const timeSlots = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+      const randomTime = timeSlots[Math.floor(Math.random() * timeSlots.length)];
+
+      const appointment = await Appointment.create({
+        patient: randomPatient._id,
+        doctor: randomDoctor.user,
+        hospital: randomHospital._id,
+        department: randomDept._id,
+        appointmentType: Math.random() > 0.5 ? 'in-person' : 'virtual',
+        appointmentDate: appointmentDate,
+        appointmentTime: randomTime,
+        reasonForVisit: [
+          'General Checkup',
+          'Follow-up visit',
+          'Consultation',
+          'Routine examination',
+          'Health screening'
+        ][Math.floor(Math.random() * 5)],
+        previousVisit: Math.random() > 0.5,
+        patientDetails: {
+          fullName: randomPatient.name,
+          email: randomPatient.email,
+          phoneNumber: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`,
+          age: 25 + Math.floor(Math.random() * 40),
+          gender: i % 2 === 0 ? 'Male' : 'Female',
+          address: `Address for ${randomPatient.name}`,
+          emergencyContact: {
+            name: `Emergency Contact ${i + 1}`,
+            phone: `+25078${String(Math.floor(Math.random() * 9000000) + 1000000)}`,
+            relationship: 'Family'
+          }
+        },
+        status: ['pending', 'confirmed', 'completed'][Math.floor(Math.random() * 3)],
+        consultationFee: randomDept.consultationFee || 25000,
+        paymentStatus: Math.random() > 0.3 ? 'paid' : 'pending'
+      });
+
+      sampleAppointments.push(appointment);
+    }
+
+    console.log(`Created ${sampleAppointments.length} sample appointments`);
+
     // --- PHARMACIES ---
     const pharmacies = await Pharmacy.insertMany([
       {
@@ -314,6 +413,8 @@ async function seed() {
     console.log(`Departments: ${departments.length}`);
     console.log(`Users: ${adminUsers.length + doctors.length + patients.length}`);
     console.log(`Doctors: ${doctors.length}`);
+    console.log(`Patient Profiles: ${patientProfiles.length}`);
+    console.log(`Sample Appointments: ${sampleAppointments.length}`);
     console.log(`Pharmacies: ${pharmacies.length}`);
     console.log(`Consultation Types: ${consultTypes.length}`);
 
