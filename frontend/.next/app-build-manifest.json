@@ -12,8 +12,16 @@
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
-      "static/css/453221894d0b6cf0.css",
+      "static/css/2dea65ed6b55d8db.css",
       "static/chunks/app/layout-304fec2c69440bef.js"
+    ],
+    "/admin/hospitals/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/admin/hospitals/page-17026427c1138a90.js"
     ],
     "/admin/insurance/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -22,21 +30,6 @@
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
       "static/chunks/app/admin/insurance/page-a461caa4b3e2ad54.js"
-    ],
-    "/admin/users/page": [
-      "static/chunks/webpack-c84e7b3dbc67fa68.js",
-      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
-      "static/chunks/23-1c962abcd96d7990.js",
-      "static/chunks/main-app-70297b9561a9d667.js",
-      "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/admin/users/page-7f672876594fdda2.js"
-    ],
-    "/auth/login/page": [
-      "static/chunks/webpack-c84e7b3dbc67fa68.js",
-      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
-      "static/chunks/23-1c962abcd96d7990.js",
-      "static/chunks/main-app-70297b9561a9d667.js",
-      "static/chunks/app/auth/login/page-8d14c8ff3c026687.js"
     ],
     "/admin/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -47,13 +40,21 @@
       "static/chunks/231-a5e18b4da91cf0a3.js",
       "static/chunks/app/admin/page-010e8ba3cec004ee.js"
     ],
-    "/admin/hospitals/page": [
+    "/admin/payments/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/admin/hospitals/page-17026427c1138a90.js"
+      "static/chunks/app/admin/payments/page-eff4f02a27e099ee.js"
+    ],
+    "/admin/users/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/admin/users/page-7f672876594fdda2.js"
     ],
     "/auth/forgot/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -61,6 +62,13 @@
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/app/auth/forgot/page-c979bcfe14a43b09.js"
+    ],
+    "/auth/login/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/app/auth/login/page-8d14c8ff3c026687.js"
     ],
     "/auth/register/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -83,14 +91,6 @@
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/app/auth/verify/page-724bbf90cb41ada4.js"
     ],
-    "/doctor/meetings/page": [
-      "static/chunks/webpack-c84e7b3dbc67fa68.js",
-      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
-      "static/chunks/23-1c962abcd96d7990.js",
-      "static/chunks/main-app-70297b9561a9d667.js",
-      "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/doctor/meetings/page-8b4796ee971a9c01.js"
-    ],
     "/dashboard/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
@@ -99,13 +99,13 @@
       "static/chunks/231-a5e18b4da91cf0a3.js",
       "static/chunks/app/dashboard/page-5f9b0c9b214123e5.js"
     ],
-    "/doctor/appointments/page": [
+    "/doctor/meetings/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/doctor/appointments/page-3eeec7e227c3de04.js"
+      "static/chunks/app/doctor/meetings/page-8b4796ee971a9c01.js"
     ],
     "/doctor/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -116,6 +116,22 @@
       "static/chunks/231-a5e18b4da91cf0a3.js",
       "static/chunks/app/doctor/page-2bc038f1a23de72f.js"
     ],
+    "/doctor/appointments/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/doctor/appointments/page-3eeec7e227c3de04.js"
+    ],
+    "/departments/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/departments/page-46652587c3dca830.js"
+    ],
     "/doctor/prescriptions/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
@@ -124,13 +140,21 @@
       "static/chunks/724-30f10790e6d99f59.js",
       "static/chunks/app/doctor/prescriptions/page-56f0864ee76e9768.js"
     ],
-    "/hospital/doctors/page": [
+    "/hospital/analytics/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/hospital/doctors/page-3f814dc96d5a1cd1.js"
+      "static/chunks/app/hospital/analytics/page-25599dccfe52f47a.js"
+    ],
+    "/hospital/appointments/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/hospital/appointments/page-2c865287379c16ed.js"
     ],
     "/hospital/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -141,13 +165,13 @@
       "static/chunks/231-a5e18b4da91cf0a3.js",
       "static/chunks/app/hospital/page-030e9d3c05f6be5f.js"
     ],
-    "/hospital/appointments/page": [
+    "/hospital/doctors/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/hospital/appointments/page-2c865287379c16ed.js"
+      "static/chunks/app/hospital/doctors/page-3f814dc96d5a1cd1.js"
     ],
     "/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -156,6 +180,14 @@
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/231-a5e18b4da91cf0a3.js",
       "static/chunks/app/page-1023e97047958a46.js"
+    ],
+    "/insurance/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/insurance/page-4ba23faac1ab52dc.js"
     ],
     "/patient/ai/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -179,6 +211,14 @@
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/app/patient/emergency/page-d867d477f64471b3.js"
     ],
+    "/patient/orders/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/patient/orders/page-13b52241cb30bfd2.js"
+    ],
     "/patient/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
@@ -188,6 +228,14 @@
       "static/chunks/231-a5e18b4da91cf0a3.js",
       "static/chunks/app/patient/page-78dcba7ed1705615.js"
     ],
+    "/patient/pharmacy/page": [
+      "static/chunks/webpack-c84e7b3dbc67fa68.js",
+      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
+      "static/chunks/23-1c962abcd96d7990.js",
+      "static/chunks/main-app-70297b9561a9d667.js",
+      "static/chunks/724-30f10790e6d99f59.js",
+      "static/chunks/app/patient/pharmacy/page-a9d898480db5488a.js"
+    ],
     "/patient/records/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
@@ -195,14 +243,6 @@
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
       "static/chunks/app/patient/records/page-d1076eb6d7f5d928.js"
-    ],
-    "/patient/orders/page": [
-      "static/chunks/webpack-c84e7b3dbc67fa68.js",
-      "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
-      "static/chunks/23-1c962abcd96d7990.js",
-      "static/chunks/main-app-70297b9561a9d667.js",
-      "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/patient/orders/page-13b52241cb30bfd2.js"
     ],
     "/patient/teleconsult/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
@@ -212,13 +252,13 @@
       "static/chunks/724-30f10790e6d99f59.js",
       "static/chunks/app/patient/teleconsult/page-08a93ee132f32668.js"
     ],
-    "/patient/pharmacy/page": [
+    "/specialists/page": [
       "static/chunks/webpack-c84e7b3dbc67fa68.js",
       "static/chunks/fd9d1056-4592e88a01ea6aa7.js",
       "static/chunks/23-1c962abcd96d7990.js",
       "static/chunks/main-app-70297b9561a9d667.js",
       "static/chunks/724-30f10790e6d99f59.js",
-      "static/chunks/app/patient/pharmacy/page-a9d898480db5488a.js"
+      "static/chunks/app/specialists/page-90d87dd7a2f03c62.js"
     ]
   }
 }

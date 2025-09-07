@@ -29,32 +29,37 @@ declare namespace __next_route_internal_types__ {
     S extends `${string}${SearchOrHash}` ? never : S
 
   type StaticRoutes = 
-    | `/admin/insurance`
-    | `/admin/users`
-    | `/auth/login`
-    | `/admin`
     | `/admin/hospitals`
+    | `/admin/insurance`
+    | `/admin`
+    | `/admin/payments`
+    | `/admin/users`
     | `/auth/forgot`
+    | `/auth/login`
     | `/auth/register`
     | `/auth/reset`
     | `/auth/verify`
-    | `/doctor/meetings`
     | `/dashboard`
-    | `/doctor/appointments`
+    | `/doctor/meetings`
     | `/doctor`
+    | `/doctor/appointments`
+    | `/departments`
     | `/doctor/prescriptions`
-    | `/hospital/doctors`
-    | `/hospital`
+    | `/hospital/analytics`
     | `/hospital/appointments`
+    | `/hospital`
+    | `/hospital/doctors`
     | `/`
+    | `/insurance`
     | `/patient/ai`
     | `/patient/appointments`
     | `/patient/emergency`
-    | `/patient`
-    | `/patient/records`
     | `/patient/orders`
-    | `/patient/teleconsult`
+    | `/patient`
     | `/patient/pharmacy`
+    | `/patient/records`
+    | `/patient/teleconsult`
+    | `/specialists`
   type DynamicRoutes<T extends string = string> = never
 
   type RouteImpl<T> = 
