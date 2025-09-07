@@ -35,8 +35,8 @@ declare namespace __next_route_internal_types__ {
     | `/admin/insurance`
     | `/admin/payments`
     | `/admin/users`
-    | `/auth/forgot`
     | `/auth/login`
+    | `/auth/forgot`
     | `/auth/register`
     | `/auth/reset`
     | `/auth/verify`
@@ -47,8 +47,8 @@ declare namespace __next_route_internal_types__ {
     | `/doctor/meetings`
     | `/doctor/prescriptions`
     | `/hospital`
-    | `/hospital/appointments`
     | `/hospital/analytics`
+    | `/hospital/appointments`
     | `/hospital/doctors`
     | `/insurance`
     | `/patient`

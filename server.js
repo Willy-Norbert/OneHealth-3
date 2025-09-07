@@ -105,7 +105,7 @@ const swaggerOptions = {
 
 const specs = swaggerJsdoc(swaggerOptions);
 app.use(
-  '-docs',
+  '/api-docs',
   swaggerUi.serve,
   swaggerUi.setup(specs, {
     customCss: '.swagger-ui .topbar { display: none }',
