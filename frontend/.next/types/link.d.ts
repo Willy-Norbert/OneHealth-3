@@ -29,33 +29,33 @@ declare namespace __next_route_internal_types__ {
     S extends `${string}${SearchOrHash}` ? never : S
 
   type StaticRoutes = 
+    | `/`
+    | `/admin`
     | `/admin/hospitals`
     | `/admin/insurance`
-    | `/admin`
     | `/admin/payments`
     | `/admin/users`
     | `/auth/forgot`
-    | `/auth/register`
     | `/auth/login`
+    | `/auth/register`
     | `/auth/reset`
     | `/auth/verify`
-    | `/departments`
     | `/dashboard`
+    | `/departments`
+    | `/doctor`
     | `/doctor/appointments`
     | `/doctor/meetings`
-    | `/doctor`
     | `/doctor/prescriptions`
-    | `/hospital/analytics`
-    | `/hospital/appointments`
-    | `/hospital/doctors`
     | `/hospital`
+    | `/hospital/appointments`
+    | `/hospital/analytics`
+    | `/hospital/doctors`
     | `/insurance`
-    | `/`
+    | `/patient`
     | `/patient/ai`
     | `/patient/appointments`
     | `/patient/emergency`
     | `/patient/orders`
-    | `/patient`
     | `/patient/pharmacy`
     | `/patient/records`
     | `/patient/teleconsult`

@@ -1,4 +1,4 @@
-// File: /workspace/frontend/src/app/auth/verify/page.tsx
+// File: C:\Users\pc\Desktop\backend\frontend\src\app\auth\verify\page.tsx
 import * as entry from '../../../../../src/app/auth/verify/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
