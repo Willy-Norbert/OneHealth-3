@@ -1,0 +1,9 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/patient/page": "app/patient/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/page": "app/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/hospital/page": "app/hospital/page.js",
+  "/hospital/doctors/page": "app/hospital/doctors/page.js"
+}
