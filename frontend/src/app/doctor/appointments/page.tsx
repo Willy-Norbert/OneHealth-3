@@ -6,7 +6,7 @@ export default function DoctorAppointmentsPage() {
   const { data, mutate } = useSWR('doctor-appts', () => api.appointments.myDoctor() as any)
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/appointments/${id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/appointments/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` },
       body: JSON.stringify({ status })
@@ -23,6 +23,10 @@ export default function DoctorAppointmentsPage() {
             <div>
               <div className="font-medium">{a.patient?.name}</div>
               <div className="text-sm text-slate-600">{new Date(a.appointmentDate).toLocaleDateString()} {a.appointmentTime} — {a.status}</div>
+<<<<<<< HEAD
+=======
+              {a.meeting?.link && <a href={a.meeting.link} className="text-primary text-sm">Join meeting</a>}
+>>>>>>> 831143276e0549cd1223d887bce6d175b078a59b
             </div>
             <div className="flex gap-2">
               <button onClick={()=>updateStatus(a._id,'confirmed')} className="rounded border px-3 py-1 text-sm">Accept</button>

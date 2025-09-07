@@ -19,14 +19,12 @@ export default function AppointmentsPage() {
   const loadSlots = async () => {
     if (!form.hospital || !form.department || !form.appointmentDate) return
     const q = new URLSearchParams({ date: form.appointmentDate, hospital: form.hospital, department: form.department })
-    const res = await apiFetch(`/appointments/available-slots?${q.toString()}`)
-    setSlots(res?.data?.availableSlots || [])
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/appointments/available-slots?${q.toString()}`, { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' })
+    const json = await res.json()
+    setSlots(json?.data?.availableSlots || [])
   }
 
-  async function apiFetch(path: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}${path}`, { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' })
-    return res.json()
-  }
+  
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()

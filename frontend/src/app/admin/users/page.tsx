@@ -6,12 +6,12 @@ export default function UsersPage() {
   const { data, mutate } = useSWR('users-admin', () => apiFetch('/users'))
 
   async function apiFetch(path: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}${path}`, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, cache: 'no-store' })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${path}`, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, cache: 'no-store' })
     return res.json()
   }
 
   const changeRole = async (id: string, role: string) => {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, body: JSON.stringify({ role }) })
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, body: JSON.stringify({ role }) })
     mutate()
   }
 

@@ -6,7 +6,7 @@ export default function HospitalAppointmentsPage() {
 
   async function apiFetch(path: string) {
     const token = document.cookie.split('token=')[1]?.split(';')[0]
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${path}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
     return res.json()
   }
 
