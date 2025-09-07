@@ -1,0 +1,113 @@
+import Cookies from 'js-cookie'
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
+export async function apiFetch<T>(path: string, options: RequestInit & { auth?: boolean } = {}): Promise<T> {
+  const token = Cookies.get('token')
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (options.headers) Object.assign(headers, options.headers as Record<string, string>)
+  if (options.auth !== false && token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers,
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Request failed: ${res.status}`)
+  }
+  try {
+    return (await res.json()) as T
+  } catch {
+    // some endpoints may not return JSON in error cases
+    return {} as T
+  }
+}
+
+export const api = {
+  // Auth
+  register: (body: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body), auth: false }),
+  login: (body: any) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body), auth: false }),
+  verifyOtp: (body: any) => apiFetch('/auth/verify-otp', { method: 'POST', body: JSON.stringify(body), auth: false }),
+  resendOtp: (body: any) => apiFetch('/auth/resend-otp', { method: 'POST', body: JSON.stringify(body), auth: false }),
+  forgotPassword: (body: any) => apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
+  resetPassword: (body: any) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
+  me: () => apiFetch('/auth/me', { method: 'GET' }),
+
+  // Core entities
+  hospitals: {
+    list: () => apiFetch('/hospitals', { method: 'GET', auth: false }),
+    get: (id: string) => apiFetch(`/hospitals/${id}`, { method: 'GET', auth: false }),
+  },
+  departments: {
+    list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
+    byHospital: (id: string) => apiFetch(`/departments/hospital/${id}`, { method: 'GET', auth: false }),
+  },
+  doctors: {
+    list: (q?: URLSearchParams) => apiFetch(`/doctors${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
+    byHospitalDepartment: (hospitalId: string, departmentId: string) => apiFetch(`/doctors/hospital/${hospitalId}/department/${departmentId}`, { method: 'GET', auth: false }),
+    get: (id: string) => apiFetch(`/doctors/${id}`, { method: 'GET', auth: false }),
+  },
+  insurance: {
+    list: () => apiFetch('/insurance', { method: 'GET', auth: false }),
+  },
+  teleconsult: {
+    consultationTypes: () => apiFetch('/teleconsultation/consultation-types', { method: 'GET', auth: false }),
+    insuranceOptions: () => apiFetch('/teleconsultation/insurance-options', { method: 'GET', auth: false }),
+    create: (body: any) => apiFetch('/teleconsultation', { method: 'POST', body: JSON.stringify(body) }),
+    mine: () => apiFetch('/teleconsultation/my-consultations', { method: 'GET' }),
+    get: (id: string) => apiFetch(`/teleconsultation/${id}`, { method: 'GET' }),
+    doctor: (doctorId: string) => apiFetch(`/teleconsultation/doctor/${doctorId}/consultations`, { method: 'GET' }),
+  },
+  appointments: {
+    availableSlots: () => apiFetch('/appointments/available-slots', { method: 'GET', auth: false }),
+    create: (body: any) => apiFetch('/appointments', { method: 'POST', body: JSON.stringify(body) }),
+    my: () => apiFetch('/appointments/my-appointments', { method: 'GET' }),
+    myDoctor: () => apiFetch('/appointments/my-doctor-appointments', { method: 'GET' }),
+    reassign: (id: string, body: any) => apiFetch(`/appointments/${id}/reassign`, { method: 'PATCH', body: JSON.stringify(body) }),
+    cancel: (id: string) => apiFetch(`/appointments/${id}/cancel`, { method: 'PATCH' }),
+  },
+  payments: {
+    checkout: (body: any) => apiFetch('/payments/checkout', { method: 'POST', body: JSON.stringify(body) }),
+    verify: (body: any) => apiFetch('/payments/verify', { method: 'POST', body: JSON.stringify(body) }),
+  },
+  ai: {
+    symptomChecker: (body: any) => apiFetch('/ai/symptom-checker', { method: 'POST', body: JSON.stringify(body) }),
+    bookAppointmentHelper: (body: any) => apiFetch('/ai/book-appointment-helper', { method: 'POST', body: JSON.stringify(body) }),
+    prescriptionHelper: (body: any) => apiFetch('/ai/prescription-helper', { method: 'POST', body: JSON.stringify(body) }),
+    referralSupport: (body: any) => apiFetch('/ai/referral-support', { method: 'POST', body: JSON.stringify(body) }),
+    healthTips: (body: any) => apiFetch('/ai/health-tips', { method: 'POST', body: JSON.stringify(body) }),
+  },
+  notifications: {
+    list: () => apiFetch('/notifications', { method: 'GET' }),
+    markRead: (id: string) => apiFetch(`/notifications/${id}/read`, { method: 'PUT' }),
+  },
+  pharmacy: {
+    list: () => apiFetch('/pharmacies', { method: 'GET', auth: false }),
+    near: (lat: number, lng: number, radius?: number) => apiFetch(`/pharmacies/near?lat=${lat}&lng=${lng}${radius?`&radius=${radius}`:''}`, { method: 'GET', auth: false }),
+    get: (id: string) => apiFetch(`/pharmacies/${id}`, { method: 'GET', auth: false }),
+  },
+  orders: {
+    create: (body: any) => apiFetch('/orders', { method: 'POST', body: JSON.stringify(body) }),
+    my: (patientId: string) => apiFetch(`/orders/patients/${patientId}/orders`, { method: 'GET' }),
+  },
+  uploads: {
+    image: async (file: File) => {
+      const token = Cookies.get('token')
+      const form = new FormData()
+      form.append('image', file)
+      const res = await fetch(`${API_BASE_URL}/upload/image`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      })
+      if (!res.ok) throw new Error('Upload failed')
+      return res.json()
+    }
+  }
+}
+
