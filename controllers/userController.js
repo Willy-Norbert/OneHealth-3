@@ -178,11 +178,11 @@ exports.updateUserRole = async (req, res) => {
 };
 
 // @desc    Update user profile
-// @route   PUT /api/users/:id/profile
+// @route   PUT /api/users/:id/profile or PATCH /api/users/profile
 // @access  Private (User themselves)
 exports.updateUserProfile = async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = req.params.id || req.user._id;
     
     // Check if user is updating their own profile
     if (req.user._id.toString() !== userId) {
@@ -193,13 +193,22 @@ exports.updateUserProfile = async (req, res) => {
       });
     }
 
-    const { name, email, phone, avatar } = req.body;
+    const { name, email, phone, avatar, address, dateOfBirth, gender, bloodType, emergencyContact, specialization, experience, bio, consultationFee } = req.body;
     const updateData = {};
     
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
-    if (avatar) updateData.profileImage = avatar; // Changed avatar to profileImage
+    if (avatar) updateData.profileImage = avatar;
+    if (address) updateData.address = address;
+    if (dateOfBirth) updateData.dateOfBirth = dateOfBirth;
+    if (gender) updateData.gender = gender;
+    if (bloodType) updateData.bloodType = bloodType;
+    if (emergencyContact) updateData.emergencyContact = emergencyContact;
+    if (specialization) updateData.specialization = specialization;
+    if (experience) updateData.experience = experience;
+    if (bio) updateData.bio = bio;
+    if (consultationFee) updateData.consultationFee = consultationFee;
 
     const user = await User.findByIdAndUpdate(
       userId,

@@ -47,6 +47,11 @@ export const api = {
   resetPassword: (body: any) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
   me: () => apiFetch('/auth/me', { method: 'GET' }),
 
+  // Users
+  users: {
+    updateProfile: (body: any) => apiFetch('/users/profile', { method: 'PATCH', body: JSON.stringify(body) }),
+  },
+
   // Core entities
   hospitals: {
     list: () => apiFetch('/hospitals', { method: 'GET', auth: false }),

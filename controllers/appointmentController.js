@@ -223,32 +223,41 @@ console.log("👤 Authenticated user:", req.user);
       // Step 7: Create a new Meeting for virtual teleconsultations
       console.log("Backend: createAppointment - Checking if virtual appointment:", appointment.appointmentType);
       if (appointment.appointmentType === 'virtual') {
-        const MeetingModel = require('../models/Meeting'); // Import Meeting model
-        // crypto already imported at the top of the file
+        try {
+          const MeetingModel = require('../models/Meeting'); // Import Meeting model
+          // crypto already imported at the top of the file
 
-        const meeting_id = crypto.randomUUID();
-        const meetingLink = `/meeting/${meeting_id}`;
+          const meeting_id = crypto.randomUUID();
+          const meetingLink = `/meeting/${meeting_id}`;
 
-        const meetingCreationData = {
-          meeting_id: meeting_id,
-          doctor: appointment.doctor,
-          patient: appointment.patient,
-          link: meetingLink,
-          startTime: appointment.appointmentDate, // Use appointment date/time as meeting start/end
-          endTime: new Date(new Date(appointment.appointmentDate).setMinutes(new Date(appointment.appointmentDate).getMinutes() + 30)), // Example: 30 min duration
-          status: 'scheduled',
-          title: `Virtual Consultation with Dr. ${(await User.findById(appointment.doctor)).name} and ${(await User.findById(appointment.patient)).name}`,
-        };
-        console.log("Backend: createAppointment - Meeting data to be created:", meetingCreationData);
+          // Get user names safely
+          const doctorUser = appointment.doctor ? await User.findById(appointment.doctor) : null;
+          const patientUser = await User.findById(appointment.patient);
 
-        const newMeeting = await MeetingModel.create(meetingCreationData);
-        console.log("Backend: createAppointment - New Meeting created successfully:", newMeeting);
+          const meetingCreationData = {
+            meeting_id: meeting_id,
+            doctor: appointment.doctor,
+            patient: appointment.patient,
+            link: meetingLink,
+            startTime: appointment.appointmentDate, // Use appointment date/time as meeting start/end
+            endTime: new Date(new Date(appointment.appointmentDate).setMinutes(new Date(appointment.appointmentDate).getMinutes() + 30)), // Example: 30 min duration
+            status: 'scheduled',
+            title: `Virtual Consultation${doctorUser ? ` with Dr. ${doctorUser.name}` : ''}${patientUser ? ` and ${patientUser.name}` : ''}`,
+          };
+          console.log("Backend: createAppointment - Meeting data to be created:", meetingCreationData);
 
-        // Link the new Meeting to the Appointment
-        console.log("Backend: createAppointment - Linking Meeting ID:", newMeeting._id, "to Appointment ID:", appointment._id);
-        appointment.meeting = newMeeting._id;
-        await appointment.save();
-        console.log("Backend: createAppointment - Appointment saved with linked Meeting:", appointment);
+          const newMeeting = await MeetingModel.create(meetingCreationData);
+          console.log("Backend: createAppointment - New Meeting created successfully:", newMeeting);
+
+          // Link the new Meeting to the Appointment
+          console.log("Backend: createAppointment - Linking Meeting ID:", newMeeting._id, "to Appointment ID:", appointment._id);
+          appointment.meeting = newMeeting._id;
+          await appointment.save();
+          console.log("Backend: createAppointment - Appointment saved with linked Meeting:", appointment);
+        } catch (meetingError) {
+          console.error("Backend: createAppointment - Error creating meeting:", meetingError);
+          // Don't fail the appointment creation if meeting creation fails
+        }
       }
 
       await appointment.populate(['hospital', 'patient', ...(doctorUserId ? ['doctor'] : []), 'department', 'meeting']); // Populate meeting here
