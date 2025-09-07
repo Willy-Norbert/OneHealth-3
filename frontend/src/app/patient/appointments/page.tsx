@@ -7,7 +7,7 @@ import { useState } from 'react'
 export default function AppointmentsPage() {
   const { data: hospitals } = useSWR('hospitals', () => api.hospitals.list() as any)
   const { data: myAppointments, mutate } = useSWR('myAppointments', () => api.appointments.my() as any)
-  const [form, setForm] = useState<any>({ hospital: '', department: '', appointmentType: 'virtual', appointmentDate: '', appointmentTime: '', reasonForVisit: '' })
+  const [form, setForm] = useState<any>({ hospital: '', department: '', appointmentType: 'in-person', appointmentDate: '', appointmentTime: '', reasonForVisit: '' })
   const [departments, setDepartments] = useState<any[]>([])
   const [slots, setSlots] = useState<string[]>([])
   const [result, setResult] = useState<any>(null)
@@ -92,36 +92,66 @@ export default function AppointmentsPage() {
             </div>
             <div className="card-body">
               <form onSubmit={submit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="form-group">
-                    <label className="form-label">Hospital</label>
-                    <select 
-                      className="input" 
-                      value={form.hospital} 
-                      onChange={e => { setForm({ ...form, hospital: e.target.value }); loadDepartments(e.target.value) }} 
-                      required
-                    >
-                      <option value="">Select Hospital</option>
-                      {(hospitals as any)?.data?.hospitals?.map((h: any) => 
-                        <option key={h._id} value={h._id}>{h.name}</option>
-                      )}
-                    </select>
-                  </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="form-group">
+                           <label className="form-label">Appointment Type</label>
+                           <div className="grid grid-cols-2 gap-3">
+                             <button
+                               type="button"
+                               onClick={() => setForm({ ...form, appointmentType: 'in-person' })}
+                               className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                                 form.appointmentType === 'in-person'
+                                   ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                   : 'border-gray-200 hover:border-gray-300'
+                               }`}
+                             >
+                               <div className="text-2xl mb-1">🏥</div>
+                               <div className="text-sm font-medium">In-Person</div>
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setForm({ ...form, appointmentType: 'virtual' })}
+                               className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                                 form.appointmentType === 'virtual'
+                                   ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                   : 'border-gray-200 hover:border-gray-300'
+                               }`}
+                             >
+                               <div className="text-2xl mb-1">📹</div>
+                               <div className="text-sm font-medium">Video Call</div>
+                             </button>
+                           </div>
+                         </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Department</label>
-                    <select 
-                      className="input" 
-                      value={form.department} 
-                      onChange={e => setForm({ ...form, department: e.target.value })} 
-                      required
-                    >
-                      <option value="">Select Department</option>
-                      {departments.map((d) => 
-                        <option key={d._id} value={d._id}>{d.name}</option>
-                      )}
-                    </select>
-                  </div>
+                         <div className="form-group">
+                           <label className="form-label">Hospital</label>
+                           <select
+                             className="input"
+                             value={form.hospital}
+                             onChange={e => { setForm({ ...form, hospital: e.target.value }); loadDepartments(e.target.value) }}
+                             required
+                           >
+                             <option value="">Select Hospital</option>
+                             {(hospitals as any)?.data?.hospitals?.map((h: any) =>
+                               <option key={h._id} value={h._id}>{h.name}</option>
+                             )}
+                           </select>
+                         </div>
+
+                         <div className="form-group">
+                           <label className="form-label">Department</label>
+                           <select
+                             className="input"
+                             value={form.department}
+                             onChange={e => setForm({ ...form, department: e.target.value })}
+                             required
+                           >
+                             <option value="">Select Department</option>
+                             {departments.map((d) =>
+                               <option key={d._id} value={d._id}>{d.name}</option>
+                             )}
+                           </select>
+                         </div>
 
                   <div className="form-group">
                     <label className="form-label">Appointment Date</label>
