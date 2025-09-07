@@ -23,7 +23,17 @@ function LoginInner() {
       const redirect = (search.get('redirect') as string) || '/dashboard'
       router.push(redirect as any)
     } catch (err: any) {
-      setError(err?.message || 'Login failed')
+      console.error('Login error:', err)
+      // Extract error message from different possible response formats
+      let errorMessage = 'Login failed'
+      if (err?.message) {
+        errorMessage = err.message
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message
+      } else if (err?.data?.message) {
+        errorMessage = err.data.message
+      }
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
