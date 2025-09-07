@@ -18,6 +18,15 @@ export async function apiFetch<T>(path: string, options: RequestInit & { auth?: 
 
   if (!res.ok) {
     const text = await res.text()
+    
+    // Handle 401 specifically - clear token and redirect
+    if (res.status === 401) {
+      Cookies.remove('token')
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login'
+      }
+    }
+    
     throw new Error(text || `Request failed: ${res.status}`)
   }
   try {
