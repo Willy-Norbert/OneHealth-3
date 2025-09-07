@@ -31,16 +31,22 @@ declare namespace __next_route_internal_types__ {
   type StaticRoutes = 
     | `/admin`
     | `/admin/users`
-    | `/auth/forgot`
-    | `/auth/reset`
-    | `/auth/register`
     | `/auth/login`
+    | `/auth/register`
+    | `/auth/reset`
     | `/auth/verify`
+    | `/auth/forgot`
     | `/dashboard`
     | `/doctor`
     | `/hospital`
     | `/`
+    | `/patient/ai`
+    | `/patient/orders`
+    | `/patient/emergency`
+    | `/patient/appointments`
     | `/patient`
+    | `/patient/pharmacy`
+    | `/patient/records`
     | `/patient/teleconsult`
   type DynamicRoutes<T extends string = string> = never
 
