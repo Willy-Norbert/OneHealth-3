@@ -70,10 +70,20 @@ export const api = {
     myDoctor: () => apiFetch('/appointments/my-doctor-appointments', { method: 'GET' }),
     reassign: (id: string, body: any) => apiFetch(`/appointments/${id}/reassign`, { method: 'PATCH', body: JSON.stringify(body) }),
     cancel: (id: string) => apiFetch(`/appointments/${id}/cancel`, { method: 'PATCH' }),
+    get: (id: string) => apiFetch(`/appointments/${id}`, { method: 'GET' }),
   },
   payments: {
     checkout: (body: any) => apiFetch('/payments/checkout', { method: 'POST', body: JSON.stringify(body) }),
     verify: (body: any) => apiFetch('/payments/verify', { method: 'POST', body: JSON.stringify(body) }),
+  },
+  meetings: {
+    user: (userId: string) => apiFetch(`/meetings/user/${userId}`, { method: 'GET' }),
+    get: (id: string) => apiFetch(`/meetings/${id}`, { method: 'GET' }),
+  },
+  prescriptions: {
+    create: (body: any) => apiFetch('/prescriptions', { method: 'POST', body: JSON.stringify(body) }),
+    byPatient: (patientId: string) => apiFetch(`/prescriptions/patient/${patientId}`, { method: 'GET' }),
+    myAuthored: () => apiFetch('/prescriptions/doctor-authored', { method: 'GET' }),
   },
   ai: {
     symptomChecker: (body: any) => apiFetch('/ai/symptom-checker', { method: 'POST', body: JSON.stringify(body) }),

@@ -5,6 +5,7 @@ import { useState } from 'react'
 
 export default function AppointmentsPage() {
   const { data: hospitals } = useSWR('hospitals', () => api.hospitals.list() as any)
+  const { data: myAppointments, mutate } = useSWR('myAppointments', () => api.appointments.my() as any)
   const [form, setForm] = useState<any>({ hospital: '', department: '', appointmentType: 'virtual', appointmentDate: '', appointmentTime: '', reasonForVisit: '' })
   const [departments, setDepartments] = useState<any[]>([])
   const [slots, setSlots] = useState<string[]>([])
@@ -35,6 +36,7 @@ export default function AppointmentsPage() {
     }
     const res = await api.appointments.create(payload as any)
     setResult(res)
+    mutate()
   }
 
   return (
@@ -78,7 +80,40 @@ export default function AppointmentsPage() {
         <button className="btn-primary">Book appointment</button>
       </form>
       {result && <pre className="card p-4 overflow-auto text-sm">{JSON.stringify(result, null, 2)}</pre>}
+      <div className="card p-6">
+        <h2 className="font-semibold text-navy">My Appointments</h2>
+        <ul className="mt-3 divide-y">
+          {(myAppointments as any)?.data?.appointments?.map((a: any)=> (
+            <li key={a._id} className="py-3 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{a.hospital?.name} — {a.department?.name}</div>
+                <div className="text-sm text-slate-600">{new Date(a.appointmentDate).toLocaleDateString()} {a.appointmentTime} — {a.status}</div>
+              </div>
+              <div className="flex gap-2">
+                {a.paymentStatus !== 'paid' && <PayButton appointmentId={a._id} />}
+                <button onClick={async()=>{ await api.appointments.cancel(a._id); mutate() }} className="rounded border px-3 py-1 text-sm">Cancel</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
+}
+
+function PayButton({ appointmentId }: { appointmentId: string }) {
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<string|undefined>()
+  const checkout = async () => {
+    setLoading(true)
+    try {
+      const res = await api.payments.checkout({ appointmentId, provider: 'DEV_FAKE' }) as any
+      const paymentId = (res as any)?.data?.payment?._id
+      // simulate redirect/return then verify
+      const verify = await api.payments.verify({ paymentId }) as any
+      setStatus(verify?.data?.payment?.status)
+    } finally { setLoading(false) }
+  }
+  return <button onClick={checkout} disabled={loading} className="btn-primary">{status || (loading? 'Processing...' : 'Pay now')}</button>
 }
 
