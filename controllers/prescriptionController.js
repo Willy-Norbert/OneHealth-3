@@ -226,3 +226,42 @@ exports.getDoctorAuthoredPrescriptions = async (req, res) => {
     });
   }
 };
+
+// @desc    Get current user's prescriptions
+// @route   GET /api/prescriptions/my
+// @access  Private (Patient)
+exports.getMyPrescriptions = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const query = { patient: req.user._id };
+
+    const prescriptions = await Prescription.find(query)
+      .populate([
+        { path: 'patient', select: 'name email' },
+        { path: 'doctor', select: 'name specialization' },
+        { path: 'appointment', select: 'appointmentDate appointmentTime' }
+      ])
+      .sort({ datePrescribed: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Prescription.countDocuments(query);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        prescriptions,
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching user prescriptions:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Internal server error. Please try again later.' 
+    });
+  }
+};

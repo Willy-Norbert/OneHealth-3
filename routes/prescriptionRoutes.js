@@ -3,6 +3,7 @@ const {
   createPrescription,
   getPatientPrescriptions,
   getDoctorAuthoredPrescriptions,
+  getMyPrescriptions,
 } = require('../controllers/prescriptionController');
 const { protect, restrictTo } = require('../middleware/auth');
 
@@ -133,5 +134,21 @@ router.get('/patient/:patientId', getPatientPrescriptions);
  *         description: Access denied
  */
 router.get('/doctor-authored', restrictTo('doctor'), getDoctorAuthoredPrescriptions);
+
+/**
+ * @swagger
+ * /api/prescriptions/my:
+ *   get:
+ *     summary: Get current user's prescriptions
+ *     tags: [Prescriptions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User prescriptions retrieved successfully
+ *       403:
+ *         description: Access denied
+ */
+router.get('/my', getMyPrescriptions);
 
 module.exports = router;

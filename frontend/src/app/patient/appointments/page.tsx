@@ -20,9 +20,17 @@ export default function AppointmentsPage() {
 
   const loadSlots = async () => {
     if (!form.hospital || !form.department || !form.appointmentDate) return
-    const q = new URLSearchParams({ date: form.appointmentDate, hospital: form.hospital, department: form.department })
-    const res = await apiFetch(`/appointments/available-slots?${q.toString()}`)
-    setSlots(res?.data?.availableSlots || [])
+    try {
+      const res = await api.appointments.availableSlots({
+        date: form.appointmentDate,
+        hospital: form.hospital,
+        department: form.department
+      })
+      setSlots(res?.data?.availableSlots || [])
+    } catch (error) {
+      console.error('Error loading slots:', error)
+      setSlots([])
+    }
   }
 
   async function apiFetch(path: string) {

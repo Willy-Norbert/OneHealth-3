@@ -73,7 +73,10 @@ export const api = {
     doctor: (doctorId: string) => apiFetch(`/teleconsultation/doctor/${doctorId}/consultations`, { method: 'GET' }),
   },
   appointments: {
-    availableSlots: () => apiFetch('/appointments/available-slots', { method: 'GET', auth: false }),
+    availableSlots: (params: { date: string; hospital: string; department: string }) => {
+      const searchParams = new URLSearchParams(params)
+      return apiFetch(`/appointments/available-slots?${searchParams.toString()}`, { method: 'GET', auth: false })
+    },
     create: (body: any) => apiFetch('/appointments', { method: 'POST', body: JSON.stringify(body) }),
     my: () => apiFetch('/appointments/my-appointments', { method: 'GET' }),
     myDoctor: () => apiFetch('/appointments/my-doctor-appointments', { method: 'GET' }),
@@ -109,6 +112,7 @@ export const api = {
     list: () => apiFetch('/pharmacies', { method: 'GET', auth: false }),
     near: (lat: number, lng: number, radius?: number) => apiFetch(`/pharmacies/near?lat=${lat}&lng=${lng}${radius?`&radius=${radius}`:''}`, { method: 'GET', auth: false }),
     get: (id: string) => apiFetch(`/pharmacies/${id}`, { method: 'GET', auth: false }),
+    prescriptions: () => apiFetch('/prescriptions/my', { method: 'GET' }),
   },
   orders: {
     create: (body: any) => apiFetch('/orders', { method: 'POST', body: JSON.stringify(body) }),
