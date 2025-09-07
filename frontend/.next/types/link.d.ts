@@ -35,22 +35,22 @@ declare namespace __next_route_internal_types__ {
     | `/admin/payments`
     | `/admin/users`
     | `/auth/forgot`
-    | `/auth/login`
     | `/auth/register`
+    | `/auth/login`
     | `/auth/reset`
     | `/auth/verify`
+    | `/departments`
     | `/dashboard`
+    | `/doctor/appointments`
     | `/doctor/meetings`
     | `/doctor`
-    | `/doctor/appointments`
-    | `/departments`
     | `/doctor/prescriptions`
     | `/hospital/analytics`
     | `/hospital/appointments`
-    | `/hospital`
     | `/hospital/doctors`
-    | `/`
+    | `/hospital`
     | `/insurance`
+    | `/`
     | `/patient/ai`
     | `/patient/appointments`
     | `/patient/emergency`

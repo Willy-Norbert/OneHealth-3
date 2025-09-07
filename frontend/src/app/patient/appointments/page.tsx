@@ -88,6 +88,7 @@ export default function AppointmentsPage() {
               <div>
                 <div className="font-medium">{a.hospital?.name} — {a.department?.name}</div>
                 <div className="text-sm text-slate-600">{new Date(a.appointmentDate).toLocaleDateString()} {a.appointmentTime} — {a.status}</div>
+                {a.meeting?.link && <a href={a.meeting.link} className="text-primary text-sm">Join meeting</a>}
               </div>
               <div className="flex gap-2">
                 {a.paymentStatus !== 'paid' && <PayButton appointmentId={a._id} />}
