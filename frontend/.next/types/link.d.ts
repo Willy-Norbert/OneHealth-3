@@ -30,11 +30,6 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/`
-    | `/admin`
-    | `/admin/insurance`
-    | `/admin/hospitals`
-    | `/admin/payments`
-    | `/admin/users`
     | `/auth/forgot`
     | `/auth/login`
     | `/auth/register`
@@ -55,12 +50,17 @@ declare namespace __next_route_internal_types__ {
     | `/patient`
     | `/patient/ai`
     | `/patient/appointments`
-    | `/patient/records`
     | `/patient/emergency`
     | `/patient/orders`
     | `/patient/pharmacy`
+    | `/patient/records`
     | `/patient/teleconsult`
     | `/specialists`
+    | `/admin`
+    | `/admin/hospitals`
+    | `/admin/insurance`
+    | `/admin/payments`
+    | `/admin/users`
   type DynamicRoutes<T extends string = string> = 
     | `/meeting/${SafeSlug<T>}`
 
