@@ -92,12 +92,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
     try {
       const res = await api.login({ email, password }) as any
+      console.log('Login response:', res)
+      
       const jwt = (res as any).token || (res as any).data?.token
-      if (!jwt) throw new Error('No token returned from server')
+      if (!jwt) {
+        const errorMsg = (res as any).message || (res as any).data?.message || 'No token returned from server'
+        throw new Error(errorMsg)
+      }
       
       setToken(jwt)
       Cookies.set('token', jwt, { expires: 7 }) // 7 days
       await refreshProfile(jwt)
+    } catch (error) {
+      console.error('Login error in AuthContext:', error)
+      throw error // Re-throw to let the login page handle it
     } finally {
       setIsLoading(false)
     }

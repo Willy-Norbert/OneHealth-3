@@ -5,14 +5,17 @@ const { verifyToken } = require('../utils/jwt');
 
 const protect = async (req, res, next) => {
   try {
-    // Get token from header
+    // Get token from header or cookie
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
       // console.log('Token from header:', token);
-    } else if (req.cookies.jwt) {
-      token = req.cookies.jwt;
+    } else if (req.cookies.token) {
+      token = req.cookies.token;
       // console.log('Token from cookie:', token);
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt; // Fallback for backward compatibility
+      // console.log('Token from jwt cookie:', token);
     }
 
     if (!token) {
