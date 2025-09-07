@@ -91,7 +91,7 @@ router.get('/:id', getEmergency);
 router.get('/patients/:patientId', getPatientEmergencies);
 
 // Admin/Responder routes
-router.get('/', restrictTo('admin'), getAllEmergencies);
+router.get('/', restrictTo('admin', 'hospital'), getAllEmergencies);
 router.get('/near', restrictTo('admin'), getEmergenciesNear);
 router.put('/:id/status', restrictTo('admin'), updateEmergencyStatus);
 router.put('/:id/assign', restrictTo('admin'), assignResponder);

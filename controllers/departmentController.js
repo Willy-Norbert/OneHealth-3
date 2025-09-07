@@ -68,6 +68,7 @@ exports.getDepartment = async (req, res) => {
 exports.createDepartment = async (req, res) => {
   try {
     // Verify hospital exists
+    console.log('Request body for createDepartment:', req.body);
     const hospital = await Hospital.findById(req.body.hospital);
     if (!hospital) {
       return res.status(400).json({

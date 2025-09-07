@@ -6,7 +6,8 @@ const {
   createPatient,
   updatePatient,
   getPatientsByHospital,
-  addHospitalVisit
+  addHospitalVisit,
+  getDoctorPatients // Added getDoctorPatients
 } = require('../controllers/patientController');
 
 const router = express.Router();
@@ -236,6 +237,72 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /api/patients/my-patients:
+ *   get:
+ *     summary: Get patients assigned to the logged-in doctor
+ *     tags: [Patients]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of patients per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by patient name or email
+ *     responses:
+ *       200:
+ *         description: Doctor's patients retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Doctor's patients retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     patients:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Patient'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalPatients:
+ *                           type: integer
+ *                         hasNext:
+ *                           type: boolean
+ *                         hasPrev:
+ *                           type: boolean
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Doctor access required
+ */
+
+/**
+ * @swagger
  * /api/patients/{id}:
  *   get:
  *     summary: Get patient details
@@ -370,6 +437,8 @@ const router = express.Router();
  *         description: Hospital visit added successfully
  *       404:
  *         description: Patient not found
+ *       403:
+ *         description: Can only access your own hospital patients
  */
 
 // Protect all routes
@@ -378,7 +447,8 @@ router.use(protect);
 // Patient routes
 router.get('/', restrictTo('admin', 'hospital'), getAllPatients);
 router.post('/', restrictTo('admin', 'patient'), createPatient);
-router.get('/:id', getPatient); // Authorization checked in controller
+router.get('/my-patients', restrictTo('doctor'), getDoctorPatients); // New route for doctors to get their patients
+router.get('/:id', restrictTo('admin', 'hospital', 'doctor', 'patient'), getPatient); // Authorization checked in controller
 router.put('/:id', updatePatient); // Authorization checked in controller
 router.post('/:id/visits', restrictTo('admin', 'hospital'), addHospitalVisit);
 

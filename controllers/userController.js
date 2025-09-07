@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const Hospital = require('../models/Hospital');
 const { sendRoleChangeEmail, sendHospitalApprovalEmail } = require('../services/emailService');
+const { createNotification } = require('../utils/notificationService'); // Import notification service
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -142,8 +143,16 @@ exports.updateUserRole = async (req, res) => {
     // Send role change notification email
     try {
       await sendRoleChangeEmail(user, oldRole, role);
+      // Create notification for the user
+      await createNotification({
+        recipient: user._id,
+        sender: req.user._id, // Admin who changed the role
+        type: 'user',
+        message: `Your role has been changed from ${oldRole} to ${role}.`,
+        relatedEntity: { id: user._id, type: 'User' },
+      });
     } catch (emailError) {
-      console.error('Failed to send role change email:', emailError);
+      console.error('Failed to send role change email/notification:', emailError);
     }
 
     res.status(200).json({
@@ -190,7 +199,7 @@ exports.updateUserProfile = async (req, res) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
-    if (avatar) updateData.avatar = avatar;
+    if (avatar) updateData.profileImage = avatar; // Changed avatar to profileImage
 
     const user = await User.findByIdAndUpdate(
       userId,

@@ -316,7 +316,7 @@ const router = express.Router();
 // My hospital route (must be before /:id to avoid conflicts)
 router.get('/me', protect, async (req, res) => {
   try {
-    const hospital = await require('../models/Hospital').findOne({ userId: req.user._id }).populate('departments');
+    const hospital = await require('../models/Hospital').findOne({ _id: req.user.hospital }).populate('departments');
     if (!hospital) return res.status(404).json({ message: 'Hospital not found for this user' });
     res.status(200).json({ success: true, data: { hospital } });
   } catch (error) {

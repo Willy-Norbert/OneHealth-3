@@ -32,21 +32,33 @@ async function sendEmail({ to, subject, html, text }) {
 // Templates
 function baseTemplate(title, body) {
   return `
-  <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
-    <div style="background:#0ea5e9; color:#fff; padding:16px 20px; border-radius:12px 12px 0 0;">
-      <h2 style="margin:0;">${title}</h2>
-    </div>
-    <div style="background:#f8fafc; padding:20px; border:1px solid #e2e8f0; border-top:0; border-radius:0 0 12px 12px;">
-      ${body}
-      <p style="color:#64748b; font-size:12px; margin-top:24px;">This is an automated message. Please do not reply.</p>
-    </div>
-  </div>`;
-}
+    <div style="font-family: 'Inter', sans-serif; max-width: 640px; margin: 0 auto; background-color: #f4f6f8; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0;">
+      <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #0ea5e9; padding: 20px; text-align: center;">
+          <img src="${process.env.EMAIL_LOGO_URL || ''}" alt="Logo" style="max-width: 150px; margin-bottom: 10px;"/>
+          <h1 style="color: #ffffff; font-size: 24px; margin: 0;">${title}</h1>
+        </div>
+        <div style="padding: 30px 20px; line-height: 1.6; color: #333333;">
+          ${body}
+        </div>
+        <div style="background-color: #f4f6f8; padding: 20px; text-align: center; font-size: 12px; color: #777777; border-top: 1px solid #e0e0e0;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} One Healthline Connect. All rights reserved.</p>
+          <p style="margin: 5px 0 0;">This is an automated message. Please do not reply.</p>
+        </div>
+      </div>
+    </div>`;
+  }
 
-async function sendWelcomeEmail(user) {
+async function sendWelcomeEmail(user, hospitalName, password) {
   const html = baseTemplate('Welcome to ONE HEALTHLINE CONNECT', `
     <p>Hi ${user.name || user.fullName || 'there'},</p>
-    <p>Welcome aboard! Your account has been created successfully.</p>
+    <p>Welcome aboard! Your account has been created successfully at ${hospitalName}.</p>
+    <p>Here are your login credentials:</p>
+    <ul>
+      <li><strong>Email:</strong> ${user.email}</li>
+      <li><strong>Password:</strong> ${password}</li>
+    </ul>
+    <p>Please keep this information secure.</p>
   `);
   return sendEmail({ to: user.email, subject: 'Welcome to ONE HEALTHLINE CONNECT', html });
 }

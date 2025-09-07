@@ -1,5 +1,7 @@
 const Emergency = require('../models/Emergency');
 const { sendEmergencyStatusEmail } = require('../services/emailService');
+const { createNotification } = require('../utils/notificationService'); // Import notification service
+const Hospital = require('../models/Hospital'); // Import Hospital model
 
 // @desc    Create emergency request
 // @route   POST /api/emergencies
@@ -18,6 +20,14 @@ exports.createEmergency = async (req, res) => {
     // - Send notifications to emergency responders
     // - Alert nearby hospitals
     // - Dispatch ambulance if needed
+
+    // Create notification for the patient
+    await createNotification({
+      recipient: req.user._id,
+      type: 'emergency',
+      message: 'Your emergency request has been created successfully. Help is on the way!',
+      relatedEntity: { id: emergency._id, type: 'Emergency' },
+    });
 
     res.status(201).json({
       success: true,
@@ -38,16 +48,23 @@ exports.createEmergency = async (req, res) => {
 // @access  Private (Admin/Emergency responders only)
 exports.getAllEmergencies = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
+    console.log('=== GET ALL EMERGENCIES ===');
+    console.log('User accessing emergencies:', req.user.role, req.user._id);
+    console.log('User hospital ID:', req.user.hospital);
 
-    const { status, emergencyType, severity } = req.query;
+    const { page = 1, limit = 10, status, emergencyType, severity } = req.query;
+    const skip = (page - 1) * limit;
     
     const filter = {};
     if (status) filter.status = status;
     if (emergencyType) filter.emergencyType = emergencyType;
     if (severity) filter.severity = severity;
+
+    // Hospital role can only see emergencies assigned to their hospital
+    if (req.user.role === 'hospital') {
+      filter['assignedTo.hospital'] = req.user.hospital;
+      console.log('Hospital filter applied to emergencies:', filter);
+    }
 
     const emergencies = await Emergency.find(filter)
       .populate('patient', 'fullName phoneNumber')
@@ -57,6 +74,8 @@ exports.getAllEmergencies = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
+    console.log('Emergencies found with filter:', filter, 'Count:', emergencies.length);
+
     const total = await Emergency.countDocuments(filter);
 
     res.status(200).json({
@@ -65,18 +84,20 @@ exports.getAllEmergencies = async (req, res) => {
       data: { 
         emergencies, 
         pagination: {
-          current: page,
-          pages: Math.ceil(total / limit),
-          total,
-          limit
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalEmergencies: total,
+          hasNext: page * limit < total,
+          hasPrev: page > 1
         }
       }
     });
   } catch (error) {
+    console.error('Error in getAllEmergencies:', error);
     res.status(500).json({
       success: false,
-      message: 'Error retrieving emergencies',
-      data: { error: error.message }
+      message: 'Failed to retrieve emergencies',
+      data: null
     });
   }
 };
@@ -171,8 +192,26 @@ exports.updateEmergencyStatus = async (req, res) => {
     // Send status update email
     try {
       await sendEmergencyStatusEmail(emergency, status);
+      // Create notification for the patient
+      await createNotification({
+        recipient: emergency.patient._id,
+        sender: req.user._id,
+        type: 'emergency',
+        message: `Your emergency request status has been updated to ${status}.`,
+        relatedEntity: { id: emergency._id, type: 'Emergency' },
+      });
+      // If an responder is assigned, notify them too
+      if (emergency.assignedTo?.responder) {
+        await createNotification({
+          recipient: emergency.assignedTo.responder._id,
+          sender: req.user._id,
+          type: 'emergency',
+          message: `Emergency ID ${emergency._id} status updated to ${status}.`,
+          relatedEntity: { id: emergency._id, type: 'Emergency' },
+        });
+      }
     } catch (error) {
-      console.error('Email send error:', error.message);
+      console.error('Email/Notification send error:', error.message);
     }
 
     res.status(200).json({
@@ -217,6 +256,24 @@ exports.assignResponder = async (req, res) => {
         success: false,
         message: 'Emergency not found',
         data: null
+      });
+    }
+
+    // Create notification for the patient and assigned responder
+    await createNotification({
+      recipient: emergency.patient._id,
+      sender: req.user._id,
+      type: 'emergency',
+      message: `Your emergency request has been acknowledged and a responder has been assigned. Estimated arrival: ${emergency.assignedTo.estimatedArrival}.`,
+      relatedEntity: { id: emergency._id, type: 'Emergency' },
+    });
+    if (emergency.assignedTo?.responder) {
+      await createNotification({
+        recipient: emergency.assignedTo.responder._id,
+        sender: req.user._id,
+        type: 'emergency',
+        message: `You have been assigned to an emergency request from ${emergency.patient.fullName}. Estimated arrival: ${emergency.assignedTo.estimatedArrival}.`,
+        relatedEntity: { id: emergency._id, type: 'Emergency' },
       });
     }
 

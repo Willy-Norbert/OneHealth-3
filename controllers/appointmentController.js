@@ -7,6 +7,7 @@ const { sendAppointmentEmail } = require('../services/emailService');
 const { generateAppointmentMeeting } = require('../services/jitsiService');
 const Joi = require('joi');
 const crypto = require('crypto');
+const { createNotification } = require('../utils/notificationService'); // Import notification service
 // Create new appointment with robust slot availability checking
 exports.createAppointment = async (req, res) => {
   try {
@@ -14,7 +15,7 @@ exports.createAppointment = async (req, res) => {
     const schema = Joi.object({
       hospital: Joi.string().required(),
       department: Joi.string().required(),
-      doctor: Joi.string().optional(),
+      doctor: Joi.string().optional(), // This is the Doctor profile ID from frontend
       appointmentType: Joi.string().valid('virtual', 'in-person').required(),
       appointmentDate: Joi.string().required(),
       appointmentTime: Joi.string().required(),
@@ -45,6 +46,17 @@ exports.createAppointment = async (req, res) => {
     if (error) return res.status(400).json({ status: 'error', message: error.message });
 
     const { hospital, department, appointmentDate, appointmentTime, doctor } = value;
+
+    let doctorUserId = undefined;
+    if (doctor) {
+      const DoctorModel = require('../models/Doctor');
+      const foundDoctor = await DoctorModel.findById(doctor).populate('user'); // Changed from .select('+user') to .populate('user')
+      if (!foundDoctor) {
+        return res.status(404).json({ status: 'error', message: 'Doctor not found.' });
+      }
+      doctorUserId = foundDoctor.user._id; // Get the User ID from the populated User object
+      console.log("Backend: createAppointment - Resolved Doctor User ID:", doctorUserId);
+    }
 
     // Normalize time to 24-hour format (HH:MM)
     const normalizeTime = (timeStr) => {
@@ -193,12 +205,13 @@ console.log('🗂 Active SlotLocks for hospital/department:',
       status: 'pending',
       paymentStatus: 'pending',
       slotLockId: lockId,
-      doctor: doctor || undefined,
+      doctor: doctorUserId || undefined, // Use the resolved Doctor User ID here
       department,
       consultationFee: value.consultationFee || (value.appointmentType === 'virtual' ? 25000 : 30000),
       appointmentTime: normalizedTime,
       appointmentDate: appointmentDateObj,
     };
+    console.log("Backend: createAppointment - Doctor ID being set:", appointmentData.doctor);
 
 console.log("📝 Final appointmentData:", appointmentData);
 console.log("👤 Authenticated user:", req.user);
@@ -206,24 +219,44 @@ console.log("👤 Authenticated user:", req.user);
     let appointment;
     try {
       appointment = await Appointment.create(appointmentData);
-      await appointment.populate(['hospital', 'patient', ...(doctor ? ['doctor'] : []), 'department']);
+      
+      // Step 7: Create a new Meeting for virtual teleconsultations
+      console.log("Backend: createAppointment - Checking if virtual appointment:", appointment.appointmentType);
+      if (appointment.appointmentType === 'virtual') {
+        const MeetingModel = require('../models/Meeting'); // Import Meeting model
+        // crypto already imported at the top of the file
+
+        const meeting_id = crypto.randomUUID();
+        const meetingLink = `/meeting/${meeting_id}`;
+
+        const meetingCreationData = {
+          meeting_id: meeting_id,
+          doctor: appointment.doctor,
+          patient: appointment.patient,
+          link: meetingLink,
+          startTime: appointment.appointmentDate, // Use appointment date/time as meeting start/end
+          endTime: new Date(new Date(appointment.appointmentDate).setMinutes(new Date(appointment.appointmentDate).getMinutes() + 30)), // Example: 30 min duration
+          status: 'scheduled',
+          title: `Virtual Consultation with Dr. ${(await User.findById(appointment.doctor)).name} and ${(await User.findById(appointment.patient)).name}`,
+        };
+        console.log("Backend: createAppointment - Meeting data to be created:", meetingCreationData);
+
+        const newMeeting = await MeetingModel.create(meetingCreationData);
+        console.log("Backend: createAppointment - New Meeting created successfully:", newMeeting);
+
+        // Link the new Meeting to the Appointment
+        console.log("Backend: createAppointment - Linking Meeting ID:", newMeeting._id, "to Appointment ID:", appointment._id);
+        appointment.meeting = newMeeting._id;
+        await appointment.save();
+        console.log("Backend: createAppointment - Appointment saved with linked Meeting:", appointment);
+      }
+
+      await appointment.populate(['hospital', 'patient', ...(doctorUserId ? ['doctor'] : []), 'department', 'meeting']); // Populate meeting here
     } catch (appointmentError) {
       // If appointment creation fails, cleanup the lock
       await SlotLock.findByIdAndDelete(slotLock._id);
+      console.error("Backend: createAppointment - Error during meeting creation/linking:", appointmentError);
       throw appointmentError;
-    }
-
-    // Step 7: Generate virtual meeting link for teleconsultations
-    if (appointment.appointmentType === 'virtual') {
-      try {
-        const jitsiDetails = generateAppointmentMeeting(appointment, req.user, false);
-        appointment.meetingLink = jitsiDetails.meetingLink;
-        appointment.roomName = jitsiDetails.roomName;
-        await appointment.save();
-      } catch (jitsiError) {
-        console.error('Jitsi link generation error:', jitsiError);
-        // Don't fail the appointment creation for Jitsi errors
-      }
     }
 
     // Step 8: Send confirmation email
@@ -234,8 +267,15 @@ console.log("👤 Authenticated user:", req.user);
       // Don't fail the appointment creation for email errors
     }
 
-    // Step 9: Return success response
- // AFTER appointment creation and any necessary population
+    // Create notification for the patient
+    await createNotification({
+      recipient: appointment.patient._id,
+      sender: req.user._id, // User who booked the appointment
+      type: 'appointment',
+      message: `Your appointment with ${appointment.hospital.name} for ${appointment.department.name} on ${appointment.appointmentDate.toDateString()} at ${appointment.appointmentTime} has been successfully booked.`,
+      relatedEntity: { id: appointment._id, type: 'Appointment' },
+    });
+
 res.status(201).json({
   status: 'success',
   message: 'Appointment booked successfully.',
@@ -248,7 +288,7 @@ res.status(201).json({
       appointmentDate: appointment.appointmentDate,
       appointmentTime: appointment.appointmentTime,
       consultationFee: appointment.consultationFee,
-      meetingLink: appointment.meetingLink || null, // optional for virtual
+      meeting: appointment.meeting || null, // Return the populated meeting object
       status: appointment.status,
     },
   },
@@ -282,12 +322,20 @@ exports.getAppointment = async (req, res) => {
     }
     
     // Check authorization - only patient, doctor, hospital staff, or admin can view
+    console.log("Backend: getAppointment - Authorization Check:");
+    console.log("  User Role:", req.user.role);
+    console.log("  User ID:", req.user._id.toString());
+    console.log("  Appointment Patient ID:", appointment.patient._id.toString());
+    console.log("  Appointment Doctor ID:", appointment.doctor ? appointment.doctor._id.toString() : "N/A");
+
     const canView = (
       appointment.patient._id.toString() === req.user._id.toString() ||
       (appointment.doctor && appointment.doctor._id.toString() === req.user._id.toString()) ||
       req.user.role === 'admin' ||
       req.user.role === 'hospital'
     );
+
+    console.log("  Can View Result:", canView);
     
     if (!canView) {
       return res.status(403).json({
@@ -312,9 +360,16 @@ exports.getAppointment = async (req, res) => {
 exports.getUserAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find({ patient: req.user._id })
-      .populate('hospital')
+      .populate([
+        { path: 'hospital' },
+        { path: 'doctor', select: 'name specialization' }, // Populate doctor name and specialization
+        { path: 'department', select: 'name' }, // Populate department name
+        { path: 'meeting' } // Populate the meeting details
+      ])
       .sort({ appointmentDate: -1 });
     
+    console.log("Backend: getUserAppointments - Appointments after population:", JSON.stringify(appointments, null, 2));
+
     res.status(200).json({
       status: 'success',
       data: { appointments }
@@ -460,8 +515,16 @@ exports.updateAppointmentStatus = async (req, res) => {
     // Send status update email
     try {
       await sendAppointmentEmail('update', appointment, appointment.patient);
+      // Create notification for the patient
+      await createNotification({
+        recipient: appointment.patient._id,
+        sender: req.user._id, 
+        type: 'appointment',
+        message: `Your appointment with ${appointment.hospital.name} for ${appointment.department.name} on ${appointment.appointmentDate.toDateString()} at ${appointment.appointmentTime} has been ${appointment.status}.`,
+        relatedEntity: { id: appointment._id, type: 'Appointment' },
+      });
     } catch (error) {
-      console.error('Email send error:', error);
+      console.error('Email/Notification send error:', error);
     }
     
     res.status(200).json({
@@ -500,6 +563,15 @@ exports.cancelAppointment = async (req, res) => {
     
     appointment.status = 'cancelled';
     await appointment.save();
+
+    // Create notification for the patient
+    await createNotification({
+      recipient: appointment.patient._id,
+      sender: req.user._id, 
+      type: 'appointment',
+      message: `Your appointment with ${appointment.hospital.name} for ${appointment.department.name} on ${appointment.appointmentDate.toDateString()} at ${appointment.appointmentTime} has been cancelled.`,
+      relatedEntity: { id: appointment._id, type: 'Appointment' },
+    });
     
     res.status(200).json({
       status: 'success',
@@ -572,8 +644,20 @@ exports.getAppointmentStats = async (req, res) => {
         }
       },
       {
-        $sort: { count: -1 }
-      }
+        $lookup: {
+          from: 'departments',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'departmentInfo'
+        }
+      },
+      {
+        $project: {
+          departmentName: { $arrayElemAt: ['$departmentInfo.name', 0] },
+          count: 1
+        }
+      },
+      { $sort: { count: -1 } }
     ]);
     
     res.status(200).json({
@@ -670,7 +754,7 @@ exports.reassignAppointment = async (req, res) => {
     const oldDoctor = appointment.doctor;
 
     // Update appointment
-    appointment.doctor = doctorId;
+    appointment.doctor = newDoctor.user._id; // Use the User ID from the populated Doctor object
     appointment.notes = appointment.notes + 
       `\n[${new Date().toISOString()}] Reassigned from Dr. ${oldDoctor?.specialization || 'Unassigned'} to Dr. ${newDoctor.specialization}` +
       (reason ? ` - Reason: ${reason}` : '');
@@ -684,8 +768,23 @@ exports.reassignAppointment = async (req, res) => {
     try {
       const { sendAppointmentEmail } = require('../services/emailService');
       await sendAppointmentEmail('reassignment', appointment, appointment.patient);
+      // Create notification for the patient and new doctor
+      await createNotification({
+        recipient: appointment.patient._id,
+        sender: req.user._id,
+        type: 'appointment',
+        message: `Your appointment with ${appointment.hospital.name} for ${appointment.department.name} on ${appointment.appointmentDate.toDateString()} at ${appointment.appointmentTime} has been reassigned to Dr. ${newDoctor.user.name}.`,
+        relatedEntity: { id: appointment._id, type: 'Appointment' },
+      });
+      await createNotification({
+        recipient: newDoctor.user._id,
+        sender: req.user._id,
+        type: 'appointment',
+        message: `You have been assigned a new appointment with ${appointment.patient.name} at ${appointment.hospital.name} for ${appointment.department.name} on ${appointment.appointmentDate.toDateString()} at ${appointment.appointmentTime}.`,
+        relatedEntity: { id: appointment._id, type: 'Appointment' },
+      });
     } catch (emailError) {
-      console.error('Failed to send reassignment email:', emailError);
+      console.error('Failed to send reassignment email/notification:', emailError);
     }
 
     res.status(200).json({
@@ -708,7 +807,7 @@ exports.reassignAppointment = async (req, res) => {
 exports.getHospitalStats = async (req, res) => {
   try {
     console.log('=== GET HOSPITAL STATS ===');
-    console.log('User:', req.user.role, req.user._id);
+    console.log('Request User (getHospitalStats):', req.user); // Added for debugging
 
     if (req.user.role !== 'hospital') {
       return res.status(403).json({
@@ -719,6 +818,7 @@ exports.getHospitalStats = async (req, res) => {
 
     // Get hospital
     const hospitalDoc = await Hospital.findOne({ userId: req.user._id });
+    console.log('Found Hospital by userId (getHospitalStats):', hospitalDoc ? hospitalDoc.name : 'Not Found'); // Added for debugging
     if (!hospitalDoc) {
       return res.status(404).json({
         status: 'error',
@@ -729,6 +829,10 @@ exports.getHospitalStats = async (req, res) => {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+
+    // Calculate 12 months ago from today
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(today.getFullYear() - 1);
 
     // Get appointments stats for this hospital
     const appointmentStats = await Appointment.aggregate([
@@ -741,11 +845,23 @@ exports.getHospitalStats = async (req, res) => {
       }
     ]);
 
-    // Get monthly appointments
-    const monthlyAppointments = await Appointment.countDocuments({
-      hospital: hospitalDoc._id,
-      createdAt: { $gte: startOfMonth }
-    });
+    // Get monthly appointments count over the last 12 months
+    const appointmentsPerMonth = await Appointment.aggregate([
+      { $match: {
+        hospital: hospitalDoc._id,
+        appointmentDate: { $gte: oneYearAgo }
+      }},
+      {
+        $group: {
+          _id: {
+            year: { $year: '$appointmentDate' },
+            month: { $month: '$appointmentDate' }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
 
     // Get today's appointments
     const todayStart = new Date();
@@ -798,6 +914,15 @@ exports.getHospitalStats = async (req, res) => {
       isActive: true
     });
 
+    // Debugging aggregated data
+    console.log('Debug getHospitalStats - hospitalDoc._id:', hospitalDoc._id);
+    console.log('Debug getHospitalStats - appointmentStats:', appointmentStats);
+    console.log('Debug getHospitalStats - appointmentsPerMonth:', appointmentsPerMonth);
+    console.log('Debug getHospitalStats - todayAppointments:', todayAppointments);
+    console.log('Debug getHospitalStats - departmentStats:', departmentStats);
+    console.log('Debug getHospitalStats - patientCount:', patientCount);
+    console.log('Debug getHospitalStats - doctorCount:', doctorCount);
+
     res.status(200).json({
       status: 'success',
       message: 'Hospital statistics retrieved successfully',
@@ -809,7 +934,7 @@ exports.getHospitalStats = async (req, res) => {
         appointments: {
           total: appointmentStats.reduce((sum, stat) => sum + stat.count, 0),
           byStatus: appointmentStats,
-          monthly: monthlyAppointments,
+          monthly: appointmentsPerMonth, // Add monthly appointments data
           today: todayAppointments
         },
         departments: departmentStats,
@@ -822,6 +947,70 @@ exports.getHospitalStats = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Failed to retrieve hospital statistics'
+    });
+  }
+};
+
+// @desc    Get appointments for the logged-in doctor
+// @route   GET /api/appointments/my-doctor-appointments
+// @access  Private (Doctor only)
+exports.getDoctorAppointments = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+
+    console.log("Backend: getDoctorAppointments - User:", req.user);
+
+    if (req.user.role !== 'doctor') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Only doctors can view this page.'
+      });
+    }
+
+    const query = { doctor: req.user._id };
+    if (status) query.status = status;
+    console.log("Backend: getDoctorAppointments - Constructed Query:", query);
+
+    const appointments = await Appointment.find(query)
+      .populate([
+        { path: 'patient', select: 'name email phoneNumber' },
+        { path: 'doctor', select: 'name specialization' },
+        { path: 'hospital', select: 'name location' },
+        { path: 'department', select: 'name' },
+        { path: 'meeting' } // Populate the meeting details
+      ])
+      // .select('+meetingLink +roomName') // Explicitly select meetingLink and roomName - REMOVED
+      .sort({ appointmentDate: 1, appointmentTime: 1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    console.log("Backend: getDoctorAppointments - Raw Appointments from DB before mapping:", JSON.stringify(appointments, null, 2));
+
+    console.log("Backend: getDoctorAppointments - Appointments Found:", appointments.map(app => ({
+      _id: app._id,
+      patientName: app.patient.name,
+      status: app.status,
+      appointmentType: app.appointmentType,
+      meeting: app.meeting || null, // Return the populated meeting object
+    })));
+
+    const total = await Appointment.countDocuments(query);
+    console.log("Backend: getDoctorAppointments - Total Appointments:", total);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        appointments,
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching doctor appointments:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to retrieve doctor appointments'
     });
   }
 };

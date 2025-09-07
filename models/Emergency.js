@@ -133,7 +133,6 @@ emergencySchema.pre('save', function(next) {
 
 // Index for efficient queries
 emergencySchema.index({ patient: 1, createdAt: -1 });
-emergencySchema.index({ emergencyNumber: 1 });
 emergencySchema.index({ status: 1 });
 emergencySchema.index({ emergencyType: 1 });
 emergencySchema.index({ 'location.coordinates': '2dsphere' });

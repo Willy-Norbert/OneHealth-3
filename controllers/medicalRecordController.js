@@ -1,5 +1,6 @@
 const MedicalRecord = require('../models/MedicalRecord');
 const Doctor = require('../models/Doctor');
+const Appointment = require('../models/Appointment'); // Import Appointment model
 
 // @desc    Get medical records with filtering
 // @route   GET /api/medical-records
@@ -230,11 +231,12 @@ exports.getPatientMedicalHistory = async (req, res) => {
     if (req.user.role === 'doctor') {
       const doctorProfile = await Doctor.findOne({ user: req.user._id });
       if (doctorProfile) {
-        const hasRecord = await MedicalRecord.findOne({ 
-          patient: patientId, 
-          doctor: doctorProfile._id 
+        // Check if the doctor has any appointments (past or present) with this patient
+        const hasAppointment = await Appointment.findOne({
+          patient: patientId,
+          doctor: req.user._id, // Match by the logged-in user's ID (which is the doctor's User ID)
         });
-        isPatientDoctor = !!hasRecord;
+        isPatientDoctor = !!hasAppointment;
       }
     }
     

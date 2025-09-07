@@ -1,6 +1,8 @@
 const Hospital = require('../models/Hospital');
 const Appointment = require('../models/Appointment');
-const { sendHospitalApprovalEmail } = require('../services/emailService');
+const User = require('../models/User'); // Import User model
+const { sendHospitalApprovalEmail, sendWelcomeEmail } = require('../services/emailService');
+const { createNotification } = require('../utils/notificationService'); // Import notification service
 
 // Get all hospitals
 exports.getAllHospitals = async (req, res) => {
@@ -106,7 +108,7 @@ exports.createHospital = async (req, res) => {
 // Update hospital
 exports.updateHospital = async (req, res) => {
   try {
-    const hospital = await Hospital.findById(req.params.id);
+    const hospital = await Hospital.findById(req.params.id).populate('userId', 'name email role'); // Populate userId
 
     if (!hospital) {
       return res.status(404).json({
@@ -120,7 +122,14 @@ exports.updateHospital = async (req, res) => {
     const isAdmin = req.user?.role === 'admin';
     const isHospitalOwner = req.user?.role === 'hospital' && 
                             hospital.userId && 
-                            hospital.userId.toString() === req.user._id.toString();
+                            hospital.userId._id.toString() === req.user._id.toString();
+    
+    console.log(`Debug updateHospital - req.user._id (obj): ${req.user?._id}, req.user._id (str): ${req.user?._id.toString()}`);
+    console.log(`Debug updateHospital - req.user.hospital: ${req.user?.hospital}, req.user.role: ${req.user?.role}`);
+    console.log(`Debug updateHospital - req.params.id (str): ${req.params.id}`);
+    console.log(`Debug updateHospital - hospital.userId (obj): ${hospital.userId}, hospital.userId (str): ${hospital.userId?._id.toString()}`);
+    console.log(`Debug updateHospital - isAdmin: ${isAdmin}, isHospitalOwner: ${isHospitalOwner}`);
+    console.log(`Debug updateHospital - Comparison result (hospital.userId === req.user._id): ${hospital.userId?._id.toString() === req.user._id.toString()}`);
 
     if (!isAdmin && !isHospitalOwner) {
       return res.status(403).json({
@@ -139,7 +148,15 @@ exports.updateHospital = async (req, res) => {
 
     const updatedHospital = await Hospital.findByIdAndUpdate(
       req.params.id,
-      updateData,
+      { 
+        name: updateData.name,
+        location: updateData.location,
+        address: updateData.address,
+        "contact.phone": updateData.contact?.phone,
+        "contact.email": updateData.contact?.email,
+        services: updateData.services,
+        workingHours: updateData.workingHours,
+      },
       { new: true, runValidators: true }
     ).populate('userId', 'name email role');
 
@@ -227,6 +244,7 @@ exports.getHospital = async (req, res) => {
     }
 
     console.log('✅ Hospital found:', hospital.name, 'Approved:', hospital.isApproved);
+    console.log('Debug getHospital - hospital.userId after populate:', hospital.userId); // Added for debugging
 
     // For approved hospitals, allow public access
     if (hospital.isApproved) {
@@ -318,8 +336,15 @@ exports.approveHospital = async (req, res) => {
     if (hospital.userId) {
       try {
         await sendHospitalApprovalEmail(hospital.userId, hospital, isApproved);
+        await createNotification({
+          recipient: hospital.userId._id,
+          sender: req.user._id,
+          type: 'system',
+          message: `Your hospital ${hospital.name} has been ${isApproved ? 'approved' : 'rejected'} by an admin.`,
+          relatedEntity: { id: hospital._id, type: 'Hospital' },
+        });
       } catch (emailError) {
-        console.error('Failed to send approval email:', emailError);
+        console.error('Failed to send approval email/notification:', emailError);
       }
     }
 
@@ -343,10 +368,12 @@ exports.approveHospital = async (req, res) => {
 exports.getHospitalDoctors = async (req, res) => {
   try {
     console.log('=== GET HOSPITAL DOCTORS ===');
-    console.log('Hospital ID:', req.params.id);
-    console.log('User:', req.user.role, req.user._id);
+    console.log('Request User (getHospitalDoctors):', req.user); // Added for debugging
+    console.log('Hospital ID from params (getHospitalDoctors):', req.params.id);
+    console.log('User Hospital ID (getHospitalDoctors):', req.user?.hospital); // Added for debugging
 
     const hospital = await Hospital.findById(req.params.id);
+    console.log('Found Hospital by params.id (getHospitalDoctors):', hospital ? hospital.name : 'Not Found'); // Added for debugging
     if (!hospital) {
       return res.status(404).json({
         success: false,
@@ -358,8 +385,10 @@ exports.getHospitalDoctors = async (req, res) => {
     // Check permissions
     const isAdmin = req.user?.role === 'admin';
     const isHospitalOwner = req.user?.role === 'hospital' && 
-                            hospital.userId && 
-                            hospital.userId.toString() === req.user._id.toString();
+                            req.user.hospital && // Ensure req.user.hospital exists
+                            req.params.id.toString() === req.user.hospital.toString();
+    console.log(`Debug getHospitalDoctors - isAdmin: ${isAdmin}, isHospitalOwner: ${isHospitalOwner}`);
+    console.log(`Debug getHospitalDoctors - req.params.id: ${req.params.id}, req.user.hospital: ${req.user.hospital}`);
 
     if (!isAdmin && !isHospitalOwner) {
       return res.status(403).json({
@@ -374,6 +403,7 @@ exports.getHospitalDoctors = async (req, res) => {
 
     const filter = { hospital: req.params.id, isActive: true };
     if (department) filter.department = department;
+    console.log("Backend getHospitalDoctors: Applied filter:", filter);
 
     const Doctor = require('../models/Doctor');
     const doctors = await Doctor.find(filter)
@@ -383,6 +413,8 @@ exports.getHospitalDoctors = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
+    console.log("Backend getHospitalDoctors: Doctors found before total count:", doctors.length);
+    console.log("Backend getHospitalDoctors: Populated Doctors data (first entry):", doctors[0]); // Added for debugging
     const total = await Doctor.countDocuments(filter);
 
     console.log(`Found ${doctors.length} doctors for hospital`);
@@ -457,10 +489,10 @@ exports.createHospitalDoctor = async (req, res) => {
           data: null
         });
       }
-      if (doctorUser.role !== 'doctor') {
+      if (doctorUser.role !== 'doctor' && doctorUser.role !== 'admin') {
         return res.status(400).json({
           success: false,
-          message: 'User must have doctor role',
+          message: 'User must have doctor or admin role',
           data: null
         });
       }
@@ -482,7 +514,19 @@ exports.createHospitalDoctor = async (req, res) => {
         password: doctorInfo.password,
         role: 'doctor',
         isActive: true,
-        isVerified: true
+        isVerified: true,
+        profileImage: doctorInfo.profileImage // Include profileImage if provided
+      });
+      console.log("Created doctor user:", doctorUser); // Add this line
+      // Send welcome email with hospital name and credentials
+      await sendWelcomeEmail(doctorUser, hospital.name, doctorInfo.password);
+      // Create notification for the new doctor
+      await createNotification({
+        recipient: doctorUser._id,
+        sender: req.user._id,
+        type: 'user',
+        message: `You have been registered as a doctor at ${hospital.name}. Your account is now active.`,
+        relatedEntity: { id: doctorUser._id, type: 'User' },
       });
     }
 
@@ -550,8 +594,10 @@ exports.getHospitalAppointments = async (req, res) => {
     // Check permissions
     const isAdmin = req.user?.role === 'admin';
     const isHospitalOwner = req.user?.role === 'hospital' && 
-                            hospital.userId && 
-                            hospital.userId.toString() === req.user._id.toString();
+                            req.params.id && 
+                            req.params.id.toString() === req.user.hospital.toString();
+    console.log(`Debug getHospitalAppointments - isAdmin: ${isAdmin}, isHospitalOwner: ${isHospitalOwner}`);
+    console.log(`Debug getHospitalAppointments - req.params.id: ${req.params.id}, req.user.hospital: ${req.user.hospital}`);
 
     if (!isAdmin && !isHospitalOwner) {
       return res.status(403).json({

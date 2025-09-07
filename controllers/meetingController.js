@@ -1,10 +1,8 @@
 const Meeting = require('../models/Meeting');
 const User = require('../models/User');
-const { 
-  generateCustomMeeting,
-  canUserJoinRoom 
-} = require('../services/jitsiService');
+const Appointment = require('../models/Appointment'); // Import Appointment model
 const Joi = require('joi');
+const crypto = require('crypto'); // For generating UUIDs
 
 /**
  * Create a new custom meeting
@@ -13,87 +11,87 @@ const Joi = require('joi');
 exports.createMeeting = async (req, res) => {
   try {
     const schema = Joi.object({
-      participants: Joi.array().items(Joi.string()).min(1).required(),
-      roleContext: Joi.string().valid('patient-doctor', 'doctor-hospital', 'hospital-admin', 'doctor-doctor', 'custom').default('custom'),
-      title: Joi.string().required(),
-      description: Joi.string().allow(''),
-      scheduledAt: Joi.date().optional(),
-      meetingType: Joi.string().valid('video', 'audio', 'chat').default('video')
+      patient: Joi.string().required(),
+      doctor: Joi.string().required(),
+      appointment: Joi.string().optional(), // Optional, but usually linked
+      startTime: Joi.date().required(),
+      endTime: Joi.date().required(),
+      title: Joi.string().allow(''), // Optional title
+      description: Joi.string().allow(''), // Optional description
     });
 
     const { error, value } = schema.validate(req.body);
     if (error) {
       return res.status(400).json({
         status: 'error',
-        message: error.details[0].message
+        message: error.details[0].message,
       });
     }
 
-    const { participants, roleContext, title, description, scheduledAt, meetingType } = value;
+    const { patient, doctor, appointment, startTime, endTime, title, description } = value;
 
-    // Verify all participants exist
-    const participantUsers = await User.find({ 
-      _id: { $in: participants } 
-    });
-
-    if (participantUsers.length !== participants.length) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'One or more participants not found'
-      });
-    }
-
-    // Check authorization based on role context
-    if (!canCreateMeeting(req.user, participantUsers, roleContext)) {
+    // Ensure only authorized users (doctor, admin) can create meetings for others
+    if (req.user.role === 'patient' && (req.user._id.toString() !== patient || req.user._id.toString() === doctor)) {
       return res.status(403).json({
         status: 'error',
-        message: 'Not authorized to create this type of meeting'
+        message: 'Patients can only create meetings for themselves and their assigned doctor.',
       });
     }
 
-    // Create meeting record
-    const meetingData = {
-      createdBy: req.user._id,
-      participants,
-      roleContext,
-      title,
+    // Verify doctor and patient exist
+    const existingDoctor = await User.findById(doctor);
+    const existingPatient = await User.findById(patient);
+
+    if (!existingDoctor || existingDoctor.role !== 'doctor') {
+      return res.status(400).json({ status: 'error', message: 'Invalid doctor ID' });
+    }
+    if (!existingPatient || existingPatient.role !== 'patient') {
+      return res.status(400).json({ status: 'error', message: 'Invalid patient ID' });
+    }
+
+    // If an appointment is provided, verify it exists and is for this doctor/patient
+    if (appointment) {
+      const associatedAppointment = await Appointment.findById(appointment);
+      if (!associatedAppointment ||
+          associatedAppointment.doctor.toString() !== doctor ||
+          associatedAppointment.patient.toString() !== patient) {
+        return res.status(400).json({ status: 'error', message: 'Associated appointment is invalid or does not match doctor/patient.' });
+      }
+    }
+
+    // Generate unique meeting_id and link
+    const meeting_id = crypto.randomUUID();
+    const link = `/meeting/${meeting_id}`;
+
+    const newMeeting = await Meeting.create({
+      meeting_id,
+      doctor,
+      patient,
+      link,
+      startTime,
+      endTime,
+      title: title || `Consultation with Dr. ${existingDoctor.name} and ${existingPatient.name}`,
       description,
-      scheduledAt,
-      meetingType,
-      status: 'scheduled'
-    };
+      status: 'scheduled',
+    });
 
-    const meeting = await Meeting.create(meetingData);
+    // Update the associated appointment with the new meeting reference
+    if (appointment) {
+      await Appointment.findByIdAndUpdate(appointment, { meeting: newMeeting._id });
+    }
 
-    // Generate Jitsi meeting link
-    const jitsiDetails = generateCustomMeeting(meeting, req.user, true); // Creator is moderator
-    
-    // Update meeting with Jitsi details
-    meeting.jitsiLink = jitsiDetails.meetingLink;
-    meeting.roomName = jitsiDetails.roomName;
-    await meeting.save();
-
-    // Populate the meeting with participant details
-    await meeting.populate('participants createdBy', 'name email role');
+    await newMeeting.populate(['doctor', 'patient']);
 
     res.status(201).json({
       status: 'success',
       message: 'Meeting created successfully',
-      data: {
-        meeting,
-        jitsiDetails: {
-          meetingLink: jitsiDetails.meetingLink,
-          roomName: jitsiDetails.roomName,
-          domain: jitsiDetails.domain
-        }
-      }
+      data: { meeting: newMeeting },
     });
-
   } catch (error) {
     console.error('Create meeting error:', error);
     res.status(500).json({
       status: 'error',
-      message: error.message
+      message: 'Internal server error. Please try again later.',
     });
   }
 };
@@ -106,45 +104,33 @@ exports.getMeeting = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const meeting = await Meeting.findById(id)
-      .populate('participants createdBy', 'name email role');
+    const meeting = await Meeting.findOne({ meeting_id: id })
+      .populate(['doctor', 'patient']);
 
     if (!meeting) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Meeting not found'
-      });
+      return res.status(404).json({ status: 'error', message: 'Meeting not found' });
     }
 
     // Check if user is authorized to view this meeting
-    const userParticipants = [
-      meeting.createdBy._id.toString(),
-      ...meeting.participants.map(p => p._id.toString())
-    ];
+    const isAuthorized = (
+      req.user._id.toString() === meeting.doctor._id.toString() ||
+      req.user._id.toString() === meeting.patient._id.toString() ||
+      req.user.role === 'admin'
+    );
 
-    if (!userParticipants.includes(req.user._id.toString()) && req.user.role !== 'admin') {
-      return res.status(403).json({
-        status: 'error',
-        message: 'Not authorized to view this meeting'
-      });
+    if (!isAuthorized) {
+      return res.status(403).json({ status: 'error', message: 'Not authorized to view this meeting' });
     }
 
-    res.status(200).json({
-      status: 'success',
-      data: { meeting }
-    });
-
+    res.status(200).json({ status: 'success', data: { meeting } });
   } catch (error) {
     console.error('Get meeting error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: error.message
-    });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
 /**
- * Get all meetings for a user
+ * Get all meetings for a user (either as doctor or patient)
  * GET /api/meetings/user/:userId
  */
 exports.getUserMeetings = async (req, res) => {
@@ -156,24 +142,23 @@ exports.getUserMeetings = async (req, res) => {
     if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
       return res.status(403).json({
         status: 'error',
-        message: 'Not authorized to view these meetings'
+        message: 'Not authorized to view these meetings',
       });
     }
 
     const query = {
       $or: [
-        { createdBy: userId },
-        { participants: userId }
-      ]
+        { doctor: userId },
+        { patient: userId },
+      ],
     };
-
     if (status) {
       query.status = status;
     }
 
     const meetings = await Meeting.find(query)
-      .populate('participants createdBy', 'name email role')
-      .sort({ createdAt: -1 })
+      .populate(['doctor', 'patient'])
+      .sort({ startTime: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
@@ -185,16 +170,12 @@ exports.getUserMeetings = async (req, res) => {
         meetings,
         totalPages: Math.ceil(total / limit),
         currentPage: parseInt(page),
-        total
-      }
+        total,
+      },
     });
-
   } catch (error) {
     console.error('Get user meetings error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: error.message
-    });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
@@ -206,39 +187,38 @@ exports.deleteMeeting = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const meeting = await Meeting.findById(id);
+    const meeting = await Meeting.findOne({ meeting_id: id }); // Find by meeting_id
 
     if (!meeting) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Meeting not found'
-      });
+      return res.status(404).json({ status: 'error', message: 'Meeting not found' });
     }
 
-    // Check if user is authorized to delete (creator or admin)
-    if (meeting.createdBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        status: 'error',
-        message: 'Not authorized to delete this meeting'
-      });
+    // Check if user is authorized to delete (doctor, patient or admin)
+    const isAuthorized = (
+      req.user._id.toString() === meeting.doctor.toString() ||
+      req.user._id.toString() === meeting.patient.toString() ||
+      req.user.role === 'admin'
+    );
+
+    if (!isAuthorized) {
+      return res.status(403).json({ status: 'error', message: 'Not authorized to delete this meeting' });
     }
 
     // Update status to cancelled instead of deleting
     meeting.status = 'cancelled';
     await meeting.save();
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Meeting cancelled successfully',
-      data: { meeting }
-    });
+    // Optionally, also update the associated appointment if it exists
+    const associatedAppointment = await Appointment.findOne({ meeting: meeting._id });
+    if (associatedAppointment) {
+      associatedAppointment.meeting = undefined; // Remove reference
+      await associatedAppointment.save();
+    }
 
+    res.status(200).json({ status: 'success', message: 'Meeting cancelled successfully', data: { meeting } });
   } catch (error) {
     console.error('Delete meeting error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: error.message
-    });
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };
 
@@ -251,80 +231,47 @@ exports.updateMeetingStatus = async (req, res) => {
     const { id } = req.params;
     const { status, notes } = req.body;
 
-    const meeting = await Meeting.findById(id);
+    const meeting = await Meeting.findOne({ meeting_id: id }); // Find by meeting_id
 
     if (!meeting) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Meeting not found'
-      });
+      return res.status(404).json({ status: 'error', message: 'Meeting not found' });
     }
 
     // Check authorization
-    const userParticipants = [
-      meeting.createdBy.toString(),
-      ...meeting.participants.map(p => p.toString())
-    ];
+    const isAuthorized = (
+      req.user._id.toString() === meeting.doctor.toString() ||
+      req.user._id.toString() === meeting.patient.toString() ||
+      req.user.role === 'admin'
+    );
 
-    if (!userParticipants.includes(req.user._id.toString()) && req.user.role !== 'admin') {
-      return res.status(403).json({
-        status: 'error',
-        message: 'Not authorized to update this meeting'
-      });
+    if (!isAuthorized) {
+      return res.status(403).json({ status: 'error', message: 'Not authorized to update this meeting' });
     }
 
-    const updates = { status };
-    if (notes) updates.notes = notes;
+    const updates = { status }; // Removed TypeScript type annotation
+    if (notes !== undefined) updates.notes = notes;
 
     // Track start/end times
-    if (status === 'active' && !meeting.startedAt) {
-      updates.startedAt = new Date();
-    } else if (status === 'completed' && !meeting.endedAt) {
-      updates.endedAt = new Date();
-      if (meeting.startedAt) {
-        updates.duration = Math.round((new Date() - meeting.startedAt) / (1000 * 60)); // minutes
+    if (status === 'in-progress' && !meeting.startTime) {
+      updates.startTime = new Date();
+    } else if (status === 'completed' && !meeting.endTime) {
+      updates.endTime = new Date();
+      if (meeting.startTime) {
+        // Calculate duration if both start and end times are available
+        // The Meeting schema doesn't have a duration field, so we'll just log it or add it later if needed
+        console.log(`Meeting duration: ${(new Date().getTime() - meeting.startTime.getTime()) / (1000 * 60)} minutes`);
       }
     }
 
     const updatedMeeting = await Meeting.findByIdAndUpdate(
-      id,
+      meeting._id, // Use MongoDB _id for update
       updates,
       { new: true, runValidators: true }
-    ).populate('participants createdBy', 'name email role');
+    ).populate(['doctor', 'patient']);
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Meeting status updated successfully',
-      data: { meeting: updatedMeeting }
-    });
-
+    res.status(200).json({ status: 'success', message: 'Meeting status updated successfully', data: { meeting: updatedMeeting } });
   } catch (error) {
     console.error('Update meeting status error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: error.message
-    });
-  }
-};
-
-/**
- * Helper function to check if user can create a meeting
- */
-const canCreateMeeting = (user, participants, roleContext) => {
-  const userRole = user.role;
-  
-  switch (roleContext) {
-    case 'patient-doctor':
-      return userRole === 'patient' || userRole === 'doctor' || userRole === 'admin';
-    case 'doctor-hospital':
-      return userRole === 'doctor' || userRole === 'hospital' || userRole === 'admin';
-    case 'hospital-admin':
-      return userRole === 'hospital' || userRole === 'admin';
-    case 'doctor-doctor':
-      return userRole === 'doctor' || userRole === 'admin';
-    case 'custom':
-      return true; // Anyone can create custom meetings
-    default:
-      return false;
+    res.status(500).json({ status: 'error', message: error.message });
   }
 };

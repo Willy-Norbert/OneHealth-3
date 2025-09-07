@@ -1,281 +1,228 @@
 const Prescription = require('../models/Prescription');
-const Doctor = require('../models/Doctor');
+const Appointment = require('../models/Appointment');
+const User = require('../models/User');
+const Joi = require('joi');
+const { createNotification } = require('../utils/notificationService');
+const { sendPrescriptionEmail } = require('../services/emailService'); // Import email service
 
-// @desc    Get all prescriptions with filtering
-// @route   GET /api/prescriptions
-// @access  Private (Doctor/Admin)
-exports.getAllPrescriptions = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const { patient, doctor, status } = req.query;
-    
-    let filter = {};
-    if (patient) filter.patient = patient;
-    if (doctor) filter.doctor = doctor;
-    if (status) filter.status = status;
-
-    // If user is a doctor, only show their prescriptions
-    if (req.user.role === 'doctor') {
-      const doctorProfile = await Doctor.findOne({ user: req.user._id });
-      if (doctorProfile) {
-        filter.doctor = doctorProfile._id;
-      }
-    }
-
-    const prescriptions = await Prescription.find(filter)
-      .populate('patient', 'fullName email phoneNumber')
-      .populate('doctor', 'specialization licenseNumber')
-      .populate({
-        path: 'doctor',
-        populate: { path: 'user', select: 'fullName' }
-      })
-      .skip(skip)
-      .limit(limit)
-      .sort({ issuedDate: -1 });
-
-    const total = await Prescription.countDocuments(filter);
-
-    res.status(200).json({
-      success: true,
-      message: 'Prescriptions retrieved successfully',
-      data: { 
-        prescriptions, 
-        pagination: {
-          current: page,
-          pages: Math.ceil(total / limit),
-          total,
-          limit
-        }
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving prescriptions',
-      data: { error: error.message }
-    });
-  }
-};
-
-// @desc    Get single prescription
-// @route   GET /api/prescriptions/:id
-// @access  Private (Patient/Doctor/Admin)
-exports.getPrescription = async (req, res) => {
-  try {
-    const prescription = await Prescription.findById(req.params.id)
-      .populate('patient', 'fullName email phoneNumber')
-      .populate('doctor', 'specialization licenseNumber')
-      .populate({
-        path: 'doctor',
-        populate: { path: 'user hospital', select: 'fullName name location' }
-      })
-      .populate('consultation')
-      .populate('appointment');
-
-    if (!prescription) {
-      return res.status(404).json({
-        success: false,
-        message: 'Prescription not found',
-        data: null
-      });
-    }
-
-    // Check permissions
-    const isPatient = req.user._id.toString() === prescription.patient._id.toString();
-    const isDoctor = await Doctor.findOne({ 
-      user: req.user._id, 
-      _id: prescription.doctor._id 
-    });
-    const isAdmin = req.user.role === 'admin';
-
-    if (!isPatient && !isDoctor && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to view this prescription',
-        data: null
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Prescription retrieved successfully',
-      data: { prescription }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving prescription',
-      data: { error: error.message }
-    });
-  }
-};
-
-// @desc    Create new prescription
+// @desc    Create a new prescription
 // @route   POST /api/prescriptions
 // @access  Private (Doctor only)
 exports.createPrescription = async (req, res) => {
   try {
-    // Verify doctor profile exists
-    const doctorProfile = await Doctor.findOne({ user: req.user._id });
-    if (!doctorProfile) {
+    // Validate input
+    const schema = Joi.object({
+      patient: Joi.string().required(),
+      appointment: Joi.string().required(),
+      diagnosis: Joi.string().required(),
+      medications: Joi.array().items(Joi.object({
+        name: Joi.string().required(),
+        dosage: Joi.string().required(),
+        frequency: Joi.string().required(),
+        instructions: Joi.string().allow(''),
+      })).min(1).required(),
+      notes: Joi.string().allow(''),
+    });
+
+    console.log("Backend: createPrescription - Incoming Request Body:", req.body);
+
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ status: 'error', message: error.details[0].message });
+
+    console.log("Backend: createPrescription - Validated Data:", value);
+
+    const { patient, appointment, diagnosis, medications, notes } = value;
+
+    // Ensure only doctors can create prescriptions
+    if (req.user.role !== 'doctor') {
       return res.status(403).json({
-        success: false,
-        message: 'Only doctors can create prescriptions',
-        data: null
+        status: 'error',
+        message: 'Access denied. Only doctors can create prescriptions.'
       });
     }
 
-    // Set expiry date (default 30 days from issue date)
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 30);
+    // Verify the appointment exists and is assigned to this doctor and patient
+    const existingAppointment = await Appointment.findOne({
+      _id: appointment,
+      doctor: req.user._id,
+      patient: patient,
+    });
 
-    const prescriptionData = {
-      ...req.body,
-      doctor: doctorProfile._id,
-      expiryDate: req.body.expiryDate || expiryDate
-    };
+    console.log("Backend: createPrescription - Existing Appointment Check:", existingAppointment);
 
-    const prescription = await Prescription.create(prescriptionData);
-    await prescription.populate([
-      { path: 'patient', select: 'fullName email phoneNumber' },
-      { path: 'doctor', populate: { path: 'user hospital', select: 'fullName name' } }
+    if (!existingAppointment) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Appointment not found or not assigned to this doctor/patient.'
+      });
+    }
+
+    // Create prescription
+    const newPrescription = await Prescription.create({
+      patient,
+      doctor: req.user._id,
+      appointment,
+      diagnosis,
+      medications,
+      notes,
+    });
+
+    console.log("Backend: createPrescription - New Prescription Created (before populate):");
+    console.log(newPrescription);
+
+    await newPrescription.populate([
+      { path: 'patient', select: 'name email' },
+      { path: 'doctor', select: 'name specialization' },
+      { path: 'appointment', select: 'appointmentDate appointmentTime' }
     ]);
+
+    // Create notification for the patient
+    await createNotification({
+      recipient: patient,
+      sender: req.user._id,
+      type: 'prescription',
+      message: `Dr. ${newPrescription.doctor.name} has issued a new prescription for your appointment on ${newPrescription.appointment.appointmentDate.toDateString()}.`,
+      relatedEntity: { id: newPrescription._id, type: 'Prescription' },
+    });
+
+    // Send prescription email to patient
+    try {
+      await sendPrescriptionEmail(newPrescription, newPrescription.patient, req.user);
+    } catch (emailError) {
+      console.error('Error sending prescription email:', emailError);
+      // Do not block the user if email fails
+    }
 
     res.status(201).json({
-      success: true,
-      message: 'Prescription created successfully',
-      data: { prescription }
+      status: 'success',
+      message: 'Prescription created successfully.',
+      data: { prescription: newPrescription },
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: 'Error creating prescription',
-      data: { error: error.message }
+    console.error('Error creating prescription:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Internal server error. Please try again later.' 
     });
   }
 };
 
-// @desc    Update prescription
-// @route   PUT /api/prescriptions/:id
-// @access  Private (Doctor who created it only)
-exports.updatePrescription = async (req, res) => {
-  try {
-    const prescription = await Prescription.findById(req.params.id);
-    
-    if (!prescription) {
-      return res.status(404).json({
-        success: false,
-        message: 'Prescription not found',
-        data: null
-      });
-    }
-
-    // Check if current user is the doctor who created the prescription
-    const doctorProfile = await Doctor.findOne({ user: req.user._id });
-    if (!doctorProfile || prescription.doctor.toString() !== doctorProfile._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this prescription',
-        data: null
-      });
-    }
-
-    const updatedPrescription = await Prescription.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    ).populate([
-      { path: 'patient', select: 'fullName email phoneNumber' },
-      { path: 'doctor', populate: { path: 'user hospital', select: 'fullName name' } }
-    ]);
-
-    res.status(200).json({
-      success: true,
-      message: 'Prescription updated successfully',
-      data: { prescription: updatedPrescription }
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: 'Error updating prescription',
-      data: { error: error.message }
-    });
-  }
-};
-
-// @desc    Get patient's prescriptions
-// @route   GET /api/patients/:patientId/prescriptions
-// @access  Private (Patient themselves, their doctors, or admin)
+// @desc    Get all prescriptions for a specific patient
+// @route   GET /api/prescriptions/patient/:patientId
+// @access  Private (Patient, Doctor, Hospital, Admin)
 exports.getPatientPrescriptions = async (req, res) => {
   try {
     const { patientId } = req.params;
-    
-    // Check permissions
-    const isPatient = req.user._id.toString() === patientId;
-    const isAdmin = req.user.role === 'admin';
-    
-    if (!isPatient && !isAdmin) {
+    const { page = 1, limit = 10 } = req.query;
+
+    // Authorization check
+    // Patient can view their own prescriptions
+    // Doctor can view prescriptions for patients they are assigned to (via appointments)
+    // Hospital staff can view prescriptions for patients in their hospital
+    // Admin can view any prescription
+    let canView = false;
+    if (req.user._id.toString() === patientId || req.user.role === 'admin') {
+      canView = true;
+    } else if (req.user.role === 'doctor') {
+      // Check if this doctor has any appointments with this patient
+      const hasAppointment = await Appointment.findOne({
+        doctor: req.user._id,
+        patient: patientId,
+      });
+      if (hasAppointment) canView = true;
+    } else if (req.user.role === 'hospital') {
+      // Check if this patient has appointments in the hospital the user is linked to
+      const hospitalDoc = await User.findById(req.user._id).select('hospital');
+      if (hospitalDoc && hospitalDoc.hospital) {
+        const hasAppointmentInHospital = await Appointment.findOne({
+          hospital: hospitalDoc.hospital,
+          patient: patientId,
+        });
+        if (hasAppointmentInHospital) canView = true;
+      }
+    }
+
+    if (!canView) {
       return res.status(403).json({
-        success: false,
-        message: 'Not authorized to view these prescriptions',
-        data: null
+        status: 'error',
+        message: 'Access denied. Not authorized to view these prescriptions.'
       });
     }
 
-    const prescriptions = await Prescription.find({ patient: patientId })
-      .populate('doctor', 'specialization licenseNumber')
-      .populate({
-        path: 'doctor',
-        populate: { path: 'user hospital', select: 'fullName name' }
-      })
-      .sort({ issuedDate: -1 });
+    const query = { patient: patientId };
+
+    const prescriptions = await Prescription.find(query)
+      .populate([
+        { path: 'patient', select: 'name email' },
+        { path: 'doctor', select: 'name specialization' },
+        { path: 'appointment', select: 'appointmentDate appointmentTime' }
+      ])
+      .sort({ datePrescribed: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Prescription.countDocuments(query);
 
     res.status(200).json({
-      success: true,
-      message: 'Patient prescriptions retrieved successfully',
-      data: { prescriptions, count: prescriptions.length }
+      status: 'success',
+      data: {
+        prescriptions,
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+      },
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving patient prescriptions',
-      data: { error: error.message }
+    console.error('Error fetching patient prescriptions:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Internal server error. Please try again later.' 
     });
   }
 };
 
-// @desc    Upload prescription image
-// @route   POST /api/prescriptions/upload
-// @access  Private (Patient only)
-exports.uploadPrescription = async (req, res) => {
+// @desc    Get all prescriptions authored by the logged-in doctor
+// @route   GET /api/prescriptions/doctor-authored
+// @access  Private (Doctor only)
+exports.getDoctorAuthoredPrescriptions = async (req, res) => {
   try {
-    // This would typically handle file upload
-    // For now, we'll just create a prescription record with image URL
-    const prescriptionData = {
-      patient: req.user._id,
-      prescriptionImage: req.body.imageUrl,
-      isDigital: false,
-      status: 'active',
-      // Other fields would be extracted from image or manually entered
-      medications: req.body.medications || [],
-      notes: req.body.notes || 'Uploaded prescription image'
-    };
+    const { page = 1, limit = 10 } = req.query;
 
-    const prescription = await Prescription.create(prescriptionData);
+    if (req.user.role !== 'doctor') {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied. Only doctors can view their authored prescriptions.'
+      });
+    }
 
-    res.status(201).json({
-      success: true,
-      message: 'Prescription uploaded successfully',
-      data: { prescription }
+    const query = { doctor: req.user._id };
+
+    const prescriptions = await Prescription.find(query)
+      .populate([
+        { path: 'patient', select: 'name email' },
+        { path: 'doctor', select: 'name specialization' },
+        { path: 'appointment', select: 'appointmentDate appointmentTime' }
+      ])
+      .sort({ datePrescribed: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Prescription.countDocuments(query);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        prescriptions,
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+      },
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: 'Error uploading prescription',
-      data: { error: error.message }
+    console.error('Error fetching doctor authored prescriptions:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Internal server error. Please try again later.' 
     });
   }
 };

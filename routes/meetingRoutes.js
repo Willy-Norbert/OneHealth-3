@@ -6,7 +6,7 @@ const {
   deleteMeeting,
   updateMeetingStatus
 } = require('../controllers/meetingController');
-const { protect, restrictTo } = require('../middleware/auth');
+const { protect } = require('../middleware/auth'); // Removed restrictTo as it's handled in controller
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Meetings
- *   description: Custom meeting management APIs
+ *   description: Custom WebRTC Meeting management APIs
  */
 
 /**
@@ -24,32 +24,47 @@ const router = express.Router();
  *     Meeting:
  *       type: object
  *       required:
- *         - participants
- *         - title
+ *         - doctor
+ *         - patient
+ *         - startTime
+ *         - endTime
  *       properties:
- *         participants:
- *           type: array
- *           items:
- *             type: string
- *           description: Array of participant user IDs
- *         roleContext:
+ *         meeting_id:
  *           type: string
- *           enum: [patient-doctor, doctor-hospital, hospital-admin, doctor-doctor, custom]
- *           default: custom
- *         title:
+ *           description: Unique identifier for the meeting (UUID)
+ *           readOnly: true
+ *         doctor:
  *           type: string
- *           description: Meeting title
- *         description:
+ *           description: User ID of the doctor
+ *         patient:
  *           type: string
- *           description: Meeting description
- *         scheduledAt:
+ *           description: User ID of the patient
+ *         appointment:
+ *           type: string
+ *           description: Optional Appointment ID associated with the meeting
+ *         link:
+ *           type: string
+ *           description: Unique private link to join the meeting
+ *           readOnly: true
+ *         status:
+ *           type: string
+ *           enum: [scheduled, in-progress, completed, cancelled]
+ *           default: scheduled
+ *           description: Current status of the meeting
+ *         startTime:
  *           type: string
  *           format: date-time
- *           description: Scheduled meeting time
- *         meetingType:
+ *           description: Scheduled start time of the meeting
+ *         endTime:
  *           type: string
- *           enum: [video, audio, chat]
- *           default: video
+ *           format: date-time
+ *           description: Scheduled end time of the meeting
+ *         title:
+ *           type: string
+ *           description: Optional title for the meeting
+ *         description:
+ *           type: string
+ *           description: Optional description for the meeting
  */
 
 // All routes require authentication
@@ -59,7 +74,7 @@ router.use(protect);
  * @swagger
  * /api/meetings:
  *   post:
- *     summary: Create a new custom meeting
+ *     summary: Create a new WebRTC meeting
  *     tags: [Meetings]
  *     security:
  *       - bearerAuth: []
@@ -68,7 +83,36 @@ router.use(protect);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Meeting'
+ *             type: object
+ *             required:
+ *               - doctor
+ *               - patient
+ *               - startTime
+ *               - endTime
+ *             properties:
+ *               doctor:
+ *                 type: string
+ *                 description: User ID of the doctor
+ *               patient:
+ *                 type: string
+ *                 description: User ID of the patient
+ *               appointment:
+ *                 type: string
+ *                 description: Optional Appointment ID associated with the meeting
+ *               startTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Scheduled start time of the meeting
+ *               endTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Scheduled end time of the meeting
+ *               title:
+ *                 type: string
+ *                 description: Optional title for the meeting
+ *               description:
+ *                 type: string
+ *                 description: Optional description for the meeting
  *     responses:
  *       201:
  *         description: Meeting created successfully
@@ -88,15 +132,6 @@ router.use(protect);
  *                   properties:
  *                     meeting:
  *                       $ref: '#/components/schemas/Meeting'
- *                     jitsiDetails:
- *                       type: object
- *                       properties:
- *                         meetingLink:
- *                           type: string
- *                         roomName:
- *                           type: string
- *                         domain:
- *                           type: string
  *       400:
  *         description: Invalid input data
  *       403:
@@ -106,19 +141,19 @@ router.post('/', createMeeting);
 
 /**
  * @swagger
- * /api/meetings/{id}:
+ * /api/meetings/{meeting_id}:
  *   get:
- *     summary: Get a specific meeting by ID
+ *     summary: Get a specific meeting by its unique meeting_id
  *     tags: [Meetings]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: meeting_id
  *         required: true
  *         schema:
  *           type: string
- *         description: Meeting ID
+ *         description: Unique Meeting ID (UUID)
  *     responses:
  *       200:
  *         description: Meeting retrieved successfully
@@ -144,44 +179,44 @@ router.get('/:id', getMeeting);
 
 /**
  * @swagger
- * /api/meetings/{id}:
+ * /api/meetings/{meeting_id}:
  *   delete:
- *     summary: Cancel/delete a meeting
+ *     summary: Cancel a meeting by its unique meeting_id
  *     tags: [Meetings]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: meeting_id
  *         required: true
  *         schema:
  *           type: string
- *         description: Meeting ID
+ *         description: Unique Meeting ID (UUID)
  *     responses:
  *       200:
  *         description: Meeting cancelled successfully
  *       404:
  *         description: Meeting not found
  *       403:
- *         description: Not authorized to delete this meeting
+ *         description: Not authorized to cancel this meeting
  */
 router.delete('/:id', deleteMeeting);
 
 /**
  * @swagger
- * /api/meetings/{id}/status:
+ * /api/meetings/{meeting_id}/status:
  *   patch:
- *     summary: Update meeting status
+ *     summary: Update meeting status by its unique meeting_id
  *     tags: [Meetings]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: meeting_id
  *         required: true
  *         schema:
  *           type: string
- *         description: Meeting ID
+ *         description: Unique Meeting ID (UUID)
  *     requestBody:
  *       required: true
  *       content:
@@ -191,9 +226,11 @@ router.delete('/:id', deleteMeeting);
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [scheduled, active, completed, cancelled]
+ *                 enum: [scheduled, in-progress, completed, cancelled]
+ *                 description: New status for the meeting
  *               notes:
  *                 type: string
+ *                 description: Optional notes about the status update
  *     responses:
  *       200:
  *         description: Meeting status updated successfully
@@ -208,7 +245,7 @@ router.patch('/:id/status', updateMeetingStatus);
  * @swagger
  * /api/meetings/user/{userId}:
  *   get:
- *     summary: Get all meetings for a user
+ *     summary: Get all meetings for a user (as doctor or patient)
  *     tags: [Meetings]
  *     security:
  *       - bearerAuth: []
@@ -218,7 +255,7 @@ router.patch('/:id/status', updateMeetingStatus);
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
+ *         description: User ID of the doctor or patient
  *       - in: query
  *         name: page
  *         schema:
@@ -235,7 +272,7 @@ router.patch('/:id/status', updateMeetingStatus);
  *         name: status
  *         schema:
  *           type: string
- *           enum: [scheduled, active, completed, cancelled]
+ *           enum: [scheduled, in-progress, completed, cancelled]
  *         description: Filter by meeting status
  *     responses:
  *       200:

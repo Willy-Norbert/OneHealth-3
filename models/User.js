@@ -51,6 +51,10 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  profileImage: {
+    type: String,
+    default: 'https://res.cloudinary.com/your_cloud_name/image/upload/v1678901234/default_profile_image.png' // Replace with a generic default image URL
   }
 });
 

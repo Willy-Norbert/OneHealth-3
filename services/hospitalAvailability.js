@@ -34,8 +34,15 @@ function generateSlotsFromWorkingHours(workingHoursForDay) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
   };
 
-  const startMins = toMinutes(workingHoursForDay.start);
+  let startMins = toMinutes(workingHoursForDay.start);
   const endMins = toMinutes(workingHoursForDay.end);
+
+  // Adjust startMins to the next nearest 30-minute interval (XX:00 or XX:30)
+  const remainder = startMins % 30;
+  if (remainder !== 0) {
+    startMins += (30 - remainder);
+  }
+
   const slots = [];
   for (let t = startMins; t + 30 <= endMins; t += 30) {
     slots.push(toLabel(t));

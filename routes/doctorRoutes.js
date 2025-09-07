@@ -6,7 +6,9 @@ const {
   updateDoctor,
   deleteDoctor,
   getDoctorsByDepartment,
-  getDoctorByUserId
+  getDoctorByUserId,
+  getDoctorsByHospitalAndDepartment,
+  updateDoctorByHospital
 } = require('../controllers/doctorController');
 const { protect, restrictTo } = require('../middleware/auth');
 const { getHospitalId, ensureHospitalLink } = require('../middleware/hospitalMiddleware');
@@ -85,16 +87,18 @@ const router = express.Router();
  */
 
 // Public routes
+router.get('/hospital/:hospitalId/department/:departmentId', getDoctorsByHospitalAndDepartment);
 router.get('/department/:departmentId', getDoctorsByDepartment);
-router.get('/profile/:userId', getDoctorByUserId);
+router.get('/user/:userId', getDoctorByUserId); // Changed from /profile/:userId to /user/:userId
 router.get('/', getAllDoctors);
 router.get('/:id', getDoctor);
 
 
 // Protected routes
 router.use(protect, getHospitalId, ensureHospitalLink);
-router.post('/', restrictTo('admin', 'hospital'), createDoctor);
+router.post('/', restrictTo('admin', 'hospital', 'doctor'), createDoctor);
 router.put('/:id', updateDoctor); // Admin, hospital owner, or doctor themselves
+router.put('/:id/hospital-update', restrictTo('hospital'), updateDoctorByHospital); // New route for hospital to update doctor
 router.delete('/:id', restrictTo('admin', 'hospital'), deleteDoctor);
 
 module.exports = router;

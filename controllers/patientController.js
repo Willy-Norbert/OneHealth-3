@@ -20,7 +20,7 @@ exports.getAllPatients = async (req, res) => {
 
     // Hospital role can only see their patients
     if (req.user.role === 'hospital') {
-      const hospitalDoc = await Hospital.findOne({ userId: req.user._id });
+      const hospitalDoc = await Hospital.findById(req.user.hospital);
       if (!hospitalDoc) {
         return res.status(403).json({
           success: false,
@@ -90,14 +90,16 @@ exports.getAllPatients = async (req, res) => {
 exports.getPatient = async (req, res) => {
   try {
     console.log('=== GET PATIENT ===');
-    console.log('Patient ID:', req.params.id);
-    console.log('User:', req.user.role, req.user._id);
+    console.log('Patient ID from params:', req.params.id);
+    console.log('User making request:', req.user.role, req.user._id);
 
-    const patient = await Patient.findById(req.params.id)
+    const patient = await Patient.findOne({ user: req.params.id })
       .populate('user', 'name email phone isActive isVerified')
       .populate('primaryHospital', 'name location contact')
       .populate('visitedHospitals.hospital', 'name location')
       .populate('medicalRecords');
+
+    console.log("Backend: getPatient - Found Patient:", patient ? patient._id : "None");
 
     if (!patient) {
       return res.status(404).json({
@@ -380,7 +382,7 @@ async function checkPatientAccess(user, patient) {
   
   // Hospital can access patients who have visited their hospital
   if (user.role === 'hospital') {
-    const hospital = await Hospital.findOne({ userId: user._id });
+    const hospital = await Hospital.findById(user.hospital);
     if (hospital) {
       const hasVisited = patient.visitedHospitals.some(
         visit => visit.hospital.toString() === hospital._id.toString()
@@ -391,15 +393,89 @@ async function checkPatientAccess(user, patient) {
   
   // Doctor can access patients they have appointments with
   if (user.role === 'doctor') {
+    console.log("Access Check: Doctor attempting to access patient.");
+    console.log("Access Check: Patient User ID:", patient.user.toString());
+    console.log("Access Check: Doctor User ID:", user._id.toString());
     const appointment = await Appointment.findOne({
       patient: patient.user,
       doctor: user._id
     });
+    console.log("Access Check: Appointment Found for Doctor/Patient:", !!appointment);
     return !!appointment;
   }
   
   return false;
 }
+
+// @desc    Get patients assigned to the logged-in doctor
+// @route   GET /api/patients/my-patients
+// @access  Private (Doctor)
+exports.getDoctorPatients = async (req, res) => {
+  try {
+    console.log('=== GET DOCTOR PATIENTS ===');
+    console.log('Logged-in Doctor User ID:', req.user._id);
+
+    const { page = 1, limit = 10, search } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Find all appointments for the logged-in doctor
+    const doctorAppointments = await Appointment.find({ doctor: req.user._id }).select('patient');
+    const patientUserIds = [...new Set(doctorAppointments.map(app => app.patient.toString()))];
+
+    let filter = { user: { $in: patientUserIds }, isActive: true };
+
+    // Add search functionality for patient names/emails
+    if (search) {
+      const users = await User.find({
+        $and: [
+          { _id: { $in: patientUserIds } }, // Ensure users are among the doctor's patients
+          {
+            $or: [
+              { name: { $regex: search, $options: 'i' } },
+              { email: { $regex: search, $options: 'i' } }
+            ]
+          }
+        ]
+      }).select('_id');
+      filter.user = { $in: users.map(u => u._id) };
+    }
+
+    const patients = await Patient.find(filter)
+      .populate('user', 'name email phone profileImage')
+      .populate('primaryHospital', 'name location')
+      .populate('visitedHospitals.hospital', 'name location')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Patient.countDocuments(filter);
+
+    console.log(`Doctor ${req.user.name} found ${patients.length} patients out of ${total} total assigned.`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Doctor\'s patients retrieved successfully',
+      data: {
+        patients,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalPatients: total,
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getDoctorPatients:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve doctor\'s patients',
+      data: null
+    });
+  }
+};
 
 // module.exports = {
 //   getAllPatients,

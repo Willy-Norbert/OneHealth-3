@@ -38,7 +38,7 @@ exports.getAllDoctors = async (req, res) => {
     if (isActive !== undefined) filter.isActive = isActive === 'true';
 
     const doctors = await Doctor.find(filter)
-      .populate('user', 'fullName email phoneNumber')
+      .populate('user', 'name email phoneNumber')
       .populate('hospital', 'name location')
       .populate('department', 'name')
       .skip(skip)
@@ -75,7 +75,7 @@ exports.getAllDoctors = async (req, res) => {
 exports.getDoctor = async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id)
-      .populate('user', 'fullName email phoneNumber')
+      .populate('user', 'name email phoneNumber')
       .populate('hospital', 'name location contact')
       .populate('department', 'name description');
 
@@ -116,10 +116,18 @@ exports.createDoctor = async (req, res) => {
       });
     }
 
-    if (user.role !== 'doctor') {
+    if (user.role === undefined) {
       return res.status(400).json({
         success: false,
-        message: 'User must have doctor role',
+        message: 'User has no role',
+        data: null
+      });
+    }
+    console.log('User role in createDoctor:', user.role);
+    if (user.role !== 'doctor' && user.role !== 'admin') {
+      return res.status(400).json({
+        success: false,
+        message: 'User must have doctor or admin role',
         data: null
       });
     }
@@ -181,7 +189,7 @@ exports.createDoctor = async (req, res) => {
       hospital: hospitalId
     });
     await doctor.populate([
-      { path: 'user', select: 'fullName email phoneNumber' },
+      { path: 'user', select: 'name email phoneNumber' },
       { path: 'hospital', select: 'name location' },
       { path: 'department', select: 'name' }
     ]);
@@ -229,7 +237,7 @@ exports.updateDoctor = async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     ).populate([
-      { path: 'user', select: 'fullName email phoneNumber' },
+      { path: 'user', select: 'name email phoneNumber' },
       { path: 'hospital', select: 'name location' },
       { path: 'department', select: 'name' }
     ]);
@@ -298,7 +306,7 @@ exports.getDoctorsByDepartment = async (req, res) => {
       department: departmentId,
       isActive: true 
     })
-    .populate('user', 'fullName email phoneNumber')
+    .populate('user', 'name email phoneNumber')
     .populate('hospital', 'name location')
     .populate('department', 'name')
     .sort({ createdAt: -1 }); // safer than rating.average
@@ -324,7 +332,7 @@ exports.getDoctorsByDepartment = async (req, res) => {
 exports.getDoctorByUserId = async (req, res) => {
   try {
     const doctor = await Doctor.findOne({ user: req.params.userId })
-      .populate('user', 'fullName email phoneNumber')
+      .populate('user', 'name email phoneNumber')
       .populate('hospital', 'name location contact')
       .populate('department', 'name description');
 
@@ -345,6 +353,164 @@ exports.getDoctorByUserId = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error retrieving doctor profile',
+      data: { error: error.message }
+    });
+  }
+};
+
+// @desc    Get doctors by hospital and department
+// @route   GET /api/doctors/hospital/:hospitalId/department/:departmentId
+// @access  Public
+exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
+  try {
+    const { hospitalId, departmentId } = req.params;
+
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(hospitalId) || !mongoose.Types.ObjectId.isValid(departmentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid hospital ID or department ID',
+        data: null
+      });
+    }
+
+    // Find active doctors in the specified hospital and department
+    const doctors = await Doctor.find({
+      hospital: hospitalId,
+      department: departmentId,
+      isActive: true
+    })
+    .populate('user', 'name email phoneNumber')
+    .populate('hospital', 'name location')
+    .populate('department', 'name')
+    .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: 'Doctors retrieved successfully',
+      data: { doctors, count: doctors.length }
+    });
+  } catch (error) {
+    console.error('Error retrieving doctors by hospital and department:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving doctors by hospital and department',
+      data: { error: error.message }
+    });
+  }
+};
+
+// @desc    Update doctor by hospital
+// @route   PUT /api/doctors/:id/hospital-update
+// @access  Private (Hospital only)
+exports.updateDoctorByHospital = async (req, res) => {
+  try {
+    const { id } = req.params; // Doctor ID
+    const { name, email, phoneNumber, profileImage, ...doctorBody } = req.body; // Extract user fields and doctor fields
+
+    // 1. Validate doctorId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid doctor ID',
+        data: null
+      });
+    }
+
+    // 2. Find the Doctor and populate user and hospital
+    const doctor = await Doctor.findById(id)
+      .populate('user', 'name email phoneNumber profileImage')
+      .populate('hospital', 'name');
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found',
+        data: null
+      });
+    }
+
+    // 3. Check Authorization
+    if (req.user.role !== 'hospital') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only hospital users can update doctor profiles via this route',
+        data: null
+      });
+    }
+
+    if (!req.user.hospital || doctor.hospital._id.toString() !== req.user.hospital.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this doctor profile (hospital mismatch)',
+        data: null
+      });
+    }
+
+    // 4. Update Doctor fields (only allowed fields)
+    const allowedDoctorFields = [
+      'licenseNumber',
+      'specialization',
+      'consultationFee',
+      'experience',
+      'bio',
+      'languages',
+      'consultationModes',
+      'availability',
+      'isActive',
+      'department',
+    ];
+    allowedDoctorFields.forEach(field => {
+      if (doctorBody[field] !== undefined) {
+        doctor[field] = doctorBody[field];
+      }
+    });
+
+    // 5. Update User fields (if provided and doctor has a user account)
+    if (doctor.user) {
+      const userUpdateFields = {};
+      if (name !== undefined) userUpdateFields.name = name;
+      if (email !== undefined) userUpdateFields.email = email;
+      if (phoneNumber !== undefined) userUpdateFields.phoneNumber = phoneNumber;
+      if (profileImage !== undefined) userUpdateFields.profileImage = profileImage;
+
+      if (Object.keys(userUpdateFields).length > 0) {
+        // Prevent changing email to an already existing one (if provided and different)
+        if (userUpdateFields.email && userUpdateFields.email !== doctor.user.email) {
+          const existingUser = await User.findOne({ email: userUpdateFields.email });
+          if (existingUser && existingUser._id.toString() !== doctor.user._id.toString()) {
+            return res.status(400).json({
+              success: false,
+              message: 'Email already in use by another user',
+              data: null
+            });
+          }
+        }
+        await User.findByIdAndUpdate(doctor.user._id, userUpdateFields, { new: true, runValidators: true });
+      }
+    }
+
+    // 6. Save changes to the doctor document
+    await doctor.save();
+
+    // Re-populate to get the updated user data in the response
+    const updatedDoctor = await Doctor.findById(id)
+      .populate('user', 'name email phoneNumber profileImage')
+      .populate('hospital', 'name location')
+      .populate('department', 'name');
+
+    // 7. Respond
+    res.status(200).json({
+      success: true,
+      message: 'Doctor profile updated successfully by hospital',
+      data: { doctor: updatedDoctor }
+    });
+
+  } catch (error) {
+    console.error('Error updating doctor by hospital:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating doctor profile',
       data: { error: error.message }
     });
   }

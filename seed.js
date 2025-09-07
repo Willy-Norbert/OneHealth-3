@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require("uuid");
+const { createSendToken, signToken } = require('./utils/jwt'); // Import createSendToken and signToken
 
 // MODELS
 const Department = require('./models/Department');
@@ -31,6 +32,8 @@ const ConsultationType =
 
 // --- CONFIG ---
 const hashPassword = (pwd) => bcrypt.hashSync(pwd, 10);
+
+const defaultProfileImageUrl = 'https://res.cloudinary.com/your_cloud_name/image/upload/v1700000000/default_profile_image.png'; // Replace with your actual default image URL
 
 // --- CONNECT TO MONGO ---
 mongoose
@@ -167,6 +170,7 @@ async function seed() {
         role: 'admin',
         isActive: true,
         isVerified: true,
+        profileImage: defaultProfileImageUrl,
       },
       {
         name: 'Kigali Hosp Admin',
@@ -176,6 +180,7 @@ async function seed() {
         hospital: hospitals[0]._id,
         isActive: true,
         isVerified: true,
+        profileImage: defaultProfileImageUrl,
       },
       {
         name: 'RCH Admin',
@@ -185,6 +190,7 @@ async function seed() {
         hospital: hospitals[1]._id,
         isActive: true,
         isVerified: true,
+        profileImage: defaultProfileImageUrl,
       },
       {
         name: 'Sunrise Admin',
@@ -194,13 +200,28 @@ async function seed() {
         hospital: hospitals[3]._id,
         isActive: true,
         isVerified: true,
+        profileImage: defaultProfileImageUrl,
       },
     ]);
+
+    // Link hospital admin users to their respective hospitals
+    for (const user of adminUsers) {
+      if (user.role === 'hospital' && user.hospital) {
+        await Hospital.findByIdAndUpdate(user.hospital, { userId: user._id });
+      }
+    }
 
     console.log('Admin login: admin@onehealth.rw | Password: Admin#123');
     console.log('Hospital Admins:');
     adminUsers.filter(u => u.role === 'hospital').forEach(u => {
       console.log(`- ${u.email} | Password: Admin#123 | Hospital ID: ${u.hospital}`);
+      const mockRes = {
+        cookie: (name, token, options) => { mockRes.storedToken = token; },
+        status: (code) => mockRes, // Chainable method
+        json: (data) => { /* console.log(data); */ }
+      };
+      const hospitalToken = signToken(u._id); // Directly generate token
+      console.log(`Explicitly logged JWT Token for ${u.email}: ${hospitalToken}`); // Log the token
     });
 
     // --- DOCTORS ---
@@ -214,6 +235,7 @@ async function seed() {
           role: 'doctor',
           isActive: true,
           isVerified: true,
+          profileImage: defaultProfileImageUrl,
         });
 
         const doctor = await Doctor.create({
@@ -260,6 +282,7 @@ async function seed() {
         role: 'patient',
         isActive: true,
         isVerified: true,
+        profileImage: defaultProfileImageUrl,
       }))
     );
 

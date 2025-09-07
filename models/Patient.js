@@ -117,7 +117,6 @@ patientSchema.pre('save', async function(next) {
 
 // Indexes for efficient queries
 patientSchema.index({ user: 1 }, { unique: true });
-patientSchema.index({ patientId: 1 }, { unique: true });
 patientSchema.index({ primaryHospital: 1 });
 patientSchema.index({ 'visitedHospitals.hospital': 1 });
 patientSchema.index({ isActive: 1 });
