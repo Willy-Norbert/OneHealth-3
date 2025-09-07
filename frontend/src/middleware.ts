@@ -4,6 +4,11 @@ export function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value
   const url = req.nextUrl
 
+  // Ensure pathname exists and is a string
+  if (!url.pathname || typeof url.pathname !== 'string') {
+    return NextResponse.next()
+  }
+
   const isAuthRoute = url.pathname.startsWith('/auth')
   const isProtected = ['/dashboard', '/patient', '/doctor', '/hospital', '/admin'].some(p => url.pathname.startsWith(p))
 
@@ -16,14 +21,30 @@ export function middleware(req: NextRequest) {
   if (token) {
     // decode role from token (no heavy lib in middleware)
     try {
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString())
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        throw new Error('Invalid token format')
+      }
+      
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString())
       const role = payload.role as string
-      if (url.pathname.startsWith('/patient') && role !== 'patient') return NextResponse.redirect(new URL('/', url.origin))
-      if (url.pathname.startsWith('/doctor') && role !== 'doctor') return NextResponse.redirect(new URL('/', url.origin))
-      if (url.pathname.startsWith('/hospital') && role !== 'hospital') return NextResponse.redirect(new URL('/', url.origin))
-      if (url.pathname.startsWith('/admin') && role !== 'admin') return NextResponse.redirect(new URL('/', url.origin))
-      if (isAuthRoute) return NextResponse.redirect(new URL('/dashboard', url.origin))
-    } catch {
+      
+      if (url.pathname.startsWith('/patient') && role !== 'patient') {
+        return NextResponse.redirect(new URL('/', url.origin))
+      }
+      if (url.pathname.startsWith('/doctor') && role !== 'doctor') {
+        return NextResponse.redirect(new URL('/', url.origin))
+      }
+      if (url.pathname.startsWith('/hospital') && role !== 'hospital') {
+        return NextResponse.redirect(new URL('/', url.origin))
+      }
+      if (url.pathname.startsWith('/admin') && role !== 'admin') {
+        return NextResponse.redirect(new URL('/', url.origin))
+      }
+      if (isAuthRoute) {
+        return NextResponse.redirect(new URL('/dashboard', url.origin))
+      }
+    } catch (error) {
       // invalid token -> clear cookie and redirect to login
       const res = NextResponse.redirect(new URL('/auth/login', url.origin))
       res.cookies.delete('token')

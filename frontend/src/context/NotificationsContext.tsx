@@ -1,6 +1,7 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { useAuth } from './AuthContext'
 
 type Notification = { _id: string; message: string; isRead?: boolean }
 
@@ -8,13 +9,33 @@ const Ctx = createContext<{ notifications: Notification[]; refresh: ()=>void }|u
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const { isAuthenticated, token } = useAuth()
+  
   const fetchNotes = async () => {
+    if (!isAuthenticated || !token) {
+      setNotifications([])
+      return
+    }
+    
     try {
       const res = await api.notifications.list() as any
       setNotifications(res?.data?.notifications || [])
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to fetch notifications:', error)
+      setNotifications([])
+    }
   }
-  useEffect(()=>{ fetchNotes(); const id = setInterval(fetchNotes, 10000); return ()=> clearInterval(id) }, [])
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotes()
+      const id = setInterval(fetchNotes, 10000)
+      return () => clearInterval(id)
+    } else {
+      setNotifications([])
+    }
+  }, [isAuthenticated, token])
+  
   return <Ctx.Provider value={{ notifications, refresh: fetchNotes }}>{children}</Ctx.Provider>
 }
 
