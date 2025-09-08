@@ -18,10 +18,21 @@ export default function PatientPaymentsPage() {
       // Initiate checkout (do not send breakdown; it's for UI only)
       const res = await api.payments.checkout({ appointmentId, provider }) as any
       const paymentId = res?.data?.payment?._id
+      const checkoutUrl = res?.data?.payment?.checkoutUrl
       if (!paymentId) throw new Error('Payment init failed')
-      // Simulate redirect/return flow by immediate verify
-      const verify = await api.payments.verify({ paymentId }) as any
-      if (verify?.data?.payment?.status === 'paid') {
+      // For non-sandbox providers, open checkout and poll verify briefly
+      if (provider !== 'DEV_FAKE' && checkoutUrl) {
+        window.open(checkoutUrl, '_blank', 'noopener,noreferrer')
+        for (let i = 0; i < 6; i++) {
+          await new Promise(r=>setTimeout(r, 2000))
+          const verify = await api.payments.verify({ paymentId }) as any
+          const status = verify?.data?.payment?.status
+          if (status === 'SUCCEEDED') break
+        }
+        await mutate()
+      } else {
+        // Sandbox: verify immediately
+        await api.payments.verify({ paymentId })
         await mutate()
       }
     } catch (e) {
@@ -94,9 +105,8 @@ export default function PatientPaymentsPage() {
                             onChange={(e)=>setProviderByAppointment(prev=>({ ...prev, [a._id]: e.target.value }))}
                           >
                             <option value="DEV_FAKE">Sandbox</option>
-                            <option value="MOMO">Mobile Money</option>
-                            <option value="CARD">Card</option>
-                            <option value="BANK">Bank Transfer</option>
+                            <option value="MTN">MTN Mobile Money</option>
+                            <option value="IREMBO">Irembo</option>
                           </select>
                         </div>
                       </div>
