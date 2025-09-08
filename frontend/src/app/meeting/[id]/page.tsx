@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 import useSWR from 'swr'
 import Cookies from 'js-cookie'
 import { AppShell } from '@/components/layout/AppShell'
+import { useAuth } from '@/context/AuthContext'
 import { api } from '@/lib/api'
 
 type UserBrief = { id: string; name?: string }
@@ -11,6 +12,7 @@ type UserBrief = { id: string; name?: string }
 export default function MeetingRoom() {
   const { id } = useParams<{ id: string }>()
   const token = Cookies.get('token')
+  const { user } = useAuth() as any
 
   const [status, setStatus] = useState<string>('Initializing...')
   const [participants, setParticipants] = useState<UserBrief[]>([])
@@ -393,46 +395,48 @@ export default function MeetingRoom() {
                 </div>
               </div>
 
-              {/* Quick Prescription */}
-              <div className="rounded-2xl overflow-hidden bg-white shadow ring-1 ring-black/5">
-                <div className="px-5 py-4 border-b border-gray-200">
-                  <h3 className="text-base font-semibold text-gray-900">Quick Prescription</h3>
-                  <p className="text-xs text-gray-500 mt-1">Create and send a prescription to the current patient</p>
-                </div>
-                <div className="p-4 space-y-4">
-                  <div>
-                    <label className="form-label">Diagnosis</label>
-                    <input className="input" value={rx.diagnosis} onChange={(e)=>setRx({ ...rx, diagnosis: e.target.value })} placeholder="e.g., Acute pharyngitis" />
+              {/* Quick Prescription - visible to doctors only */}
+              {user?.role === 'doctor' && (
+                <div className="rounded-2xl overflow-hidden bg-white shadow ring-1 ring-black/5">
+                  <div className="px-5 py-4 border-b border-gray-200">
+                    <h3 className="text-base font-semibold text-gray-900">Quick Prescription</h3>
+                    <p className="text-xs text-gray-500 mt-1">Create and send a prescription to the current patient</p>
                   </div>
-                  <div>
-                    <label className="form-label">Medications</label>
-                    <div className="space-y-3">
-                      {rx.medications.map((m: any, idx: number) => (
-                        <div key={idx} className="grid grid-cols-2 gap-2">
-                          <input className="input" placeholder="Name" value={m.name} onChange={(e)=>changeMed(idx,'name',e.target.value)} />
-                          <input className="input" placeholder="Dosage" value={m.dosage} onChange={(e)=>changeMed(idx,'dosage',e.target.value)} />
-                          <input className="input" placeholder="Frequency" value={m.frequency} onChange={(e)=>changeMed(idx,'frequency',e.target.value)} />
-                          <input className="input" placeholder="Instructions (optional)" value={m.instructions} onChange={(e)=>changeMed(idx,'instructions',e.target.value)} />
-                          <div className="col-span-2 flex justify-end">
-                            {rx.medications.length > 1 && (
-                              <button onClick={()=>removeMed(idx)} className="btn-outline btn-sm">Remove</button>
-                            )}
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="form-label">Diagnosis</label>
+                      <input className="input" value={rx.diagnosis} onChange={(e)=>setRx({ ...rx, diagnosis: e.target.value })} placeholder="e.g., Acute pharyngitis" />
+                    </div>
+                    <div>
+                      <label className="form-label">Medications</label>
+                      <div className="space-y-3">
+                        {rx.medications.map((m: any, idx: number) => (
+                          <div key={idx} className="grid grid-cols-2 gap-2">
+                            <input className="input" placeholder="Name" value={m.name} onChange={(e)=>changeMed(idx,'name',e.target.value)} />
+                            <input className="input" placeholder="Dosage" value={m.dosage} onChange={(e)=>changeMed(idx,'dosage',e.target.value)} />
+                            <input className="input" placeholder="Frequency" value={m.frequency} onChange={(e)=>changeMed(idx,'frequency',e.target.value)} />
+                            <input className="input" placeholder="Instructions (optional)" value={m.instructions} onChange={(e)=>changeMed(idx,'instructions',e.target.value)} />
+                            <div className="col-span-2 flex justify-end">
+                              {rx.medications.length > 1 && (
+                                <button onClick={()=>removeMed(idx)} className="btn-outline btn-sm">Remove</button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      <button onClick={addMed} className="btn-outline btn-sm">Add Medication</button>
+                        ))}
+                        <button onClick={addMed} className="btn-outline btn-sm">Add Medication</button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="form-label">Notes</label>
+                      <textarea className="input h-20" value={rx.notes} onChange={(e)=>setRx({ ...rx, notes: e.target.value })} placeholder="Additional instructions" />
+                    </div>
+                    {rxMsg && <div className="text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded">{rxMsg}</div>}
+                    <div className="flex justify-end">
+                      <button onClick={submitRx} disabled={rxSubmitting} className="btn-primary btn-sm">{rxSubmitting ? 'Saving...' : 'Save Prescription'}</button>
                     </div>
                   </div>
-                  <div>
-                    <label className="form-label">Notes</label>
-                    <textarea className="input h-20" value={rx.notes} onChange={(e)=>setRx({ ...rx, notes: e.target.value })} placeholder="Additional instructions" />
-                  </div>
-                  {rxMsg && <div className="text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded">{rxMsg}</div>}
-                  <div className="flex justify-end">
-                    <button onClick={submitRx} disabled={rxSubmitting} className="btn-primary btn-sm">{rxSubmitting ? 'Saving...' : 'Save Prescription'}</button>
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
