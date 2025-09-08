@@ -108,6 +108,8 @@ export const api = {
   meetings: {
     user: (userId: string) => apiFetch(`/meetings/user/${userId}`, { method: 'GET' }),
     get: (id: string) => apiFetch(`/meetings/${id}`, { method: 'GET' }),
+    updateStatus: (id: string, status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled') =>
+      apiFetch(`/meetings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   },
   prescriptions: {
     create: (body: any) => apiFetch('/prescriptions', { method: 'POST', body: JSON.stringify(body) }),
