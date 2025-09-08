@@ -2,6 +2,7 @@ const Prescription = require('../models/Prescription');
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
+const mongoose = require('mongoose');
 const Joi = require('joi');
 const { createNotification } = require('../utils/notificationService');
 const { sendPrescriptionEmail } = require('../services/emailService'); // Import email service
@@ -35,6 +36,17 @@ exports.createPrescription = async (req, res) => {
 
     const { patient, appointment, diagnosis, medications, notes } = value;
 
+    // Validate IDs format early to avoid CastErrors
+    if (!mongoose.Types.ObjectId.isValid(patient)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid patient ID' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(appointment)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid appointment ID' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid doctor (auth) ID' });
+    }
+
     // Ensure only doctors can create prescriptions
     if (req.user.role !== 'doctor') {
       return res.status(403).json({
@@ -46,14 +58,21 @@ exports.createPrescription = async (req, res) => {
     // Verify the appointment exists and is assigned to this doctor and patient
     // Some datasets store doctor as the Doctor profile, others as the User ID. Support both.
     const doctorProfile = await Doctor.findOne({ user: req.user._id }).select('_id');
-    const existingAppointment = await Appointment.findOne({
-      _id: appointment,
-      patient: patient,
-      $or: [
-        { doctor: req.user._id },
-        ...(doctorProfile ? [{ doctor: doctorProfile._id }] : []),
-      ],
-    });
+    console.log('createPrescription: user doctorId:', req.user._id.toString(), 'doctorProfile:', doctorProfile?._id?.toString());
+    let existingAppointment = null;
+    try {
+      existingAppointment = await Appointment.findOne({
+        _id: appointment,
+        patient: patient,
+        $or: [
+          { doctor: req.user._id },
+          ...(doctorProfile ? [{ doctor: doctorProfile._id }] : []),
+        ],
+      });
+    } catch (findErr) {
+      console.error('createPrescription: appointment query error:', findErr);
+      return res.status(400).json({ status: 'error', message: 'Invalid appointment reference' });
+    }
 
     console.log("Backend: createPrescription - Existing Appointment Check:", existingAppointment);
 
