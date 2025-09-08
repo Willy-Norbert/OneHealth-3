@@ -224,67 +224,114 @@ export default function MeetingRoom() {
         { href: '/doctor/meetings', label: 'Teleconsultations' },
       ]}
     >
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Teleconsultation</h1>
-            <p className="text-gray-600 mt-1">{meeting?.title || 'Secure video consultation'}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">{status}</span>
-            <button onClick={copyLink} className="btn-outline btn-sm">Copy Link</button>
-            <a href="/doctor/meetings" className="btn-danger btn-sm">Leave</a>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 space-y-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gray-900 aspect-video">
-              <video ref={remoteVideoRef} className="w-full h-full object-cover" playsInline autoPlay />
-              {!remoteVideoRef.current?.srcObject && (
-                <div className="absolute inset-0 flex items-center justify-center text-gray-400">Waiting for participant...</div>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              <div className="rounded-xl overflow-hidden bg-gray-900 aspect-video">
-                <video ref={localVideoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
+      <div className="relative -m-6 p-6 bg-gradient-to-br from-blue-50 via-white to-emerald-50 min-h-[calc(100vh-4rem)]">
+        <div className="mx-auto max-w-7xl space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                {status}
               </div>
-              <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 col-span-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <button onClick={toggleMic} className={`btn ${micOn ? 'btn-outline' : 'btn-danger'}`}>
+              <h1 className="mt-2 text-3xl font-bold text-gray-900">Teleconsultation</h1>
+              <p className="text-gray-600">{meeting?.title || 'Secure video consultation'}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={copyLink} className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm">Copy Link</button>
+              <a href="/doctor/meetings" className="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-sm">Leave</a>
+            </div>
+          </div>
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Stage */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="relative rounded-2xl overflow-hidden bg-gray-900 aspect-video shadow-lg ring-1 ring-black/5">
+                <video ref={remoteVideoRef} className="w-full h-full object-cover" playsInline autoPlay />
+                {!remoteVideoRef.current?.srcObject && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300">
+                    <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-3">
+                      <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5M3 8.25h18M3 15.75h18"/></svg>
+                    </div>
+                    Waiting for participant...
+                  </div>
+                )}
+                {/* Floating Controls */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-4 flex items-center gap-3">
+                  <button onClick={toggleMic} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${micOn ? 'bg-white/70 border-gray-200 text-gray-800' : 'bg-red-600 text-white border-red-600'}`}>
                     {micOn ? 'Mute' : 'Unmute'}
                   </button>
-                  <button onClick={toggleCam} className={`btn ${camOn ? 'btn-outline' : 'btn-danger'}`}>
-                    {camOn ? 'Turn Camera Off' : 'Turn Camera On'}
+                  <button onClick={toggleCam} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${camOn ? 'bg-white/70 border-gray-200 text-gray-800' : 'bg-red-600 text-white border-red-600'}`}>
+                    {camOn ? 'Camera Off' : 'Camera On'}
                   </button>
-                  <button onClick={toggleScreen} className={`btn ${screenOn ? 'btn-danger' : 'btn-outline'}`}>
+                  <button onClick={toggleScreen} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${screenOn ? 'bg-red-600 text-white border-red-600' : 'bg-white/70 border-gray-200 text-gray-800'}`}>
                     {screenOn ? 'Stop Share' : 'Share Screen'}
                   </button>
-                  <a href="/doctor/meetings" className="btn-danger">End Call</a>
+                  <a href="/doctor/meetings" className="px-4 py-2 rounded-full shadow-md border bg-red-600 text-white border-red-600">End</a>
+                </div>
+              </div>
+              {/* Local preview */}
+              <div className="rounded-2xl overflow-hidden bg-white shadow ring-1 ring-black/5 p-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-xl overflow-hidden bg-gray-900 aspect-video ring-1 ring-white/10">
+                    <video ref={localVideoRef} className="w-full h-full object-cover" playsInline autoPlay muted />
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <div className="text-xs text-gray-500">Meeting ID</div>
+                      <div className="text-sm font-medium text-gray-800 truncate">{id}</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <div className="text-xs text-gray-500">Start Time</div>
+                      <div className="text-sm font-medium text-gray-800">{meeting?.startTime ? new Date(meeting.startTime).toLocaleString() : '—'}</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <div className="text-xs text-gray-500">Status</div>
+                      <div className="text-sm font-medium text-emerald-700">{status}</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <div className="text-xs text-gray-500">Participants</div>
+                      <div className="text-sm font-medium text-gray-800">{participants.length}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="lg:col-span-1">
-            <div className="card">
-              <div className="card-header">
-                <h3 className="text-lg font-semibold text-gray-900">Participants</h3>
-              </div>
-              <div className="card-body">
-                {participants.length ? (
-                  <div className="space-y-2">
-                    {participants.map((p) => (
-                      <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-semibold">
-                          {(p.name || p.id).charAt(0).toUpperCase()}
+
+            {/* Sidebar */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="rounded-2xl overflow-hidden bg-white shadow ring-1 ring-black/5">
+                <div className="px-5 py-4 border-b border-gray-200">
+                  <h3 className="text-base font-semibold text-gray-900">Participants</h3>
+                </div>
+                <div className="p-4 max-h-[50vh] overflow-auto">
+                  {participants.length ? (
+                    <div className="space-y-2">
+                      {participants.map((p) => (
+                        <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center font-semibold">
+                            {(p.name || p.id).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="text-sm text-gray-800 truncate">{p.name || p.id}</div>
                         </div>
-                        <div className="text-sm text-gray-800 truncate">{p.name || p.id}</div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">No other participants yet.</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden bg-white shadow ring-1 ring-black/5">
+                <div className="px-5 py-4 border-b border-gray-200">
+                  <h3 className="text-base font-semibold text-gray-900">Notes</h3>
+                </div>
+                <div className="p-4">
+                  <textarea className="input h-28" placeholder="Write important notes here..."></textarea>
+                  <div className="mt-3 flex justify-end">
+                    <button className="btn-primary btn-sm">Save Notes</button>
                   </div>
-                ) : (
-                  <div className="text-sm text-gray-500">No other participants yet.</div>
-                )}
+                </div>
               </div>
             </div>
           </div>
