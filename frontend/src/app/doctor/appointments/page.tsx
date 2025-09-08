@@ -235,19 +235,28 @@ export default function DoctorAppointmentsPage() {
                           </div>
                         )}
 
-                        {appointment.meeting?.link && (
+                        {/* Teleconsultation Join Button (visible and prominent) */}
+                        {appointment.appointmentType === 'virtual' && (
                           <div className="mt-3">
-                            <a 
-                              href={appointment.meeting.link} 
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-success btn-sm inline-flex items-center"
-                            >
-                              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                              </svg>
-                              Join Meeting
-                            </a>
+                            {(() => {
+                              const meetingLink = appointment.meeting?.meetingLink || appointment.meeting?.link
+                              const meetingId = appointment.meeting?.meeting_id || (meetingLink ? String(meetingLink).split('/').pop() : null)
+                              const href = meetingLink || (meetingId ? `/meeting/${meetingId}` : null)
+                              if (!href) return null
+                              return (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn-primary btn-sm inline-flex items-center"
+                                >
+                                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                                  </svg>
+                                  Join Teleconsultation
+                                </a>
+                              )
+                            })()}
                           </div>
                         )}
                       </div>
