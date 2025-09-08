@@ -233,34 +233,50 @@ io.on('connection', (socket) => {
 
   socket.on('offer', (offer, roomId, receiverId) => {
     console.log(`Offer from ${socket.user.name} (${socket.user._id}) to ${receiverId} in room: ${roomId}`);
-    const targetSocketId = userSocketMap.get(receiverId.toString());
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('offer', offer, roomId, socket.user._id);
-      console.log(`Backend: Offer sent from ${socket.user._id} to socket ${targetSocketId} for user ${receiverId}`);
+    if (receiverId) {
+      const targetSocketId = userSocketMap.get(receiverId.toString());
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('offer', offer, roomId, socket.user._id);
+        console.log(`Backend: Offer sent from ${socket.user._id} to socket ${targetSocketId} for user ${receiverId}`);
+      } else {
+        console.warn(`Backend: Could not find socket ID for receiver ${receiverId} to send offer.`);
+      }
     } else {
-      console.warn(`Backend: Could not find socket ID for receiver ${receiverId} to send offer.`);
+      // Fallback: broadcast to room (excluding sender)
+      socket.to(roomId).emit('offer', offer, roomId, socket.user._id);
+      console.log(`Backend: Broadcast offer in room ${roomId} from ${socket.user._id}`);
     }
   });
 
   socket.on('answer', (answer, roomId, receiverId) => {
     console.log(`Answer from ${socket.user.name} (${socket.user._id}) to ${receiverId} in room: ${roomId}`);
-    const targetSocketId = userSocketMap.get(receiverId.toString());
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('answer', answer, roomId, socket.user._id);
-      console.log(`Backend: Answer sent from ${socket.user._id} to socket ${targetSocketId} for user ${receiverId}`);
+    if (receiverId) {
+      const targetSocketId = userSocketMap.get(receiverId.toString());
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('answer', answer, roomId, socket.user._id);
+        console.log(`Backend: Answer sent from ${socket.user._id} to socket ${targetSocketId} for user ${receiverId}`);
+      } else {
+        console.warn(`Backend: Could not find socket ID for receiver ${receiverId} to send answer.`);
+      }
     } else {
-      console.warn(`Backend: Could not find socket ID for receiver ${receiverId} to send answer.`);
+      socket.to(roomId).emit('answer', answer, roomId, socket.user._id);
+      console.log(`Backend: Broadcast answer in room ${roomId} from ${socket.user._id}`);
     }
   });
 
   socket.on('ice-candidate', (candidate, roomId, receiverId) => {
     console.log(`ICE Candidate from ${socket.user.name} (${socket.user._id}) to ${receiverId} in room: ${roomId}`);
-    const targetSocketId = userSocketMap.get(receiverId.toString());
-    if (targetSocketId) {
-      io.to(targetSocketId).emit('ice-candidate', candidate, roomId, socket.user._id);
-      console.log(`Backend: ICE Candidate sent from ${socket.user._id} to socket ${targetSocketId} for user ${receiverId}`);
+    if (receiverId) {
+      const targetSocketId = userSocketMap.get(receiverId.toString());
+      if (targetSocketId) {
+        io.to(targetSocketId).emit('ice-candidate', candidate, roomId, socket.user._id);
+        console.log(`Backend: ICE Candidate sent from ${socket.user._id} to socket ${targetSocketId} for user ${receiverId}`);
+      } else {
+        console.warn(`Backend: Could not find socket ID for receiver ${receiverId} to send ICE candidate.`);
+      }
     } else {
-      console.warn(`Backend: Could not find socket ID for receiver ${receiverId} to send ICE candidate.`);
+      socket.to(roomId).emit('ice-candidate', candidate, roomId, socket.user._id);
+      console.log(`Backend: Broadcast ICE candidate in room ${roomId} from ${socket.user._id}`);
     }
   });
 
@@ -269,8 +285,12 @@ io.on('connection', (socket) => {
     // Remove user from the map on disconnect
     userSocketMap.delete(socket.user._id.toString());
     console.log(`Backend: userSocketMap updated. Current map size: ${userSocketMap.size}`);
-    // Optionally, notify others in any rooms the user was in
-    // socket.broadcast.emit('user-left', socket.id);
+    // Notify all rooms this user was part of
+    for (const roomId of socket.rooms) {
+      if (roomId !== socket.id) {
+        socket.to(roomId).emit('user-left', socket.user._id);
+      }
+    }
   });
 });
 
