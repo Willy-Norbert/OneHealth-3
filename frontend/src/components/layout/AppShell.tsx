@@ -9,6 +9,7 @@ import Link from 'next/link'
 export function AppShell({ children, menu }: { children: React.ReactNode, menu: { href: string; label: string }[] }) {
   const { user, logout } = useAuth()
   const { notifications } = useNotifications()
+  const unreadCount = notifications.filter((n:any)=>!n.isRead).length
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
 
@@ -66,9 +67,9 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                   </svg>
-                  {notifications.length > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                      {notifications.length}
+                      {unreadCount}
                     </span>
                   )}
                 </button>
@@ -79,7 +80,7 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
                       <Link href="/notifications" className="text-xs text-blue-600 hover:underline" onClick={()=>setNotifOpen(false)}>View all</Link>
                     </div>
                     <div className="max-h-80 overflow-auto">
-                      {notifications.length ? notifications.map((n)=> (
+                      {notifications.length ? notifications.slice(0,4).map((n)=> (
                         <div key={n._id} className="px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-50">
                           {n.message}
                         </div>
