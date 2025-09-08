@@ -4,7 +4,9 @@ import useSWR from 'swr'
 import { api } from '@/lib/api'
 
 export default function TeleconsultationPage() {
-  const { data: myTeleconsults } = useSWR('my-teleconsults', () => api.teleconsult.mine() as any)
+  // Fetch all my appointments and filter virtual ones so we always have meeting links
+  const { data: myAppointments } = useSWR('myAppointments', () => api.appointments.my() as any)
+  const virtuals = (myAppointments as any)?.data?.appointments?.filter((a: any) => a.appointmentType === 'virtual') || []
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -22,12 +24,12 @@ export default function TeleconsultationPage() {
   }
 
   const stats = {
-    total: myTeleconsults?.data?.teleconsultations?.length || 0,
-    scheduled: myTeleconsults?.data?.teleconsultations?.filter((t: any) => t.status === 'scheduled').length || 0,
-    completed: myTeleconsults?.data?.teleconsultations?.filter((t: any) => t.status === 'completed').length || 0,
-    today: myTeleconsults?.data?.teleconsultations?.filter((t: any) => {
+    total: virtuals.length || 0,
+    scheduled: virtuals.filter((t: any) => t.status === 'confirmed' || t.status === 'pending').length || 0,
+    completed: virtuals.filter((t: any) => t.status === 'completed').length || 0,
+    today: virtuals.filter((t: any) => {
       const today = new Date()
-      const consultDate = new Date(t.preferredDate || t.createdAt)
+      const consultDate = new Date(t.appointmentDate || t.createdAt)
       return consultDate.toDateString() === today.toDateString()
     }).length || 0
   }
@@ -130,10 +132,12 @@ export default function TeleconsultationPage() {
             <p className="text-sm text-gray-500">View and manage your video consultations</p>
           </div>
           <div className="card-body">
-            {myTeleconsults?.data?.teleconsultations?.length > 0 ? (
+            {virtuals.length > 0 ? (
               <div className="space-y-4">
-                {myTeleconsults.data.teleconsultations.map((teleconsult: any) => (
-                  <div key={teleconsult._id} className="p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                {virtuals.map((appt: any) => {
+                  const meetingLink = appt?.meeting?.meetingLink || appt?.meeting?.link
+                  return (
+                  <div key={appt._id} className="p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-3">
@@ -144,41 +148,41 @@ export default function TeleconsultationPage() {
                           </div>
                           <div>
                             <h4 className="text-lg font-semibold text-gray-900">
-                              {teleconsult.consultationType?.name || 'General Consultation'}
+                              {appt?.department?.name || 'Teleconsultation'}
                             </h4>
                             <p className="text-sm text-gray-500">
-                              {teleconsult.hospital?.name || 'Hospital not specified'}
+                              {appt?.hospital?.name || 'Hospital not specified'}
                             </p>
                           </div>
-                          <span className={`badge ${getStatusBadge(teleconsult.status)}`}>
-                            {teleconsult.status}
+                          <span className={`badge ${getStatusBadge(appt.status)}`}>
+                            {appt.status}
                           </span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                           <div>
-                            <p><span className="font-medium">Date:</span> {new Date(teleconsult.preferredDate || teleconsult.createdAt).toLocaleDateString()}</p>
-                            <p><span className="font-medium">Time:</span> {teleconsult.preferredTime || 'TBD'}</p>
+                            <p><span className="font-medium">Date:</span> {new Date(appt.appointmentDate || appt.createdAt).toLocaleDateString()}</p>
+                            <p><span className="font-medium">Time:</span> {appt.appointmentTime || 'TBD'}</p>
                           </div>
                           <div>
-                            <p><span className="font-medium">Type:</span> {teleconsult.consultationType?.name || 'General'}</p>
-                            <p><span className="font-medium">Insurance:</span> {teleconsult.insurance?.name || 'Self-pay'}</p>
+                            <p><span className="font-medium">Type:</span> Virtual</p>
+                            <p><span className="font-medium">Department:</span> {appt?.department?.name || 'General'}</p>
                           </div>
                         </div>
 
-                        {teleconsult.notes && (
+                        {appt.reasonForVisit && (
                           <div className="mt-3 p-3 bg-white rounded-lg">
                             <p className="text-sm text-gray-700">
-                              <span className="font-medium">Notes:</span> {teleconsult.notes}
+                              <span className="font-medium">Reason:</span> {appt.reasonForVisit}
                             </p>
                           </div>
                         )}
 
                         {/* Meeting Link */}
-                        {teleconsult.meetingLink && (
+                        {meetingLink && (
                           <div className="mt-3">
                             <a
-                              href={teleconsult.meetingLink}
+                              href={meetingLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="btn-success btn-sm inline-flex items-center"
@@ -196,7 +200,7 @@ export default function TeleconsultationPage() {
                         <button className="btn-primary btn-sm">
                           View Details
                         </button>
-                        {teleconsult.status === 'scheduled' && (
+                        {appt.status === 'confirmed' && (
                           <button className="btn-danger btn-sm">
                             Cancel
                           </button>
@@ -204,7 +208,7 @@ export default function TeleconsultationPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             ) : (
               <div className="text-center py-12">
