@@ -46,9 +46,7 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
             {/* Header content */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600">
-                  <Image src="/logo.png" alt="OneHealthline" width={24} height={24} className="text-white" />
-                </div>
+                <Image src="/logo.png" alt="OneHealthline" width={28} height={28} className="h-7 w-7" />
                 <div>
                   <h1 className="text-lg font-semibold text-gray-900">
                     {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)} Portal
