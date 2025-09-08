@@ -1,21 +1,222 @@
 "use client"
+import { AppShell } from '@/components/layout/AppShell'
 import useSWR from 'swr'
 import { api } from '@/lib/api'
+import { useState } from 'react'
 
 export default function DoctorPrescriptionsPage() {
-  const { data } = useSWR('myAuthoredRx', () => api.prescriptions.myAuthored() as any)
+  const { data: myPrescriptions, mutate } = useSWR('my-prescriptions', () => api.prescriptions.myAuthored() as any)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const stats = {
+    total: myPrescriptions?.data?.prescriptions?.length || 0,
+    thisMonth: myPrescriptions?.data?.prescriptions?.filter((p: any) => {
+      const thisMonth = new Date()
+      const prescriptionDate = new Date(p.datePrescribed)
+      return prescriptionDate.getMonth() === thisMonth.getMonth() && 
+             prescriptionDate.getFullYear() === thisMonth.getFullYear()
+    }).length || 0,
+    thisWeek: myPrescriptions?.data?.prescriptions?.filter((p: any) => {
+      const thisWeek = new Date()
+      const prescriptionDate = new Date(p.datePrescribed)
+      const weekAgo = new Date(thisWeek.getTime() - 7 * 24 * 60 * 60 * 1000)
+      return prescriptionDate >= weekAgo
+    }).length || 0,
+    today: myPrescriptions?.data?.prescriptions?.filter((p: any) => {
+      const today = new Date()
+      const prescriptionDate = new Date(p.datePrescribed)
+      return prescriptionDate.toDateString() === today.toDateString()
+    }).length || 0
+  }
+
   return (
-    <div className="card p-6">
-      <h1 className="text-xl font-semibold text-navy">My Prescriptions</h1>
-      <ul className="mt-3 space-y-3">
-        {(data as any)?.data?.prescriptions?.map((p: any)=> (
-          <li key={p._id} className="rounded border p-3">
-            <div className="font-medium">{p.diagnosis}</div>
-            <div className="text-sm text-slate-600">Patient: {p.patient?.name || p.patient}</div>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <AppShell
+      menu={[
+        { href: '/doctor', label: 'Overview' },
+        { href: '/doctor/appointments', label: 'Appointments' },
+        { href: '/doctor/meetings', label: 'Meetings' },
+        { href: '/doctor/prescriptions', label: 'Prescriptions' },
+        { href: '/doctor/records', label: 'Records' },
+        { href: '/doctor/profile', label: 'Profile' },
+      ]}
+    >
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Prescriptions</h1>
+            <p className="text-gray-600 mt-1">Manage patient prescriptions and medication records</p>
+          </div>
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="btn-primary"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            New Prescription
+          </button>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="stat-card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="stat-label">Total Prescriptions</p>
+                <p className="stat-value">{stats.total}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="stat-label">This Month</p>
+                <p className="stat-value">{stats.thisMonth}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="stat-label">This Week</p>
+                <p className="stat-value">{stats.thisWeek}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="stat-label">Today</p>
+                <p className="stat-value">{stats.today}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Prescriptions List */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="text-lg font-semibold text-gray-900">My Prescriptions</h3>
+            <p className="text-sm text-gray-500">View and manage all your prescriptions</p>
+          </div>
+          <div className="card-body">
+            {myPrescriptions?.data?.prescriptions?.length > 0 ? (
+              <div className="space-y-4">
+                {myPrescriptions.data.prescriptions.map((prescription: any) => (
+                  <div key={prescription._id} className="p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900">
+                              {prescription.patient?.name || 'Unknown Patient'}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              {new Date(prescription.datePrescribed).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Diagnosis:</span> {prescription.diagnosis}
+                          </p>
+                        </div>
+
+                        <div className="mb-3">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Medications:</p>
+                          <div className="space-y-1">
+                            {prescription.medications?.map((med: any, index: number) => (
+                              <div key={index} className="text-sm text-gray-600 bg-white p-2 rounded">
+                                <span className="font-medium">{med.name}</span> - {med.dosage} ({med.frequency})
+                                {med.instructions && <div className="text-xs text-gray-500 mt-1">{med.instructions}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {prescription.notes && (
+                          <div className="mt-3 p-3 bg-white rounded-lg">
+                            <p className="text-sm text-gray-700">
+                              <span className="font-medium">Notes:</span> {prescription.notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col space-y-2 ml-4">
+                        <button className="btn-primary btn-sm">
+                          View Details
+                        </button>
+                        <button className="btn-outline btn-sm">
+                          Edit
+                        </button>
+                        <button className="btn-danger btn-sm">
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                </svg>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No prescriptions</h3>
+                <p className="mt-1 text-sm text-gray-500">You haven't written any prescriptions yet.</p>
+                <div className="mt-6">
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="btn-primary"
+                  >
+                    Create First Prescription
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </AppShell>
   )
 }
-
