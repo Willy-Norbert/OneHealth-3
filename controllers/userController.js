@@ -182,7 +182,7 @@ exports.updateUserRole = async (req, res) => {
 // @access  Private (User themselves)
 exports.updateUserProfile = async (req, res) => {
   try {
-    const userId = req.params.id || req.user._id;
+    const userId = (req.params.id || req.user._id)?.toString();
     
     // Check if user is updating their own profile
     if (req.user._id.toString() !== userId) {
