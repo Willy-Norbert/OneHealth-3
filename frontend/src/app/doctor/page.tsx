@@ -61,7 +61,14 @@ export default function DoctorDashboard() {
             <div className="backdrop-brightness-75 rounded-2xl p-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold">Good morning, Doctor!</h1>
+                  <h1 className="text-3xl font-bold">
+                    {(() => {
+                      const hour = new Date().getHours()
+                      if (hour < 12) return 'Good morning, Doctor!'
+                      if (hour < 18) return 'Good afternoon, Doctor!'
+                      return 'Good evening, Doctor!'
+                    })()}
+                  </h1>
                   <p className="text-emerald-100 mt-2">Here's your schedule and patient overview for today.</p>
                 </div>
                 <div className="hidden md:block">

@@ -1,6 +1,7 @@
 const Meeting = require('../models/Meeting');
 const User = require('../models/User');
 const Appointment = require('../models/Appointment'); // Import Appointment model
+const { sendEmail } = require('../services/emailService');
 const Joi = require('joi');
 const crypto = require('crypto'); // For generating UUIDs
 
@@ -81,6 +82,26 @@ exports.createMeeting = async (req, res) => {
     }
 
     await newMeeting.populate(['doctor', 'patient']);
+
+    // Send meeting invitation emails to patient and doctor (and hospital if available)
+    try {
+      const hostUrl = process.env.FRONTEND_URL || 'http://localhost:3001'
+      const meetingUrl = `${hostUrl}/meeting/${meeting_id}`
+      const subject = 'Teleconsultation Meeting Invitation'
+      const htmlBody = `
+        <p>You have been invited to a teleconsultation meeting.</p>
+        <ul>
+          <li><strong>Starts:</strong> ${new Date(startTime).toLocaleString()}</li>
+          <li><strong>Ends:</strong> ${new Date(endTime).toLocaleString()}</li>
+          <li><strong>Title:</strong> ${title || 'Teleconsultation'}</li>
+        </ul>
+        <p><a href="${meetingUrl}" style="color:#0ea5e9;">Join Meeting</a></p>
+      `
+      if (newMeeting?.patient?.email) await sendEmail({ to: newMeeting.patient.email, subject, html: require('../services/emailService').baseTemplate('Meeting Invitation', htmlBody) })
+      if (newMeeting?.doctor?.email) await sendEmail({ to: newMeeting.doctor.email, subject, html: require('../services/emailService').baseTemplate('Meeting Invitation', htmlBody) })
+    } catch (e) {
+      console.warn('Failed to send meeting invitation emails:', e.message)
+    }
 
     res.status(201).json({
       status: 'success',
