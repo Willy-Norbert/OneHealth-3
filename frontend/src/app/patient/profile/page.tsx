@@ -8,6 +8,7 @@ export default function ProfilePage() {
   const { user, refreshProfile } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [toastMsg, setToastMsg] = useState<string|undefined>(undefined)
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -34,6 +35,8 @@ export default function ProfilePage() {
         // Optimistically update local UI before server confirms
         await api.users.updateProfile({ avatar: res.url })
         await refreshProfile()
+        setToastMsg('Profile photo updated')
+        setTimeout(()=>setToastMsg(undefined), 3000)
       }
     } catch (err) {
       console.error('Avatar upload failed', err)
@@ -132,8 +135,8 @@ export default function ProfilePage() {
                 {user?.profileImage ? (
                   <img src={user.profileImage} alt={user?.name || 'Avatar'} className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
                 ) : (
-                  <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-semibold text-blue-600">
+                  <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-semibold text-emerald-600">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
@@ -145,14 +148,12 @@ export default function ProfilePage() {
                     {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
                   </span>
                 </div>
-                {isEditing && (
-                  <div className="mt-4">
-                    <label className="btn-outline btn-sm cursor-pointer">
-                      {avatarUploading ? 'Uploading...' : 'Change Photo'}
-                      <input type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
-                    </label>
-                  </div>
-                )}
+                <div className="mt-4">
+                  <label className="btn-outline btn-sm cursor-pointer">
+                    {avatarUploading ? 'Uploading...' : 'Change Photo'}
+                    <input type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -388,6 +389,12 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow px-4 py-3">
+          {toastMsg}
+        </div>
+      )}
     </AppShell>
   )
 }

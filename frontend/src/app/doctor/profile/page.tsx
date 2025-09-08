@@ -10,6 +10,7 @@ export default function DoctorProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [toastMsg, setToastMsg] = useState<string|undefined>(undefined)
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -66,6 +67,8 @@ export default function DoctorProfilePage() {
       if (res?.url) {
         await api.users.updateProfile({ avatar: res.url })
         await refreshProfile()
+        setToastMsg('Profile photo updated')
+        setTimeout(()=>setToastMsg(undefined), 3000)
       }
     } catch (err) {
       console.error('Doctor avatar upload failed', err)
@@ -262,6 +265,12 @@ export default function DoctorProfilePage() {
           </div>
         </div>
       </div>
+      {/* Toast */}
+      {toastMsg && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow px-4 py-3">
+          {toastMsg}
+        </div>
+      )}
     </AppShell>
   )
 }
