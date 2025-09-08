@@ -1167,6 +1167,9 @@ video {
 .pt-6 {
   padding-top: 1.5rem;
 }
+.pt-4 {
+  padding-top: 1rem;
+}
 .text-left {
   text-align: left;
 }
@@ -2544,6 +2547,10 @@ body {
 }
 
 @media (min-width: 768px) {
+
+  .md\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
 
   .md\:block {
     display: block;

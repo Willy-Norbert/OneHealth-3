@@ -1,6 +1,6 @@
 "use client"
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams, useParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
 import Cookies from 'js-cookie'
 
 type Signal = {
@@ -13,40 +13,42 @@ export default function MeetingRoom() {
   const token = Cookies.get('token')
   const [status, setStatus] = useState<string>('Initializing...')
   const [participants, setParticipants] = useState<Array<{ id: string; name: string }>>([])
+
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const socketRef = useRef<any>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
+  const remoteUserRef = useRef<string | null>(null)
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
   useEffect(() => {
     let mounted = true
+    if (!token) {
+      setStatus('Not authenticated')
+      return
+    }
+
     ;(async () => {
       try {
-        if (!token) {
-          setStatus('Not authenticated')
-          return
-        }
-
-        // lazy import socket.io-client
         const { io } = await import('socket.io-client')
         const socket = io(API_BASE, { auth: { token } })
         socketRef.current = socket
 
-        const pc = new RTCPeerConnection({
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-          ],
-        })
+        // IMPORTANT: STUN must not include query params; TURN can include transport with credentials
+        const iceServers: RTCIceServer[] = [
+          { urls: ['stun:stun.l.google.com:19302', 'stun:global.stun.twilio.com:3478'] },
+          // If you have TURN credentials, uncomment:
+          // { urls: 'turn:global.turn.twilio.com:3478?transport=udp', username: process.env.NEXT_PUBLIC_TURN_USER!, credential: process.env.NEXT_PUBLIC_TURN_CRED! },
+        ]
+
+        const pc = new RTCPeerConnection({ iceServers })
         pcRef.current = pc
 
         pc.onicecandidate = (event) => {
           if (event.candidate) {
-            const receiverId = participants[0]?.id // simplistic: send to first remote
-            socket.emit('ice-candidate', event.candidate, id, receiverId)
+            socket.emit('ice-candidate', event.candidate, id, remoteUserRef.current)
           }
         }
 
@@ -63,31 +65,36 @@ export default function MeetingRoom() {
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
         // join room
-        socket.emit('join-room', id, (resp: any) => {
+        socket.emit('join-room', id, (_resp: any) => {
+          if (!mounted) return
           setStatus('Joined room')
         })
 
         socket.on('room-users', (users: Array<{ id: string; name: string }>) => {
           if (!mounted) return
           setParticipants(users)
+          // Prefer the first other user in the room (if any)
+          const me = socket.id
+          const other = users.find((u) => u.id !== me)
+          remoteUserRef.current = other?.id || null
         })
 
         socket.on('user-joined', async (userId: string, userName: string) => {
           if (!mounted) return
-          setParticipants((prev) => {
-            const exists = prev.some((u) => u.id === userId)
-            return exists ? prev : [...prev, { id: userId, name: userName }]
-          })
+          setParticipants((prev) => (prev.some((u) => u.id === userId) ? prev : [...prev, { id: userId, name: userName }]))
+          remoteUserRef.current = userId
+
           // we are the caller
           const offer = await pc.createOffer()
           await pc.setLocalDescription(offer)
           socket.emit('offer', offer, id, userId)
         })
 
-        socket.on('offer', async (offer: RTCSessionDescriptionInit, roomId: string, senderId: string) => {
+        socket.on('offer', async (offer: RTCSessionDescriptionInit, _roomId: string, senderId: string) => {
           await pc.setRemoteDescription(new RTCSessionDescription(offer))
           const answer = await pc.createAnswer()
           await pc.setLocalDescription(answer)
+          remoteUserRef.current = senderId
           socket.emit('answer', answer, id, senderId)
         })
 
@@ -99,7 +106,7 @@ export default function MeetingRoom() {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate))
           } catch {
-            // ignore
+            // ignore invalid/early candidates
           }
         })
 
@@ -108,13 +115,17 @@ export default function MeetingRoom() {
         setStatus(e?.message || 'Failed to initialize meeting')
       }
     })()
+
     return () => {
       mounted = false
       try { socketRef.current?.disconnect?.() } catch {}
       try { pcRef.current?.close?.() } catch {}
       localStreamRef.current?.getTracks()?.forEach((t) => t.stop())
+      pcRef.current = null
+      localStreamRef.current = null
     }
-  }, [API_BASE, id, token, participants])
+    // NOTE: do NOT depend on participants; it would recreate RTCPeerConnection and duplicate handlers
+  }, [API_BASE, id, token])
 
   return (
     <div className="space-y-4">
@@ -127,4 +138,3 @@ export default function MeetingRoom() {
     </div>
   )
 }
-
