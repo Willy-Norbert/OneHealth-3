@@ -23,6 +23,8 @@ export default function HospitalDoctorsPage() {
     consultationModes: ['in-person'],
     bio: ''
   })
+  const [createUser, setCreateUser] = useState<boolean>(false)
+  const [newUser, setNewUser] = useState<any>({ name: '', email: '', password: '', profileImage: '' })
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -153,7 +155,7 @@ export default function HospitalDoctorsPage() {
           <div className="card">
             <div className="card-header">
               <h3 className="text-lg font-semibold text-gray-900">Add Doctor</h3>
-              <p className="text-sm text-gray-500">Create a new doctor profile linked to an existing user with role "doctor"</p>
+              <p className="text-sm text-gray-500">Create a doctor profile for an existing user, or create a new user account.</p>
             </div>
             <div className="card-body">
               <form
@@ -161,8 +163,10 @@ export default function HospitalDoctorsPage() {
                   e.preventDefault()
                   setSubmitting(true)
                   try {
-                    const payload = {
-                      user: form.user,
+                    const usingExisting = !createUser
+                    const payload: any = {
+                      user: usingExisting ? form.user : undefined,
+                      doctorInfo: !usingExisting ? newUser : undefined,
                       licenseNumber: form.licenseNumber,
                       specialization: form.specialization,
                       department: form.department,
@@ -172,10 +176,15 @@ export default function HospitalDoctorsPage() {
                       consultationModes: form.consultationModes,
                       bio: form.bio,
                     }
-                    await api.doctors.create(payload)
+                    // Call hospital-specific endpoint so backend infers hospital and validates department linkage
+                    // NOTE: hospitalId is derived server-side from auth; if you need explicit hospital id, supply it here.
+                    const me: any = await api.me()
+                    const hospitalId = me?.data?.user?.hospital || me?.data?.user?.hospitalId || me?.data?.user?.hospital?._id
+                    await api.hospitals.createDoctor(hospitalId, payload)
                     await mutate()
                     setShowCreate(false)
                     setForm({ user: '', licenseNumber: '', specialization: '', department: '', consultationFee: '', experience: '', languages: '', consultationModes: ['in-person'], bio: '' })
+                    setNewUser({ name: '', email: '', password: '', profileImage: '' })
                   } catch (err) {
                     console.error('Create doctor error', err)
                   } finally {
@@ -186,14 +195,45 @@ export default function HospitalDoctorsPage() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="form-group">
-                    <label className="form-label">User (role: doctor)</label>
-                    <select className="input" value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} required>
-                      <option value="">Select User</option>
-                      {usersRes?.data?.users?.map((u: any) => (
-                        <option value={u._id} key={u._id}>{u.name} - {u.email}</option>
-                      ))}
-                    </select>
+                    <label className="form-label">Link to Existing User?</label>
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" checked={!createUser} onChange={(e) => setCreateUser(!e.target.checked)} />
+                        <span>Use existing user with role "doctor"</span>
+                      </label>
+                    </div>
                   </div>
+                  {!createUser && (
+                    <div className="form-group">
+                      <label className="form-label">Existing User (role: doctor)</label>
+                      <select className="input" value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} required>
+                        <option value="">Select User</option>
+                        {usersRes?.data?.users?.map((u: any) => (
+                          <option value={u._id} key={u._id}>{u.name} - {u.email}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {createUser && (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">Name</label>
+                        <input className="input" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Email</label>
+                        <input type="email" className="input" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Password</label>
+                        <input type="password" className="input" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Profile Image (optional)</label>
+                        <input className="input" value={newUser.profileImage} onChange={(e) => setNewUser({ ...newUser, profileImage: e.target.value })} placeholder="https://..." />
+                      </div>
+                    </>
+                  )}
                   <div className="form-group">
                     <label className="form-label">License Number</label>
                     <input className="input" value={form.licenseNumber} onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })} required />

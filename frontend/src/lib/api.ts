@@ -62,6 +62,7 @@ export const api = {
   hospitals: {
     list: () => apiFetch('/hospitals', { method: 'GET', auth: false }),
     get: (id: string) => apiFetch(`/hospitals/${id}`, { method: 'GET', auth: false }),
+    createDoctor: (hospitalId: string, body: any) => apiFetch(`/hospitals/${hospitalId}/doctors`, { method: 'POST', body: JSON.stringify(body) }),
   },
   patients: {
     list: () => apiFetch('/users/patients', { method: 'GET' }),
