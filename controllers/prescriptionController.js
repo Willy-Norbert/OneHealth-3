@@ -1,6 +1,7 @@
 const Prescription = require('../models/Prescription');
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
+const Doctor = require('../models/Doctor');
 const Joi = require('joi');
 const { createNotification } = require('../utils/notificationService');
 const { sendPrescriptionEmail } = require('../services/emailService'); // Import email service
@@ -43,10 +44,15 @@ exports.createPrescription = async (req, res) => {
     }
 
     // Verify the appointment exists and is assigned to this doctor and patient
+    // Some datasets store doctor as the Doctor profile, others as the User ID. Support both.
+    const doctorProfile = await Doctor.findOne({ user: req.user._id }).select('_id');
     const existingAppointment = await Appointment.findOne({
       _id: appointment,
-      doctor: req.user._id,
       patient: patient,
+      $or: [
+        { doctor: req.user._id },
+        ...(doctorProfile ? [{ doctor: doctorProfile._id }] : []),
+      ],
     });
 
     console.log("Backend: createPrescription - Existing Appointment Check:", existingAppointment);
