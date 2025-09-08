@@ -48,18 +48,29 @@ export default function DoctorDashboard() {
       ]}
     >
       <div className="space-y-8">
-        {/* Welcome Section */}
-        <div className="card p-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Good morning, Doctor!</h1>
-              <p className="text-emerald-100 mt-2">Here's your schedule and patient overview for today.</p>
-            </div>
-            <div className="hidden md:block">
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        {/* Welcome Section with background image and overlay */}
+        <div className="relative overflow-hidden rounded-2xl shadow-card">
+          <div
+            className="p-8 text-white"
+            style={{
+              backgroundImage: 'url(https://png.pngtree.com/background/20210709/original/pngtree-simple-medical-running-doctor-picture-image_955916.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            <div className="backdrop-brightness-75 rounded-2xl p-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold">Good morning, Doctor!</h1>
+                  <p className="text-emerald-100 mt-2">Here's your schedule and patient overview for today.</p>
+                </div>
+                <div className="hidden md:block">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+                    <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
