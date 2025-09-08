@@ -34,6 +34,18 @@ export default function MeetingRoom() {
   // Fetch meeting meta (optional, for header details)
   const { data: meetingData } = useSWR(() => (id ? `meeting-${id}` : null), () => api.meetings.get(id) as any)
   const meeting = (meetingData as any)?.data?.meeting
+  // For prescriptions - try to locate the linked appointment for this meeting
+  const shouldFetchDoctorAppts = !!user && user.role === 'doctor'
+  const { data: myDoctorAppts } = useSWR(() => (shouldFetchDoctorAppts ? 'my-doctor-appts' : null), () => api.appointments.myDoctor() as any)
+  const currentAppointmentId = (() => {
+    const patientId = meeting?.patient?._id || meeting?.patient
+    const list = (myDoctorAppts as any)?.data?.appointments || []
+    const byPatient = list.filter((a: any) => String(a.patient?._id || a.patient) === String(patientId) && a.appointmentType === 'virtual')
+    if (!byPatient.length) return undefined
+    // Prefer the one closest to now
+    byPatient.sort((a: any, b: any) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime())
+    return byPatient[0]?._id
+  })()
 
   // Quick Prescription form state
   const [rxSubmitting, setRxSubmitting] = useState(false)
@@ -50,13 +62,15 @@ export default function MeetingRoom() {
     medications: prev.medications.map((m: any, i: number) => i === idx ? { ...m, [field]: value } : m)
   }))
   const submitRx = async () => {
+    if (user?.role !== 'doctor') { setRxMsg('Only doctors can create prescriptions'); return }
     if (!meeting?.patient?._id) { setRxMsg('Missing patient'); return }
+    if (!currentAppointmentId) { setRxMsg('No linked virtual appointment found for this meeting'); return }
     setRxSubmitting(true)
     setRxMsg('')
     try {
       const payload = {
         patient: meeting.patient._id,
-        appointment: meeting.appointment || undefined,
+        appointment: currentAppointmentId,
         diagnosis: rx.diagnosis,
         medications: rx.medications.filter((m: any) => m.name && m.dosage && m.frequency),
         notes: rx.notes,
@@ -115,7 +129,7 @@ export default function MeetingRoom() {
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
         // Clean any prior listeners to avoid duplicates (hot reload)
-        socket.off('room-users'); socket.off('user-joined'); socket.off('offer'); socket.off('answer'); socket.off('ice-candidate')
+        socket.off('room-users'); socket.off('user-joined'); socket.off('user-left'); socket.off('offer'); socket.off('answer'); socket.off('ice-candidate')
 
         // Join signaling room using meeting_id
         socket.emit('join-room', id, () => mounted && setStatus('Joined room'))
@@ -142,6 +156,14 @@ export default function MeetingRoom() {
           } finally {
             isMakingOffer = false
           }
+        })
+
+        // Notify when someone leaves
+        socket.on('user-left', (userId: string) => {
+          if (!mounted) return
+          setParticipants((prev) => prev.filter((p) => p.id !== userId))
+          setStatus('A participant left the meeting')
+          setTimeout(() => setStatus('Ready'), 1500)
         })
 
         socket.on('offer', async (offer: RTCSessionDescriptionInit, _roomId: string, senderId: string) => {
@@ -186,6 +208,19 @@ export default function MeetingRoom() {
             // ignore
           }
         })
+
+        // Also initiate negotiation if needed (e.g., tracks added later)
+        pc.onnegotiationneeded = async () => {
+          try {
+            if (pc.signalingState !== 'stable') return
+            isMakingOffer = true
+            const offer = await pc.createOffer()
+            await pc.setLocalDescription(offer)
+            socket.emit('offer', pc.localDescription, id, remoteUserRef.current)
+          } finally {
+            isMakingOffer = false
+          }
+        }
 
         setStatus('Ready')
       } catch (e: any) {
