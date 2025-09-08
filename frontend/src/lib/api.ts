@@ -49,6 +49,12 @@ export const api = {
 
   // Users
   users: {
+    list: (params?: Record<string, string | number | boolean>) => {
+      const sp = new URLSearchParams()
+      if (params) Object.entries(params).forEach(([k, v]) => sp.append(k, String(v)))
+      const qs = sp.toString()
+      return apiFetch(`/users${qs ? `?${qs}` : ''}`, { method: 'GET' })
+    },
     updateProfile: (body: any) => apiFetch('/users/profile', { method: 'PATCH', body: JSON.stringify(body) }),
   },
 
@@ -68,6 +74,7 @@ export const api = {
     list: (q?: URLSearchParams) => apiFetch(`/doctors${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
     byHospitalDepartment: (hospitalId: string, departmentId: string) => apiFetch(`/doctors/hospital/${hospitalId}/department/${departmentId}`, { method: 'GET', auth: false }),
     get: (id: string) => apiFetch(`/doctors/${id}`, { method: 'GET', auth: false }),
+    create: (body: any) => apiFetch('/doctors', { method: 'POST', body: JSON.stringify(body) }),
   },
   insurance: {
     list: () => apiFetch('/insurance', { method: 'GET', auth: false }),

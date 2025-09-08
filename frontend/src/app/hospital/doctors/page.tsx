@@ -2,12 +2,27 @@
 import { AppShell } from '@/components/layout/AppShell'
 import useSWR from 'swr'
 import { api } from '@/lib/api'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 export default function HospitalDoctorsPage() {
   const { data, mutate } = useSWR('doctors-list', () => api.doctors.list() as any)
+  const { data: departmentsRes } = useSWR('departments', () => api.departments.list() as any)
+  const { data: usersRes } = useSWR('users-hospital', () => api.users.list({ role: 'doctor', limit: 100 }) as any)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm] = useState<any>({
+    user: '',
+    licenseNumber: '',
+    specialization: '',
+    department: '',
+    consultationFee: '',
+    experience: '',
+    languages: '',
+    consultationModes: ['in-person'],
+    bio: ''
+  })
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -58,7 +73,7 @@ export default function HospitalDoctorsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Doctors</h1>
             <p className="text-gray-600 mt-1">Manage hospital medical staff</p>
           </div>
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={() => setShowCreate(true)}>
             <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
@@ -132,6 +147,118 @@ export default function HospitalDoctorsPage() {
             </div>
           </div>
         </div>
+
+        {/* Create Doctor */}
+        {showCreate && (
+          <div className="card">
+            <div className="card-header">
+              <h3 className="text-lg font-semibold text-gray-900">Add Doctor</h3>
+              <p className="text-sm text-gray-500">Create a new doctor profile linked to an existing user with role "doctor"</p>
+            </div>
+            <div className="card-body">
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  setSubmitting(true)
+                  try {
+                    const payload = {
+                      user: form.user,
+                      licenseNumber: form.licenseNumber,
+                      specialization: form.specialization,
+                      department: form.department,
+                      consultationFee: Number(form.consultationFee || 0),
+                      experience: Number(form.experience || 0),
+                      languages: form.languages ? String(form.languages).split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+                      consultationModes: form.consultationModes,
+                      bio: form.bio,
+                    }
+                    await api.doctors.create(payload)
+                    await mutate()
+                    setShowCreate(false)
+                    setForm({ user: '', licenseNumber: '', specialization: '', department: '', consultationFee: '', experience: '', languages: '', consultationModes: ['in-person'], bio: '' })
+                  } catch (err) {
+                    console.error('Create doctor error', err)
+                  } finally {
+                    setSubmitting(false)
+                  }
+                }}
+                className="space-y-6"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="form-group">
+                    <label className="form-label">User (role: doctor)</label>
+                    <select className="input" value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} required>
+                      <option value="">Select User</option>
+                      {usersRes?.data?.users?.map((u: any) => (
+                        <option value={u._id} key={u._id}>{u.name} - {u.email}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">License Number</label>
+                    <input className="input" value={form.licenseNumber} onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Specialization</label>
+                    <select className="input" value={form.specialization} onChange={(e) => setForm({ ...form, specialization: e.target.value })} required>
+                      <option value="">Select Specialization</option>
+                      {[
+                        'General Medicine','Cardiology','Pediatrics','Gynecology','Orthopedics','Dermatology','Neurology','Psychiatry','Emergency Medicine','Surgery','Oncology','Ophthalmology','ENT','Urology','Endocrinology','Mental Health','Dentistry'
+                      ].map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Department</label>
+                    <select className="input" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} required>
+                      <option value="">Select Department</option>
+                      {departmentsRes?.data?.departments?.map((d: any) => (
+                        <option key={d._id} value={d._id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Consultation Fee (RWF)</label>
+                    <input type="number" className="input" value={form.consultationFee} onChange={(e) => setForm({ ...form, consultationFee: e.target.value })} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Experience (years)</label>
+                    <input type="number" className="input" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} />
+                  </div>
+                  <div className="form-group md:col-span-2">
+                    <label className="form-label">Languages (comma separated)</label>
+                    <input className="input" value={form.languages} onChange={(e) => setForm({ ...form, languages: e.target.value })} placeholder="Kinyarwanda, English, French" />
+                  </div>
+                  <div className="form-group md:col-span-2">
+                    <label className="form-label">Consultation Modes</label>
+                    <div className="flex flex-wrap gap-3">
+                      {['in-person','video-call','phone-call'].map((m) => (
+                        <label key={m} className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input type="checkbox" checked={form.consultationModes.includes(m)} onChange={(e) => {
+                            const next = e.target.checked
+                              ? [...form.consultationModes, m]
+                              : form.consultationModes.filter((x: string) => x !== m)
+                            setForm({ ...form, consultationModes: next })
+                          }} />
+                          <span>{m}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="form-group md:col-span-2">
+                    <label className="form-label">Bio</label>
+                    <textarea className="input" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button type="button" className="btn-outline" onClick={() => setShowCreate(false)}>Cancel</button>
+                  <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? 'Saving...' : 'Save Doctor'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Filters and Search */}
         <div className="card">
