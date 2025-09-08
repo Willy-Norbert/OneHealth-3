@@ -36,7 +36,7 @@ declare namespace __next_route_internal_types__ {
     | `/admin/payments`
     | `/admin/profile`
     | `/admin/users`
-    | `/doctor`
+    | `/admin/notifications`
     | `/auth/forgot`
     | `/auth/login`
     | `/auth/register`
@@ -44,11 +44,13 @@ declare namespace __next_route_internal_types__ {
     | `/auth/verify`
     | `/dashboard`
     | `/departments`
+    | `/doctor`
     | `/doctor/appointments`
     | `/doctor/profile`
     | `/doctor/meetings`
     | `/doctor/prescriptions`
     | `/doctor/records`
+    | `/doctor/notifications`
     | `/hospital`
     | `/hospital/analytics`
     | `/hospital/appointments`
@@ -56,6 +58,7 @@ declare namespace __next_route_internal_types__ {
     | `/hospital/doctors`
     | `/hospital/patients`
     | `/hospital/profile`
+    | `/hospital/notifications`
     | `/insurance`
     | `/patient`
     | `/patient/ai`
@@ -66,7 +69,10 @@ declare namespace __next_route_internal_types__ {
     | `/patient/profile`
     | `/patient/records`
     | `/patient/teleconsult`
+    | `/patient/prescriptions`
+    | `/patient/payments`
     | `/specialists`
+    | `/notifications`
   type DynamicRoutes<T extends string = string> = 
     | `/meeting/${SafeSlug<T>}`
 
