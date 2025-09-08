@@ -46,6 +46,8 @@ export default function MeetingsPage() {
     }).length || 0
   }
 
+  const [sched, setSched] = useState({ patient: '', start: '', end: '', title: '', description: '' })
+
   return (
     <AppShell
       menu={[
@@ -241,11 +243,12 @@ export default function MeetingsPage() {
                           <button
                             onClick={async () => {
                               try {
-                                await api.meetings.updateStatus(meeting._id, 'ongoing')
+                                const mid = meeting.meeting_id || (meeting.link ? meeting.link.split('/').pop() : '')
+                                if (!mid) throw new Error('Missing meeting_id')
+                                await api.meetings.updateStatus(mid, 'in-progress')
                                 mutate()
-                                if (meeting.meetingLink) {
-                                  window.open(meeting.meetingLink, '_blank', 'noopener,noreferrer')
-                                }
+                                const link = meeting.meetingLink || meeting.link
+                                if (link) window.open(link, '_blank', 'noopener,noreferrer')
                               } catch (e) {
                                 console.error('Failed to start meeting', e)
                               }
@@ -259,7 +262,9 @@ export default function MeetingsPage() {
                           <button
                             onClick={async () => {
                               try {
-                                await api.meetings.updateStatus(meeting._id, 'completed')
+                                const mid = meeting.meeting_id || (meeting.link ? meeting.link.split('/').pop() : '')
+                                if (!mid) throw new Error('Missing meeting_id')
+                                await api.meetings.updateStatus(mid, 'completed')
                                 mutate()
                               } catch (e) {
                                 console.error('Failed to end meeting', e)
@@ -294,9 +299,32 @@ export default function MeetingsPage() {
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Schedule New Meeting</h3>
             <p className="text-gray-600 mb-4">Create a new video consultation with a patient.</p>
-            <button className="btn-primary">
-              Schedule Meeting
-            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input className="input" placeholder="Patient User ID" value={sched.patient} onChange={(e)=>setSched({...sched, patient: e.target.value})} />
+              <input className="input" type="datetime-local" value={sched.start} onChange={(e)=>setSched({...sched, start: e.target.value})} />
+              <input className="input" type="datetime-local" value={sched.end} onChange={(e)=>setSched({...sched, end: e.target.value})} />
+              <input className="input" placeholder="Title (optional)" value={sched.title} onChange={(e)=>setSched({...sched, title: e.target.value})} />
+              <input className="input md:col-span-2" placeholder="Description (optional)" value={sched.description} onChange={(e)=>setSched({...sched, description: e.target.value})} />
+            </div>
+            <div className="mt-4">
+              <button className="btn-primary" onClick={async ()=>{
+                try {
+                  if (!user) return
+                  await api.meetings.create({
+                    doctor: user.id,
+                    patient: sched.patient,
+                    startTime: new Date(sched.start).toISOString(),
+                    endTime: new Date(sched.end).toISOString(),
+                    title: sched.title,
+                    description: sched.description,
+                  })
+                  setSched({ patient: '', start: '', end: '', title: '', description: '' })
+                  mutate()
+                } catch (e) {
+                  console.error('Failed to schedule meeting', e)
+                }
+              }}>Schedule Meeting</button>
+            </div>
           </div>
           
           <div className="card p-6">
