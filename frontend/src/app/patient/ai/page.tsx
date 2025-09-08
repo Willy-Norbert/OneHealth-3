@@ -45,17 +45,17 @@ export default function AIPage() {
           })
       }
       
-      // If API fails, provide mock response for demonstration
-      if (!res || res.error) {
-        res = generateMockResponse(selectedService, symptoms)
+      // Prefer backend response; if it signals error, surface it; fallback only when no data
+      if (!res || (res as any)?.status === 'error') {
+        setResponse({ error: (res as any)?.message || 'AI service error. Please try again.' })
+      } else if (!(res as any)?.data) {
+        setResponse(generateMockResponse(selectedService, symptoms))
+      } else {
+        setResponse(res)
       }
-      
-      setResponse(res)
-    } catch (error) {
-      console.error('AI service error:', error)
-      // Provide mock response on error for demonstration
-      const mockResponse = generateMockResponse(selectedService, symptoms)
-      setResponse(mockResponse)
+    } catch (error: any) {
+      console.error('AI service error:', error?.message || error)
+      setResponse({ error: error?.message || 'AI request failed.' })
     } finally {
       setLoading(false)
     }

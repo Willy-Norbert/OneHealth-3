@@ -1,9 +1,12 @@
 "use client"
 import { AppShell } from '@/components/layout/AppShell'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+import 'leaflet/dist/leaflet.css'
 
 export default function EmergencyPage() {
   const [coords, setCoords] = useState<{lat:number,lng:number}|null>(null)
+  const [ambulanceCoords, setAmbulanceCoords] = useState<{lat:number,lng:number}|null>(null)
   const [address, setAddress] = useState('')
   const [desc, setDesc] = useState('')
   const [severity, setSeverity] = useState('moderate')
@@ -17,6 +20,8 @@ export default function EmergencyPage() {
         (pos) => {
           const newCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           setCoords(newCoords)
+          // Seed a mock ambulance 2km away to demonstrate routing
+          setAmbulanceCoords({ lat: newCoords.lat + 0.018, lng: newCoords.lng + 0.018 })
           // Reverse geocoding to get address
           fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${newCoords.lat}&longitude=${newCoords.lng}&localityLanguage=en`)
             .then(res => res.json())
@@ -34,6 +39,26 @@ export default function EmergencyPage() {
       setAddress('Geolocation not supported')
     }
   }, [])
+
+  // Lazy-load map components to avoid SSR issues
+  const MapContainer = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false }), [])
+  const TileLayer = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false }), [])
+  const Marker = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false }), [])
+  const Polyline = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.Polyline), { ssr: false }), [])
+
+  const etaMinutes = useMemo(() => {
+    if (!coords || !ambulanceCoords) return null
+    // Haversine distance approx and simple ETA at 40 km/h
+    const R = 6371
+    const toRad = (d:number)=>d*Math.PI/180
+    const dLat = toRad(ambulanceCoords.lat - coords.lat)
+    const dLng = toRad(ambulanceCoords.lng - coords.lng)
+    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(coords.lat))*Math.cos(toRad(ambulanceCoords.lat))*Math.sin(dLng/2)**2
+    const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    const km = R*c
+    const minutes = Math.round((km/40)*60)
+    return Math.max(1, minutes)
+  }, [coords, ambulanceCoords])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -275,26 +300,19 @@ export default function EmergencyPage() {
         <div className="card">
           <div className="card-header">
             <h3 className="text-lg font-semibold text-gray-900">Emergency Map</h3>
-            <p className="text-sm text-gray-500">View your location and nearby emergency services</p>
+            <p className="text-sm text-gray-500">Live view of your location and incoming ambulance route{etaMinutes?` • ETA ${etaMinutes} min`:''}</p>
           </div>
           <div className="card-body">
             {coords ? (
-              <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                  </svg>
-                  <p className="text-gray-600 mb-2">Map View</p>
-                  <p className="text-sm text-gray-500">
-                    Location: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {address}
-                  </p>
-                  <button className="btn-outline btn-sm mt-4">
-                    Open in Maps
-                  </button>
-                </div>
+              <div className="h-96 rounded-lg overflow-hidden">
+                <MapContainer center={[coords.lat, coords.lng]} zoom={14} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
+                  <Marker position={[coords.lat, coords.lng]} />
+                  {ambulanceCoords && <Marker position={[ambulanceCoords.lat, ambulanceCoords.lng]} />}
+                  {ambulanceCoords && (
+                    <Polyline positions={[[ambulanceCoords.lat, ambulanceCoords.lng],[coords.lat, coords.lng]]} color="#ef4444" />
+                  )}
+                </MapContainer>
               </div>
             ) : (
               <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">

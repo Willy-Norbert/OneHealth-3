@@ -7,14 +7,14 @@ import Link from 'next/link'
 export default function PatientDashboard() {
   const { data: hospitals } = useSWR('hospitals', () => api.hospitals.list() as any)
   const { data: insurance } = useSWR('insurance', () => api.insurance.list() as any)
-  const { data: slots } = useSWR('slots', () => api.appointments.availableSlots() as any)
+  // availableSlots requires params; remove unused call
   const { data: appointments } = useSWR('myAppointments', () => api.appointments.my() as any)
 
   // Mock data for demonstration - in real app, this would come from API
   const stats = {
     totalAppointments: appointments?.data?.appointments?.length || 0,
-    upcomingAppointments: appointments?.data?.appointments?.filter((a: any) => new Date(a.date) > new Date()).length || 0,
-    completedAppointments: appointments?.data?.appointments?.filter((a: any) => new Date(a.date) < new Date()).length || 0,
+    upcomingAppointments: appointments?.data?.appointments?.filter((a: any) => new Date(a.appointmentDate) > new Date()).length || 0,
+    completedAppointments: appointments?.data?.appointments?.filter((a: any) => new Date(a.appointmentDate) < new Date()).length || 0,
     availableHospitals: hospitals?.data?.hospitals?.length || 0,
     insuranceProviders: insurance?.data?.insuranceProviders?.length || 0,
     emergencyContacts: 3
@@ -203,13 +203,13 @@ export default function PatientDashboard() {
                           {appointment.doctor?.name || 'Dr. Smith'}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {new Date(appointment.date).toLocaleDateString()}
+                          {new Date(appointment.appointmentDate).toLocaleDateString()} • {appointment.appointmentTime}
                         </p>
                       </div>
                       <span className={`badge ${
-                        new Date(appointment.date) > new Date() ? 'badge-primary' : 'badge-gray'
+                        new Date(appointment.appointmentDate) > new Date() ? 'badge-primary' : 'badge-gray'
                       }`}>
-                        {new Date(appointment.date) > new Date() ? 'Upcoming' : 'Completed'}
+                        {new Date(appointment.appointmentDate) > new Date() ? 'Upcoming' : 'Completed'}
                       </span>
                     </div>
                   ))}
