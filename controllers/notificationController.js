@@ -63,9 +63,19 @@ const deleteNotification = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Mark all notifications as read for current user
+// @route   PUT /api/notifications/mark-all/read
+// @access  Private
+const markAllAsRead = asyncHandler(async (req, res) => {
+  await Notification.updateMany({ recipient: req.user.id, read: { $ne: true } }, { $set: { read: true } });
+  const notifications = await Notification.find({ recipient: req.user.id }).sort({ createdAt: -1 });
+  res.status(200).json({ success: true, message: 'All notifications marked as read', data: notifications });
+});
+
 module.exports = {
   getNotifications,
   markAsRead,
+  markAllAsRead,
   deleteNotification,
 };
 

@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 export function AppShell({ children, menu }: { children: React.ReactNode, menu: { href: string; label: string }[] }) {
   const { user, logout } = useAuth()
-  const { notifications } = useNotifications()
+  const { notifications, markAll } = useNotifications()
   const unreadCount = notifications.filter((n:any)=>!n.isRead).length
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -75,7 +75,10 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
                   <div className="absolute right-0 z-40 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-xl">
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                       <div className="text-sm font-semibold text-gray-900">Notifications</div>
-                      <Link href="/notifications" className="text-xs text-blue-600 hover:underline" onClick={()=>setNotifOpen(false)}>View all</Link>
+                      <div className="flex items-center gap-3">
+                        <button className="text-xs text-emerald-600 hover:underline" onClick={async()=>{ await markAll(); }}>{'Mark all'}</button>
+                        <Link href="/notifications" className="text-xs text-emerald-600 hover:underline" onClick={()=>setNotifOpen(false)}>View all</Link>
+                      </div>
                     </div>
                     <div className="max-h-80 overflow-auto">
                       {notifications.length ? notifications.slice(0,4).map((n:any)=> (

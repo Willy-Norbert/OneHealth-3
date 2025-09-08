@@ -9,6 +9,9 @@ router.get('/', protect, notificationController.getNotifications);
 // Mark a notification as read
 router.put('/:id/read', protect, notificationController.markAsRead);
 
+// Mark all as read
+router.put('/mark-all/read', protect, notificationController.markAllAsRead);
+
 // Delete a notification
 router.delete('/:id', protect, notificationController.deleteNotification);
 

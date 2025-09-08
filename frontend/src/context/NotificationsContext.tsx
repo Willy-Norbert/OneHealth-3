@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext'
 
 type Notification = { _id: string; message: string; isRead?: boolean }
 
-const Ctx = createContext<{ notifications: Notification[]; refresh: ()=>void }|undefined>(undefined)
+const Ctx = createContext<{ notifications: Notification[]; refresh: ()=>void; markAll: ()=>Promise<void> }|undefined>(undefined)
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -38,7 +38,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [isAuthenticated, token])
   
-  return <Ctx.Provider value={{ notifications, refresh: fetchNotes }}>{children}</Ctx.Provider>
+  const markAll = async () => {
+    try {
+      await api.notifications.markRead('mark-all') as any
+      await fetchNotes()
+    } catch (e) {
+      // ignore
+    }
+  }
+  return <Ctx.Provider value={{ notifications, refresh: fetchNotes, markAll }}>{children}</Ctx.Provider>
 }
 
 export function useNotifications() {

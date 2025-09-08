@@ -130,7 +130,7 @@ export const api = {
   },
   notifications: {
     list: () => apiFetch('/notifications', { method: 'GET' }),
-    markRead: (id: string) => apiFetch(`/notifications/${id}/read`, { method: 'PUT' }),
+    markRead: (id: string) => id === 'mark-all' ? apiFetch('/notifications/mark-all/read', { method: 'PUT' }) : apiFetch(`/notifications/${id}/read`, { method: 'PUT' }),
   },
   pharmacy: {
     list: () => apiFetch('/pharmacies', { method: 'GET', auth: false }),
