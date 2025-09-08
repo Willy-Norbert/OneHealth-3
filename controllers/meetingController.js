@@ -1,7 +1,7 @@
 const Meeting = require('../models/Meeting');
 const User = require('../models/User');
 const Appointment = require('../models/Appointment'); // Import Appointment model
-const { sendEmail } = require('../services/emailService');
+const { sendEmail, baseTemplate } = require('../services/emailService');
 const Joi = require('joi');
 const crypto = require('crypto'); // For generating UUIDs
 
@@ -97,8 +97,19 @@ exports.createMeeting = async (req, res) => {
         </ul>
         <p><a href="${meetingUrl}" style="color:#0ea5e9;">Join Meeting</a></p>
       `
-      if (newMeeting?.patient?.email) await sendEmail({ to: newMeeting.patient.email, subject, html: require('../services/emailService').baseTemplate('Meeting Invitation', htmlBody) })
-      if (newMeeting?.doctor?.email) await sendEmail({ to: newMeeting.doctor.email, subject, html: require('../services/emailService').baseTemplate('Meeting Invitation', htmlBody) })
+      if (newMeeting?.patient?.email) await sendEmail({ to: newMeeting.patient.email, subject, html: baseTemplate('Meeting Invitation', htmlBody) })
+      if (newMeeting?.doctor?.email) await sendEmail({ to: newMeeting.doctor.email, subject, html: baseTemplate('Meeting Invitation', htmlBody) })
+      // Optionally notify hospital if doctor is linked to one
+      try {
+        const docUser = await User.findById(doctor).populate('hospital')
+        const hospitalId = docUser?.hospital
+        if (hospitalId) {
+          const Hospital = require('../models/Hospital')
+          const hospital = await Hospital.findById(hospitalId)
+          const hospitalEmail = hospital?.contact?.email
+          if (hospitalEmail) await sendEmail({ to: hospitalEmail, subject, html: baseTemplate('Meeting Invitation', htmlBody) })
+        }
+      } catch {}
     } catch (e) {
       console.warn('Failed to send meeting invitation emails:', e.message)
     }
