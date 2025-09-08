@@ -20,10 +20,17 @@ export default function AppointmentsPage() {
 
   const loadSlots = async () => {
     if (!form.hospital || !form.department || !form.appointmentDate) return
-    const q = new URLSearchParams({ date: form.appointmentDate, hospital: form.hospital, department: form.department })
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/appointments/available-slots?${q.toString()}`, { headers: { 'Content-Type': 'application/json' }, cache: 'no-store' })
-    const json = await res.json()
-    setSlots(json?.data?.availableSlots || [])
+    try {
+      const res = await api.appointments.availableSlots({
+        date: form.appointmentDate,
+        hospital: form.hospital,
+        department: form.department
+      })
+      setSlots(res?.data?.availableSlots || [])
+    } catch (error) {
+      console.error('Error loading slots:', error)
+      setSlots([])
+    }
   }
 
   
