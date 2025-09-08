@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  /* Healthcare Professional Color Palette */
-  --primary: 59 130 246; /* Blue-500 */
-  --primary-dark: 37 99 235; /* Blue-600 */
-  --primary-light: 147 197 253; /* Blue-300 */
-  --secondary: 16 185 129; /* Emerald-500 */
+  /* Healthcare Professional Color Palette - shifted to Green/Navy */
+  --primary: 16 185 129; /* Emerald-500 */
+  --primary-dark: 5 150 105; /* Emerald-600 */
+  --primary-light: 167 243 208; /* Emerald-300 */
+  --secondary: 0 51 102; /* Navy */
   --accent: 245 101 101; /* Red-400 */
   --success: 34 197 94; /* Green-500 */
   --warning: 251 191 36; /* Amber-400 */
@@ -74,7 +74,7 @@ body {
 }
 
 .btn-primary {
-  @apply btn bg-blue-600 text-white px-6 py-3 hover:bg-blue-700 focus:ring-blue-500 shadow-sm;
+  @apply btn bg-emerald-600 text-white px-6 py-3 hover:bg-emerald-700 focus:ring-emerald-500 shadow-sm;
 }
 
 .btn-secondary {
@@ -103,7 +103,7 @@ body {
 
 /* Professional Input Styles */
 .input {
-  @apply w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  @apply w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200;
 }
 
 .input-error {
@@ -133,7 +133,7 @@ body {
 }
 
 .badge-primary {
-  @apply badge bg-blue-100 text-blue-800;
+  @apply badge bg-emerald-100 text-emerald-800;
 }
 
 .badge-success {
@@ -170,7 +170,7 @@ body {
 }
 
 .sidebar-item.active {
-  @apply bg-blue-50 text-blue-700 border-r-2 border-blue-600;
+  @apply bg-emerald-50 text-emerald-700 border-r-2 border-emerald-600;
 }
 
 /* Professional Header Styles */
@@ -226,7 +226,7 @@ body {
 
 /* Professional Loading States */
 .loading-spinner {
-  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600;
 }
 
 /* Professional Modal Styles */
@@ -257,7 +257,7 @@ body {
 }
 
 .nav-item.active {
-  @apply text-blue-600 bg-blue-50;
+  @apply text-emerald-600 bg-emerald-50;
 }
 
 /* Professional Icons */

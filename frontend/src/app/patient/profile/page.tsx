@@ -31,6 +31,7 @@ export default function ProfilePage() {
     try {
       const res: any = await api.uploads.image(file)
       if (res?.url) {
+        // Optimistically update local UI before server confirms
         await api.users.updateProfile({ avatar: res.url })
         await refreshProfile()
       }
