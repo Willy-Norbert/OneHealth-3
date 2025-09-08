@@ -86,6 +86,14 @@ const orderSchema = new mongoose.Schema({
   timestamps: true 
 });
 
+// Ensure orderNumber is generated before validation so 'required' passes
+orderSchema.pre('validate', function(next) {
+  if (!this.orderNumber) {
+    this.orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).slice(-6).toUpperCase()}`;
+  }
+  next();
+});
+
 // Auto-generate order number
 orderSchema.pre('save', async function(next) {
   if (!this.orderNumber) {
