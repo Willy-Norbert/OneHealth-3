@@ -12,7 +12,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['appointment', 'user', 'emergency', 'system', 'message', 'other'],
+    enum: ['appointment', 'user', 'emergency', 'system', 'message', 'other', 'prescription'],
     required: true,
   },
   message: {
@@ -34,7 +34,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
       type: String,
-      enum: ['User', 'Appointment', 'Hospital', 'Emergency'], // Add other relevant types here
+      enum: ['User', 'Appointment', 'Hospital', 'Emergency', 'Prescription'], // Add other relevant types here
     },
   },
 });

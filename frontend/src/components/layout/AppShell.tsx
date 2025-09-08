@@ -4,11 +4,13 @@ import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 import { useNotifications } from '@/context/NotificationsContext'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export function AppShell({ children, menu }: { children: React.ReactNode, menu: { href: string; label: string }[] }) {
   const { user, logout } = useAuth()
   const { notifications } = useNotifications()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,7 +61,7 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
             <div className="flex items-center gap-4">
               {/* Notifications */}
               <div className="relative">
-                <button className="relative rounded-xl bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-colors">
+                <button onClick={()=>setNotifOpen(!notifOpen)} className="relative rounded-xl bg-gray-100 p-2 text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-colors">
                   <span className="sr-only">View notifications</span>
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
@@ -70,6 +72,26 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
                     </span>
                   )}
                 </button>
+                {notifOpen && (
+                  <div className="absolute right-0 z-40 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-xl">
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                      <div className="text-sm font-semibold text-gray-900">Notifications</div>
+                      <Link href="/notifications" className="text-xs text-blue-600 hover:underline" onClick={()=>setNotifOpen(false)}>View all</Link>
+                    </div>
+                    <div className="max-h-80 overflow-auto">
+                      {notifications.length ? notifications.map((n)=> (
+                        <div key={n._id} className="px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-50">
+                          {n.message}
+                        </div>
+                      )) : (
+                        <div className="px-4 py-6 text-sm text-gray-500">You're all caught up.</div>
+                      )}
+                    </div>
+                    <div className="px-4 py-3 text-right">
+                      <Link href="/notifications" className="btn-outline btn-sm" onClick={()=>setNotifOpen(false)}>Open Notifications</Link>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* User menu */}
