@@ -244,7 +244,8 @@ export default function DoctorAppointmentsPage() {
                               const meetingLink = appointment.meeting?.meetingLink || appointment.meeting?.link
                               const meetingId = appointment.meeting?.meeting_id || (meetingLink ? String(meetingLink).split('/').pop() : null)
                               const href = meetingLink || (meetingId ? `/meeting/${meetingId}` : null)
-                              if (href) {
+                              // Gate join until patient has paid
+                              if (href && appointment.paymentStatus === 'paid') {
                                 return (
                                   <a
                                     href={href}
@@ -256,6 +257,14 @@ export default function DoctorAppointmentsPage() {
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                                     </svg>
                                     Join Teleconsultation
+                                  </a>
+                                )
+                              }
+                              if (href && appointment.paymentStatus !== 'paid') {
+                                return (
+                                  <a href="/patient/payments" className="btn-outline btn-sm inline-flex items-center">
+                                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+                                    Awaiting Payment
                                   </a>
                                 )
                               }
