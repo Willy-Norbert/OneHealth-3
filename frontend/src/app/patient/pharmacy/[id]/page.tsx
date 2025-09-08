@@ -14,7 +14,9 @@ export default function PharmacyProfilePage() {
   const { data: insuranceRes } = useSWR('insurance', () => api.insurance.list() as any)
 
   const pharmacy = pharmacyRes?.data?.pharmacy
-  const insuranceOptions: any[] = insuranceRes?.data || []
+  const insuranceOptions: any[] = Array.isArray(insuranceRes?.data?.insuranceProviders)
+    ? insuranceRes.data.insuranceProviders
+    : (Array.isArray(insuranceRes?.data) ? insuranceRes.data : [])
 
   const [step, setStep] = useState<number>(1)
   const [orderType, setOrderType] = useState<'prescription'|'over-the-counter'>('prescription')
