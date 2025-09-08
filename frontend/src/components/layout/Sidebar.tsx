@@ -41,9 +41,7 @@ export function Sidebar({ items, isOpen, onClose }: {
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600">
-                <Image src="/logo.png" alt="OneHealthline" width={24} height={24} />
-              </div>
+              <Image src="/logo.png" alt="OneHealthline" width={28} height={28} className="h-7 w-7" />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">OneHealthline</h1>
                 <p className="text-xs text-gray-500">Connect</p>
@@ -64,13 +62,13 @@ export function Sidebar({ items, isOpen, onClose }: {
                       href={item.href}
                       className={`group flex gap-x-3 rounded-xl p-3 text-sm font-semibold leading-6 transition-all duration-200 ${
                         isActive
-                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          ? 'bg-emerald-50 text-emerald-700 border-r-2 border-emerald-600'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
                       <svg
                         className={`h-6 w-6 shrink-0 ${
-                          isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-600'
+                          isActive ? 'text-emerald-700' : 'text-gray-400 group-hover:text-gray-600'
                         }`}
                         fill="none"
                         viewBox="0 0 24 24"
@@ -95,9 +93,7 @@ export function Sidebar({ items, isOpen, onClose }: {
           {/* Mobile header */}
           <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600">
-                <Image src="/logo.png" alt="OneHealthline" width={24} height={24} />
-              </div>
+              <Image src="/logo.png" alt="OneHealthline" width={28} height={28} className="h-7 w-7" />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">OneHealthline</h1>
                 <p className="text-xs text-gray-500">Connect</p>
@@ -129,13 +125,13 @@ export function Sidebar({ items, isOpen, onClose }: {
                       onClick={onClose}
                       className={`group flex gap-x-3 rounded-xl p-3 text-sm font-semibold leading-6 transition-all duration-200 ${
                         isActive
-                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          ? 'bg-emerald-50 text-emerald-700 border-r-2 border-emerald-600'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
                       <svg
                         className={`h-6 w-6 shrink-0 ${
-                          isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-600'
+                          isActive ? 'text-emerald-700' : 'text-gray-400 group-hover:text-gray-600'
                         }`}
                         fill="none"
                         viewBox="0 0 24 24"
