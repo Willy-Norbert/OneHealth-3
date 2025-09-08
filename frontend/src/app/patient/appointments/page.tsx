@@ -131,7 +131,7 @@ export default function AppointmentsPage() {
                                onClick={() => setForm({ ...form, appointmentType: 'in-person' })}
                                className={`p-3 rounded-lg border-2 text-center transition-colors ${
                                  form.appointmentType === 'in-person'
-                                   ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                   ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                                    : 'border-gray-200 hover:border-gray-300'
                                }`}
                              >
@@ -287,7 +287,7 @@ export default function AppointmentsPage() {
                           <span className={`badge ${getStatusBadge(appointment.status)}`}>
                             {appointment.status}
                           </span>
-                          <span className={`badge ${appointment.appointmentType === 'virtual' ? 'badge-purple' : 'badge-blue'}`}>
+                          <span className={`badge ${appointment.appointmentType === 'virtual' ? 'badge-purple' : 'badge-primary'}`}>
                             {appointment.appointmentType === 'virtual' ? '📹 Virtual' : '🏥 In-Person'}
                           </span>
                         </div>

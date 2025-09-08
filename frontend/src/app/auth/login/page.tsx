@@ -121,7 +121,7 @@ function LoginInner() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Remember me
@@ -129,7 +129,7 @@ function LoginInner() {
               </div>
 
               <div className="text-sm">
-                <a href="/auth/forgot" className="font-medium text-blue-600 hover:text-blue-500">
+                <a href="/auth/forgot" className="font-medium text-emerald-600 hover:text-emerald-500">
                   Forgot your password?
                 </a>
               </div>
@@ -192,7 +192,7 @@ function LoginInner() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="/auth/register" className="font-medium text-blue-600 hover:text-blue-500">
+              <a href="/auth/register" className="font-medium text-emerald-600 hover:text-emerald-500">
                 Sign up here
               </a>
             </p>
