@@ -20,6 +20,7 @@ export default function MeetingRoom() {
 
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const socketRef = useRef<any>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
@@ -210,6 +211,16 @@ export default function MeetingRoom() {
     }
   }
 
+  const toggleFullscreen = () => {
+    const el = stageRef.current
+    if (!el) return
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().catch(() => {})
+    } else {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }
+
   const copyLink = async () => {
     const link = typeof window !== 'undefined' ? window.location.href : ''
     try { await navigator.clipboard.writeText(link) } catch {}
@@ -246,7 +257,7 @@ export default function MeetingRoom() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Stage */}
             <div className="lg:col-span-3 space-y-4">
-              <div className="relative rounded-2xl overflow-hidden bg-gray-900 aspect-video shadow-lg ring-1 ring-black/5">
+              <div ref={stageRef} className="relative rounded-2xl overflow-hidden bg-gray-900 aspect-video shadow-lg ring-1 ring-black/5">
                 <video ref={remoteVideoRef} className="w-full h-full object-cover" playsInline autoPlay />
                 {!remoteVideoRef.current?.srcObject && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300">
@@ -258,16 +269,39 @@ export default function MeetingRoom() {
                 )}
                 {/* Floating Controls */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-4 flex items-center gap-3">
-                  <button onClick={toggleMic} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${micOn ? 'bg-white/70 border-gray-200 text-gray-800' : 'bg-red-600 text-white border-red-600'}`}>
-                    {micOn ? 'Mute' : 'Unmute'}
+                  <button onClick={toggleMic} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${micOn ? 'bg-white/80 border-gray-200 text-gray-800 hover:bg-white' : 'bg-red-600 text-white border-red-600'}`} title={micOn ? 'Mute microphone' : 'Unmute microphone'}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      {micOn ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 1.5a3 3 0 00-3 3v7.5a3 3 0 106 0V4.5a3 3 0 00-3-3zM19.5 10.5a7.5 7.5 0 01-15 0M12 22.5v-3" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M9 9v3.75a3 3 0 004.243 2.773M15 10.5V4.5a3 3 0 00-5.96-.6" />
+                      )}
+                    </svg>
                   </button>
-                  <button onClick={toggleCam} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${camOn ? 'bg-white/70 border-gray-200 text-gray-800' : 'bg-red-600 text-white border-red-600'}`}>
-                    {camOn ? 'Camera Off' : 'Camera On'}
+                  <button onClick={toggleCam} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${camOn ? 'bg-white/80 border-gray-200 text-gray-800 hover:bg-white' : 'bg-red-600 text-white border-red-600'}`} title={camOn ? 'Turn camera off' : 'Turn camera on'}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      {camOn ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5A2.25 2.25 0 015.25 5.25h7.5A2.25 2.25 0 0115 7.5v1.06l3.22-1.933A1.125 1.125 0 0120 7.56v8.88a1.125 1.125 0 01-1.78.933L15 15.439V16.5a2.25 2.25 0 01-2.25 2.25h-7.5A2.25 2.25 0 013 16.5v-9z" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M9.75 9.75H5.25A2.25 2.25 0 003 12v4.5A2.25 2.25 0 005.25 18.75h7.5A2.25 2.25 0 0015 16.5v-.439l3.22 1.873A1.125 1.125 0 0020 16.999V9.06a1.125 1.125 0 00-1.78-.933L15 10.06M9.75 9.75l4.5 4.5" />
+                      )}
+                    </svg>
                   </button>
-                  <button onClick={toggleScreen} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${screenOn ? 'bg-red-600 text-white border-red-600' : 'bg-white/70 border-gray-200 text-gray-800'}`}>
-                    {screenOn ? 'Stop Share' : 'Share Screen'}
+                  <button onClick={toggleScreen} className={`backdrop-blur px-4 py-2 rounded-full shadow-md border ${screenOn ? 'bg-red-600 text-white border-red-600' : 'bg-white/80 border-gray-200 text-gray-800 hover:bg-white'}`} title={screenOn ? 'Stop sharing' : 'Share screen'}>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.5h16.5A1.5 1.5 0 0121.75 6v7.5A1.5 1.5 0 0120.25 15H3.75A1.5 1.5 0 012.25 13.5V6A1.5 1.5 0 013.75 4.5zM6 19.5h12" />
+                    </svg>
                   </button>
-                  <a href="/doctor/meetings" className="px-4 py-2 rounded-full shadow-md border bg-red-600 text-white border-red-600">End</a>
+                  <button onClick={toggleFullscreen} className="backdrop-blur px-4 py-2 rounded-full shadow-md border bg-white/80 border-gray-200 text-gray-800 hover:bg-white" title="Fullscreen">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9V4.5H8.25M15.75 4.5H20.25V9M20.25 15V19.5H15.75M8.25 19.5H3.75V15" />
+                    </svg>
+                  </button>
+                  <a href="/doctor/meetings" className="px-4 py-2 rounded-full shadow-md border bg-red-600 text-white border-red-600" title="End call">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 13.5c4.5-4.5 10.5-4.5 15 0l-3 3c-3-3-6-3-9 0l-3-3z" />
+                    </svg>
+                  </a>
                 </div>
               </div>
               {/* Local preview */}

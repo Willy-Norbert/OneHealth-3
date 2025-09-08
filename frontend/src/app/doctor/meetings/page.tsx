@@ -4,6 +4,7 @@ import useSWR from 'swr'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useState } from 'react'
+import useSWR from 'swr'
 
 export default function MeetingsPage() {
   const { user } = useAuth()
@@ -47,6 +48,7 @@ export default function MeetingsPage() {
   }
 
   const [sched, setSched] = useState({ patient: '', start: '', end: '', title: '', description: '' })
+  const { data: myPatients } = useSWR('doctor-patients', () => api.patients.myForDoctor() as any)
 
   return (
     <AppShell
@@ -300,7 +302,12 @@ export default function MeetingsPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Schedule New Meeting</h3>
             <p className="text-gray-600 mb-4">Create a new video consultation with a patient.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input className="input" placeholder="Patient User ID" value={sched.patient} onChange={(e)=>setSched({...sched, patient: e.target.value})} />
+              <select className="input" value={sched.patient} onChange={(e)=>setSched({...sched, patient: e.target.value})}>
+                <option value="">Select Patient</option>
+                {myPatients?.data?.patients?.map((p: any) => (
+                  <option key={p._id} value={p._id}>{p.name} - {p.email}</option>
+                ))}
+              </select>
               <input className="input" type="datetime-local" value={sched.start} onChange={(e)=>setSched({...sched, start: e.target.value})} />
               <input className="input" type="datetime-local" value={sched.end} onChange={(e)=>setSched({...sched, end: e.target.value})} />
               <input className="input" placeholder="Title (optional)" value={sched.title} onChange={(e)=>setSched({...sched, title: e.target.value})} />
