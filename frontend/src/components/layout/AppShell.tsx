@@ -9,7 +9,7 @@ import Link from 'next/link'
 export function AppShell({ children, menu }: { children: React.ReactNode, menu: { href: string; label: string }[] }) {
   const { user, logout } = useAuth()
   const { notifications, markAll } = useNotifications()
-  const unreadCount = notifications.filter((n:any)=>!n.isRead).length
+  const unreadCount = notifications.filter((n:any)=>!(n?.read ?? n?.isRead)).length
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
 
