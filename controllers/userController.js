@@ -278,3 +278,43 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
+
+// @desc    Get all patients
+// @route   GET /api/users/patients
+// @access  Private (Hospital, Admin)
+exports.getPatients = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const patients = await User.find({ role: 'patient' })
+      .select('-password -otpCode -passwordResetOTP')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments({ role: 'patient' });
+
+    res.status(200).json({
+      success: true,
+      message: 'Patients retrieved successfully',
+      data: {
+        patients,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / limit),
+          totalPatients: total,
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching patients:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch patients',
+      data: null
+    });
+  }
+};
