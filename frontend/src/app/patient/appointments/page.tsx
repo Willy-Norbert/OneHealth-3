@@ -91,6 +91,7 @@ export default function AppointmentsPage() {
         { href: '/patient', label: 'Overview' },
         { href: '/patient/appointments', label: 'Appointments' },
         { href: '/patient/teleconsult', label: 'Teleconsultation' },
+        { href: '/patient/prescriptions', label: 'Prescriptions' },
         { href: '/patient/pharmacy', label: 'Pharmacy' },
         { href: '/patient/ai', label: 'AI Assistant' },
         { href: '/patient/emergency', label: 'Emergency' },
