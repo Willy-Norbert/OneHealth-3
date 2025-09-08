@@ -28,6 +28,7 @@ export default function MeetingRoom() {
   const localStreamRef = useRef<MediaStream | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
   const remoteUserRef = useRef<string | null>(null)
+  const pendingRemoteCandidatesRef = useRef<RTCIceCandidateInit[]>([])
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -122,6 +123,13 @@ export default function MeetingRoom() {
           }
         }
 
+        pc.oniceconnectionstatechange = () => {
+          setStatus(`ICE: ${pc.iceConnectionState}`)
+          if (pc.iceConnectionState === 'connected') {
+            setTimeout(() => setStatus('Ready'), 1000)
+          }
+        }
+
         // Local media
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         localStreamRef.current = stream
@@ -189,6 +197,13 @@ export default function MeetingRoom() {
             await pc.setLocalDescription(answer)
             remoteUserRef.current = senderId
             socket.emit('answer', pc.localDescription, id, senderId)
+            // Flush any pending ICE candidates received before remote description was set
+            if (pendingRemoteCandidatesRef.current.length) {
+              for (const c of pendingRemoteCandidatesRef.current) {
+                try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch {}
+              }
+              pendingRemoteCandidatesRef.current = []
+            }
           } catch {
             // ignore
           }
@@ -205,6 +220,11 @@ export default function MeetingRoom() {
 
         socket.on('ice-candidate', async (candidate: RTCIceCandidateInit) => {
           try {
+            // If remote description not set yet, buffer the candidate
+            if (!pc.remoteDescription) {
+              pendingRemoteCandidatesRef.current.push(candidate)
+              return
+            }
             await pc.addIceCandidate(new RTCIceCandidate(candidate))
           } catch {
             // ignore
