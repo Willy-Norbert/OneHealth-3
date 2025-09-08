@@ -3,8 +3,10 @@ import { AppShell } from '@/components/layout/AppShell'
 import useSWR from 'swr'
 import { api } from '@/lib/api'
 import { useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
 
 export default function DoctorAppointmentsPage() {
+  const { user } = useAuth()
   const { data, mutate } = useSWR('doctor-appts', () => api.appointments.myDoctor() as any)
   const [updating, setUpdating] = useState<string | null>(null)
   const [filter, setFilter] = useState('all')
@@ -235,26 +237,55 @@ export default function DoctorAppointmentsPage() {
                           </div>
                         )}
 
-                        {/* Teleconsultation Join Button (visible and prominent) */}
+                        {/* Teleconsultation Join or Create */}
                         {appointment.appointmentType === 'virtual' && (
                           <div className="mt-3">
                             {(() => {
                               const meetingLink = appointment.meeting?.meetingLink || appointment.meeting?.link
                               const meetingId = appointment.meeting?.meeting_id || (meetingLink ? String(meetingLink).split('/').pop() : null)
                               const href = meetingLink || (meetingId ? `/meeting/${meetingId}` : null)
-                              if (!href) return null
+                              if (href) {
+                                return (
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn-primary btn-sm inline-flex items-center"
+                                  >
+                                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                                    </svg>
+                                    Join Teleconsultation
+                                  </a>
+                                )
+                              }
+                              // If no meeting exists yet, allow creating one then open
                               return (
-                                <a
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
                                   className="btn-primary btn-sm inline-flex items-center"
+                                  onClick={async ()=>{
+                                    try {
+                                      const res = await api.meetings.create({
+                                        doctor: user?.id,
+                                        patient: appointment.patient?._id || appointment.patient,
+                                        appointment: appointment._id,
+                                        startTime: new Date().toISOString(),
+                                        endTime: new Date(Date.now()+30*60000).toISOString(),
+                                        title: 'Teleconsultation',
+                                      }) as any
+                                      const link = res?.data?.meeting?.link || res?.data?.meeting?.meetingLink
+                                      mutate()
+                                      if (link) window.open(link, '_blank', 'noopener,noreferrer')
+                                    } catch (e) {
+                                      console.error('Failed to create meeting', e)
+                                    }
+                                  }}
                                 >
                                   <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                   </svg>
-                                  Join Teleconsultation
-                                </a>
+                                  Create & Join Teleconsultation
+                                </button>
                               )
                             })()}
                           </div>

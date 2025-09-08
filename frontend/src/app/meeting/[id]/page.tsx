@@ -29,6 +29,7 @@ export default function MeetingRoom() {
   const screenStreamRef = useRef<MediaStream | null>(null)
   const remoteUserRef = useRef<string | null>(null)
   const pendingRemoteCandidatesRef = useRef<RTCIceCandidateInit[]>([])
+  const statsIntervalRef = useRef<any>(null)
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
@@ -110,14 +111,17 @@ export default function MeetingRoom() {
 
         const pc = new RTCPeerConnection({ iceServers })
         pcRef.current = pc
+        console.log('[RTC] Created RTCPeerConnection', { iceServers })
 
         pc.onicecandidate = (event) => {
           if (event.candidate && socketRef.current) {
+            console.log('[RTC] onicecandidate -> emitting', event.candidate?.candidate)
             socketRef.current.emit('ice-candidate', event.candidate, id, remoteUserRef.current)
           }
         }
 
         pc.ontrack = (event) => {
+          console.log('[RTC] ontrack received', event.streams?.[0]?.getTracks()?.map(t=>({ kind: t.kind, id: t.id, enabled: t.enabled })))
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = event.streams[0]
           }
@@ -125,15 +129,28 @@ export default function MeetingRoom() {
 
         pc.oniceconnectionstatechange = () => {
           setStatus(`ICE: ${pc.iceConnectionState}`)
+          console.log('[RTC] iceConnectionState', pc.iceConnectionState)
           if (pc.iceConnectionState === 'connected') {
             setTimeout(() => setStatus('Ready'), 1000)
           }
         }
 
+        pc.onsignalingstatechange = () => {
+          console.log('[RTC] signalingState', pc.signalingState)
+        }
+
+        pc.onconnectionstatechange = () => {
+          console.log('[RTC] connectionState', pc.connectionState)
+        }
+
         // Local media
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        console.log('[MEDIA] got user media', stream.getTracks().map(t=>({ kind: t.kind, id: t.id, enabled: t.enabled })))
         localStreamRef.current = stream
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+        stream.getTracks().forEach((track) => {
+          const sender = pc.addTrack(track, stream)
+          console.log('[RTC] addTrack', { kind: track.kind, senderId: sender?.track?.id })
+        })
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
 
         // Clean any prior listeners to avoid duplicates (hot reload)
@@ -156,10 +173,12 @@ export default function MeetingRoom() {
           if (!mounted) return
           remoteUserRef.current = userId
           try {
-            if (pc.signalingState !== 'stable') return
+            if (pc.signalingState !== 'stable') { console.log('[RTC] skip offer, signaling not stable'); return }
             isMakingOffer = true
             const offer = await pc.createOffer()
+            console.log('[SDP] created local offer')
             await pc.setLocalDescription(offer)
+            console.log('[SDP] setLocalDescription(offer)')
             socket.emit('offer', pc.localDescription, id, userId)
           } catch {
             // ignore
@@ -187,14 +206,17 @@ export default function MeetingRoom() {
             if (offerCollision) {
               await Promise.all([
                 pc.setLocalDescription({ type: 'rollback' } as any),
-                pc.setRemoteDescription(offerDesc),
+                (async ()=>{ console.log('[SDP] setRemoteDescription(offer) with rollback'); await pc.setRemoteDescription(offerDesc) })(),
               ])
             } else {
+              console.log('[SDP] setRemoteDescription(offer)')
               await pc.setRemoteDescription(offerDesc)
             }
 
             const answer = await pc.createAnswer()
+            console.log('[SDP] created local answer')
             await pc.setLocalDescription(answer)
+            console.log('[SDP] setLocalDescription(answer)')
             remoteUserRef.current = senderId
             socket.emit('answer', pc.localDescription, id, senderId)
             // Flush any pending ICE candidates received before remote description was set
@@ -211,7 +233,8 @@ export default function MeetingRoom() {
 
         socket.on('answer', async (answer: RTCSessionDescriptionInit) => {
           try {
-            if (pc.signalingState !== 'have-local-offer') return
+            if (pc.signalingState !== 'have-local-offer') { console.log('[SDP] skip setRemoteDescription(answer) wrong state', pc.signalingState); return }
+            console.log('[SDP] setRemoteDescription(answer)')
             await pc.setRemoteDescription(new RTCSessionDescription(answer))
           } catch {
             // ignore
@@ -222,9 +245,11 @@ export default function MeetingRoom() {
           try {
             // If remote description not set yet, buffer the candidate
             if (!pc.remoteDescription) {
+              console.log('[ICE] buffering remote candidate before SRD')
               pendingRemoteCandidatesRef.current.push(candidate)
               return
             }
+            console.log('[ICE] addIceCandidate')
             await pc.addIceCandidate(new RTCIceCandidate(candidate))
           } catch {
             // ignore
@@ -234,17 +259,33 @@ export default function MeetingRoom() {
         // Also initiate negotiation if needed (e.g., tracks added later)
         pc.onnegotiationneeded = async () => {
           try {
-            if (pc.signalingState !== 'stable') return
-            if (!remoteUserRef.current) return
-            if (isMakingOffer) return
+            if (pc.signalingState !== 'stable') { console.log('[RTC] skip negotiationneeded, not stable'); return }
+            if (!remoteUserRef.current) { console.log('[RTC] skip negotiationneeded, no remoteUser yet'); return }
+            if (isMakingOffer) { console.log('[RTC] skip negotiationneeded, already making offer'); return }
             isMakingOffer = true
             const offer = await pc.createOffer()
+            console.log('[SDP] negotiationneeded created offer')
             await pc.setLocalDescription(offer)
+            console.log('[SDP] negotiationneeded setLocalDescription(offer)')
             socket.emit('offer', pc.localDescription, id, remoteUserRef.current)
           } finally {
             isMakingOffer = false
           }
         }
+
+        // Periodic stats
+        if (statsIntervalRef.current) clearInterval(statsIntervalRef.current)
+        statsIntervalRef.current = setInterval(async () => {
+          try {
+            const stats = await pc.getStats()
+            let outbound = 0, inbound = 0
+            stats.forEach((r) => {
+              if ((r.type === 'outbound-rtp') && !r.isRemote) outbound += (r.bytesSent || 0)
+              if ((r.type === 'inbound-rtp') && !r.isRemote) inbound += (r.bytesReceived || 0)
+            })
+            console.log('[STATS] bytes outbound/inbound', outbound, inbound)
+          } catch {}
+        }, 3000)
 
         setStatus('Ready')
       } catch (e: any) {
@@ -258,6 +299,7 @@ export default function MeetingRoom() {
       try { pcRef.current?.close?.() } catch {}
       localStreamRef.current?.getTracks()?.forEach((t) => t.stop())
       screenStreamRef.current?.getTracks()?.forEach((t) => t.stop())
+      if (statsIntervalRef.current) { clearInterval(statsIntervalRef.current); statsIntervalRef.current = null }
       pcRef.current = null
       localStreamRef.current = null
       screenStreamRef.current = null
