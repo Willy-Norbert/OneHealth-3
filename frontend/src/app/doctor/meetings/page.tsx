@@ -4,7 +4,6 @@ import useSWR from 'swr'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useState } from 'react'
-import useSWR from 'swr'
 
 export default function MeetingsPage() {
   const { user } = useAuth()
