@@ -7,16 +7,16 @@ import { useState } from 'react'
 export default function PatientPaymentsPage() {
   const { data: myAppointments, mutate } = useSWR('myAppointments', () => api.appointments.my() as any)
   const [processingId, setProcessingId] = useState<string| null>(null)
+  const [providerByAppointment, setProviderByAppointment] = useState<Record<string, string>>({})
 
   const unpaid = (myAppointments as any)?.data?.appointments?.filter((a: any) => a.appointmentType === 'virtual' && a.paymentStatus !== 'paid') || []
 
   const handlePay = async (appointmentId: string, fee: number) => {
     setProcessingId(appointmentId)
     try {
-      const systemFee = Math.round(fee * 0.01)
-      const hospitalFee = fee - systemFee
-      // Initiate checkout
-      const res = await api.payments.checkout({ appointmentId, provider: 'DEV_FAKE', breakdown: { systemFee, hospitalFee } }) as any
+      const provider = providerByAppointment[appointmentId] || 'DEV_FAKE'
+      // Initiate checkout (do not send breakdown; it's for UI only)
+      const res = await api.payments.checkout({ appointmentId, provider }) as any
       const paymentId = res?.data?.payment?._id
       if (!paymentId) throw new Error('Payment init failed')
       // Simulate redirect/return flow by immediate verify
@@ -85,6 +85,19 @@ export default function PatientPaymentsPage() {
                             <div className="text-xs text-gray-500">Hospital (99%)</div>
                             <div className="text-gray-900">RWF {hospitalFee.toLocaleString()}</div>
                           </div>
+                        </div>
+                        <div className="mt-3">
+                          <label className="text-xs text-gray-500 mb-1 block">Payment method</label>
+                          <select
+                            className="input"
+                            value={providerByAppointment[a._id] || 'DEV_FAKE'}
+                            onChange={(e)=>setProviderByAppointment(prev=>({ ...prev, [a._id]: e.target.value }))}
+                          >
+                            <option value="DEV_FAKE">Sandbox</option>
+                            <option value="MOMO">Mobile Money</option>
+                            <option value="CARD">Card</option>
+                            <option value="BANK">Bank Transfer</option>
+                          </select>
                         </div>
                       </div>
                       <div className="ml-4">
