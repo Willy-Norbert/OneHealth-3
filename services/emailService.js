@@ -160,4 +160,5 @@ module.exports = {
   sendEmergencyStatusEmail,
   sendRoleChangeEmail,
   sendHospitalApprovalEmail,
+  baseTemplate,
 };
