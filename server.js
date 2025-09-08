@@ -169,6 +169,9 @@ const io = new Server(server, {
   },
 });
 
+// Make socket available to notificationService for real-time notifications
+try { require('./utils/notificationService').setSocket(io); } catch {}
+
 // Store a mapping of user IDs to their socket IDs
 const userSocketMap = new Map();
 
@@ -197,6 +200,8 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
   console.log(`⚡️ User connected: ${socket.id} (User: ${socket.user.name})`);
   userSocketMap.set(socket.user._id.toString(), socket.id); // Store user ID to socket ID mapping
+  // Join a personal room equal to user id for targeted events
+  socket.join(socket.user._id.toString());
   console.log(`Backend: userSocketMap updated. Current map size: ${userSocketMap.size}`);
 
   socket.on('join-room', (roomId, cb) => {

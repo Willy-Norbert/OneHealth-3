@@ -1,5 +1,6 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { io, Socket } from 'socket.io-client'
 import { api } from '@/lib/api'
 import { useAuth } from './AuthContext'
 
@@ -10,6 +11,7 @@ const Ctx = createContext<{ notifications: Notification[]; refresh: ()=>void; ma
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const { isAuthenticated, token } = useAuth()
+  const [socket, setSocket] = useState<Socket | null>(null)
   
   const fetchNotes = async () => {
     if (!isAuthenticated || !token) {
@@ -32,7 +34,18 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (isAuthenticated) {
       fetchNotes()
       const id = setInterval(fetchNotes, 10000)
-      return () => clearInterval(id)
+      // Setup socket for real-time notifications
+      try {
+        const s = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+          transports: ['websocket'],
+          auth: { token }
+        })
+        s.on('connect', () => setSocket(s))
+        s.on('notification:new', () => fetchNotes())
+        return () => { clearInterval(id); s.disconnect() }
+      } catch {
+        return () => clearInterval(id)
+      }
     } else {
       setNotifications([])
     }
