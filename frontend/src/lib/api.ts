@@ -66,6 +66,7 @@ export const api = {
   },
   patients: {
     list: () => apiFetch('/users/patients', { method: 'GET' }),
+    myForDoctor: () => apiFetch('/patients/my-patients', { method: 'GET' }),
   },
   departments: {
     list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
