@@ -19,7 +19,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     
     try {
       const res = await api.notifications.list() as any
-      setNotifications(res?.data?.notifications || [])
+      // Normalize various response shapes to an array
+      const list = (res?.data?.notifications) || (Array.isArray(res?.data) ? res.data : [])
+      setNotifications(list)
     } catch (error) {
       console.warn('Failed to fetch notifications:', error)
       setNotifications([])
