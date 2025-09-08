@@ -2,6 +2,7 @@
 import { AppShell } from '@/components/layout/AppShell'
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
+import 'leaflet/dist/leaflet.css'
 
 export default function EmergencyPage() {
   const [coords, setCoords] = useState<{lat:number,lng:number}|null>(null)
