@@ -239,9 +239,16 @@ export default function MeetingsPage() {
                       <div className="flex flex-col space-y-2 ml-4">
                         {meeting.status === 'scheduled' && (
                           <button
-                            onClick={() => {
-                              // Update meeting status to ongoing
-                              console.log('Starting meeting:', meeting._id)
+                            onClick={async () => {
+                              try {
+                                await api.meetings.updateStatus(meeting._id, 'ongoing')
+                                mutate()
+                                if (meeting.meetingLink) {
+                                  window.open(meeting.meetingLink, '_blank', 'noopener,noreferrer')
+                                }
+                              } catch (e) {
+                                console.error('Failed to start meeting', e)
+                              }
                             }}
                             className="btn-primary btn-sm"
                           >
@@ -250,9 +257,13 @@ export default function MeetingsPage() {
                         )}
                         {meeting.status === 'ongoing' && (
                           <button
-                            onClick={() => {
-                              // Update meeting status to completed
-                              console.log('Ending meeting:', meeting._id)
+                            onClick={async () => {
+                              try {
+                                await api.meetings.updateStatus(meeting._id, 'completed')
+                                mutate()
+                              } catch (e) {
+                                console.error('Failed to end meeting', e)
+                              }
                             }}
                             className="btn-danger btn-sm"
                           >
