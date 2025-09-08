@@ -1,8 +1,10 @@
 "use client"
 import { AppShell } from '@/components/layout/AppShell'
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
+import { api, apiFetch } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 
 export default function EmergencyPage() {
   const [coords, setCoords] = useState<{lat:number,lng:number}|null>(null)
@@ -11,8 +13,12 @@ export default function EmergencyPage() {
   const [desc, setDesc] = useState('')
   const [severity, setSeverity] = useState('moderate')
   const [emergencyType, setEmergencyType] = useState('medical')
+  const [quickCareType, setQuickCareType] = useState<'ambulance'|'doctor-on-call'|'nurse-on-call'|'medication-delivery'|'telemedicine'>('ambulance')
+  const { user } = useAuth()
+  const [phone, setPhone] = useState<string>(user?.phone || '')
   const [submitted, setSubmitted] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [hospitalPins, setHospitalPins] = useState<any[]>([])
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -45,6 +51,8 @@ export default function EmergencyPage() {
   const TileLayer = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false }), [])
   const Marker = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false }), [])
   const Polyline = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.Polyline), { ssr: false }), [])
+  const Tooltip = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.Tooltip), { ssr: false }), [])
+  const CircleMarker = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.CircleMarker), { ssr: false }), [])
 
   const etaMinutes = useMemo(() => {
     if (!coords || !ambulanceCoords) return null
@@ -64,25 +72,52 @@ export default function EmergencyPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const token = document.cookie.split('token=')[1]?.split(';')[0]
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/emergencies`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          emergencyType, 
-          severity, 
-          quickCareType: 'ambulance', 
-          description: desc, 
-          location: { coordinates: coords, address } 
-        })
+      if (!coords) throw new Error('Location required')
+      const result = await api.emergencies.create({
+        emergencyType,
+        severity,
+        quickCareType,
+        description: desc,
+        contactInfo: { primaryPhone: phone },
+        location: { address, coordinates: { latitude: coords.lat, longitude: coords.lng } }
       })
-      const result = await res.json()
       setSubmitted(result)
     } catch (error) {
       console.error('Emergency submission error:', error)
       setSubmitted({ error: 'Failed to submit emergency request. Please try again or call emergency services directly.' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const findHospitals = async () => {
+    if (!coords) return
+    try {
+      const data: any = await api.hospitals.list()
+      const hospitals = data?.data?.hospitals || []
+      const geocoded: any[] = []
+      for (const h of hospitals.slice(0, 15)) {
+        const q = encodeURIComponent(`${h.address || ''} ${h.location || ''}`.trim())
+        if (!q) continue
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`)
+          const j = await r.json()
+          if (j && j[0]) {
+            geocoded.push({
+              id: h._id,
+              name: h.name,
+              phone: h.contact?.phone,
+              email: h.contact?.email,
+              address: h.address,
+              lat: parseFloat(j[0].lat),
+              lng: parseFloat(j[0].lon)
+            })
+          }
+        } catch {}
+      }
+      setHospitalPins(geocoded)
+    } catch (e) {
+      console.error('Find hospitals error:', e)
     }
   }
 
@@ -98,11 +133,11 @@ export default function EmergencyPage() {
 
   const emergencyTypes = [
     { value: 'medical', label: 'Medical Emergency', icon: '🏥' },
-    { value: 'accident', label: 'Accident', icon: '🚗' },
-    { value: 'injury', label: 'Injury', icon: '🩹' },
-    { value: 'cardiac', label: 'Cardiac Emergency', icon: '❤️' },
-    { value: 'respiratory', label: 'Respiratory Emergency', icon: '🫁' },
-    { value: 'other', label: 'Other', icon: '⚠️' }
+    { value: 'accident', label: 'Accident or Injury', icon: '🚗' },
+    { value: 'maternal', label: 'Maternal Emergency', icon: '🧑‍🍼' },
+    { value: 'respiratory', label: 'Breathing Issue', icon: '🫁' },
+    { value: 'mental-health', label: 'Mental Health Crisis', icon: '🧠' },
+    { value: 'covid', label: 'COVID-19 / Coronavirus', icon: '🦠' }
   ]
 
   return (
@@ -160,7 +195,7 @@ export default function EmergencyPage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Find Nearest Hospital</h3>
             <p className="text-sm text-gray-500 mb-4">Locate the closest medical facility</p>
-            <button className="btn-primary w-full">
+            <button className="btn-primary w-full" onClick={findHospitals}>
               Find Hospitals
             </button>
           </div>
@@ -228,6 +263,33 @@ export default function EmergencyPage() {
                 </div>
               </div>
 
+              {/* Quick Care Type */}
+              <div className="form-group">
+                <label className="form-label">Quick Care Needed</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { value: 'ambulance', label: 'Ambulance Dispatch' },
+                    { value: 'doctor-on-call', label: 'Doctor on Call' },
+                    { value: 'nurse-on-call', label: 'Nurse on Call' },
+                    { value: 'medication-delivery', label: 'Emergency Meds Delivery' },
+                    { value: 'telemedicine', label: 'Telemedicine' }
+                  ].map((q: any) => (
+                    <button
+                      key={q.value}
+                      type="button"
+                      onClick={() => setQuickCareType(q.value)}
+                      className={`p-3 rounded-lg border-2 text-left transition-colors ${
+                        quickCareType === q.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-sm font-medium">{q.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Severity */}
               <div className="form-group">
                 <label className="form-label">Severity Level</label>
@@ -271,6 +333,19 @@ export default function EmergencyPage() {
                 />
               </div>
 
+              {/* Contact Phone */}
+              <div className="form-group">
+                <label className="form-label">Your Phone Number</label>
+                <input
+                  className="input"
+                  type="tel"
+                  placeholder="e.g., +2507..."
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+
               {/* Submit Button */}
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-500">
@@ -307,11 +382,24 @@ export default function EmergencyPage() {
               <div className="h-96 rounded-lg overflow-hidden">
                 <MapContainer center={[coords.lat, coords.lng]} zoom={14} style={{ height: '100%', width: '100%' }}>
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
-                  <Marker position={[coords.lat, coords.lng]} />
+                  <Marker position={[coords.lat, coords.lng]}>{Tooltip ? <Tooltip>My Location</Tooltip> : null}</Marker>
                   {ambulanceCoords && <Marker position={[ambulanceCoords.lat, ambulanceCoords.lng]} />}
                   {ambulanceCoords && (
                     <Polyline positions={[[ambulanceCoords.lat, ambulanceCoords.lng],[coords.lat, coords.lng]]} color="#ef4444" />
                   )}
+                  {hospitalPins.map((h:any) => (
+                    <CircleMarker key={h.id} center={[h.lat, h.lng]} pathOptions={{ color: '#2563eb' }} radius={12}>
+                      {Tooltip ? (
+                        <Tooltip direction="top" opacity={1} permanent={false}>
+                          <div className="text-xs">
+                            <div className="font-semibold">{h.name}</div>
+                            <div>{h.address}</div>
+                            <div>{h.phone}</div>
+                          </div>
+                        </Tooltip>
+                      ) : null}
+                    </CircleMarker>
+                  ))}
                 </MapContainer>
               </div>
             ) : (

@@ -2,7 +2,8 @@
 import { AppShell } from '@/components/layout/AppShell'
 import useSWR from 'swr'
 import { api } from '@/lib/api'
-import { useState } from 'react'
+import React, { useState, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 
 export default function PharmacyPage() {
   const { data: pharmacies } = useSWR('pharmacies', () => api.pharmacy.list() as any)
@@ -10,6 +11,13 @@ export default function PharmacyPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploadRes, setUploadRes] = useState<any>(null)
   const [uploading, setUploading] = useState(false)
+  const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null)
+  const [mapPharmacy, setMapPharmacy] = useState<any>(null)
+
+  // Lazy-load map to avoid SSR issues
+  const MapContainer = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false }), [])
+  const TileLayer = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false }), [])
+  const Marker = useMemo(() => dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false }), [])
 
   const upload = async () => {
     if (!file) return
@@ -255,10 +263,13 @@ export default function PharmacyPage() {
                     </div>
                     
                     <div className="mt-4 flex space-x-2">
-                      <button className="btn-primary btn-sm flex-1">
+                      <button className="btn-primary btn-sm flex-1" onClick={() => setSelectedPharmacy(pharmacy)}>
                         View Details
                       </button>
-                      <button className="btn-outline btn-sm">
+                      <a className="btn-outline btn-sm" href={`/patient/pharmacy/${pharmacy._id}`}>
+                        Open Profile
+                      </a>
+                      <button className="btn-outline btn-sm" onClick={() => setMapPharmacy(pharmacy)}>
                         Directions
                       </button>
                     </div>
@@ -344,6 +355,52 @@ export default function PharmacyPage() {
             )}
           </div>
         </div>
+
+        {/* Pharmacy Details Modal */}
+        {selectedPharmacy && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-xl">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold">{selectedPharmacy.name}</h3>
+                <button className="btn-outline btn-sm" onClick={() => setSelectedPharmacy(null)}>Close</button>
+              </div>
+              <div className="p-4 space-y-3 text-sm text-gray-700">
+                <div><span className="font-medium">Address:</span> {selectedPharmacy.location?.address}</div>
+                <div><span className="font-medium">City:</span> {selectedPharmacy.location?.city}</div>
+                <div><span className="font-medium">Phone:</span> {selectedPharmacy.contact?.phone}</div>
+                <div><span className="font-medium">Services:</span> {(selectedPharmacy.services || []).join(', ') || '—'}</div>
+                <div><span className="font-medium">Insurance:</span> {(selectedPharmacy.insuranceAccepted || []).map((i:any)=>i.name).join(', ') || '—'}</div>
+                <div className="pt-2">
+                  <button className="btn-primary w-full">Start Order</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Directions Map Modal */}
+        {mapPharmacy && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Directions to {mapPharmacy.name}</h3>
+                <button className="btn-outline btn-sm" onClick={() => setMapPharmacy(null)}>Close</button>
+              </div>
+              <div className="h-96">
+                {MapContainer && TileLayer && Marker ? (
+                  <MapContainer center={[mapPharmacy.location?.coordinates?.latitude || 0, mapPharmacy.location?.coordinates?.longitude || 0]} zoom={15} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
+                    {mapPharmacy.location?.coordinates && (
+                      <Marker position={[mapPharmacy.location.coordinates.latitude, mapPharmacy.location.coordinates.longitude]} />
+                    )}
+                  </MapContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center">Loading map...</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   )

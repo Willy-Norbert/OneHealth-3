@@ -1,6 +1,6 @@
 "use client"
 import { AppShell } from '@/components/layout/AppShell'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { api } from '@/lib/api'
 
 export default function AIPage() {
@@ -17,41 +17,72 @@ export default function AIPage() {
       switch (selectedService) {
         case 'symptom-checker':
           res = await api.ai.symptomChecker({
-            symptoms: symptoms.split(',').map(s => s.trim()),
+            symptoms: symptoms.split(',').map((s: string) => s.trim()),
             severity: 'mild',
             duration: '2d',
             age: 30
           })
           break
         case 'health-tips':
-          res = await api.ai.healthTips({
-            topic: symptoms,
-            age: 30,
-            gender: 'male'
-          })
+          {
+            const items = symptoms.split(',').map((s: string) => s.trim()).filter(Boolean)
+            const [categoryOrCondition, ...rest] = items
+            res = await api.ai.healthTips({
+              category: categoryOrCondition || 'general',
+              condition: categoryOrCondition,
+              age: 30,
+              interests: rest
+            })
+          }
           break
         case 'prescription-helper':
-          res = await api.ai.prescriptionHelper({
-            symptoms: symptoms.split(',').map(s => s.trim()),
-            diagnosis: 'General consultation'
-          })
+          {
+            const items = symptoms.split(',').map((s: string) => s.trim()).filter(Boolean)
+            const [medicationName, ...qs] = items
+            res = await api.ai.prescriptionHelper({
+              medicationName: medicationName || symptoms,
+              questions: qs.length ? qs : [
+                'What are common side effects?',
+                'How should I take it?',
+                'Any warnings?'
+              ]
+            })
+          }
           break
         default:
           res = await api.ai.symptomChecker({
-            symptoms: symptoms.split(',').map(s => s.trim()),
+            symptoms: symptoms.split(',').map((s: string) => s.trim()),
             severity: 'mild',
             duration: '2d',
             age: 30
           })
       }
       
-      // Prefer backend response; if it signals error, surface it; fallback only when no data
+      // Normalize backend responses to UI-friendly shape
       if (!res || (res as any)?.status === 'error') {
         setResponse({ error: (res as any)?.message || 'AI service error. Please try again.' })
-      } else if (!(res as any)?.data) {
-        setResponse(generateMockResponse(selectedService, symptoms))
+      } else if ((res as any)?.data) {
+        const d = (res as any).data
+        if (selectedService === 'symptom-checker') {
+          const analysisText = Array.isArray(d.analysis)
+            ? d.analysis.map((a: any) => `${a.symptom || a.matched}: ${a.recommendations?.[0] || a.urgency || ''}`).join('\n')
+            : (d.analysis || '')
+          setResponse({ data: { analysis: analysisText, recommendations: d.recommendations, urgency: d.urgencyLevel || d.urgency } })
+        } else if (selectedService === 'health-tips') {
+          const tips = d.tips || []
+          const aiTips = d.aiGeneratedTips || []
+          const recs = [...tips, ...aiTips].map((t: any) => `${t.title}: ${t.content}`)
+          setResponse({ data: { analysis: `Personalized tips (${recs.length})`, recommendations: recs, urgency: 'low' } })
+        } else if (selectedService === 'prescription-helper') {
+          const info = d.information
+          const recs = [...(d.guidance || []), ...(d.ai?.warnings || [])]
+          const analysisText = info ? `${info.genericName || ''} — Uses: ${(info.uses || []).join(', ')}` : 'Medication guidance'
+          setResponse({ data: { analysis: analysisText, recommendations: recs, urgency: 'medium' } })
+        } else {
+          setResponse({ data: d })
+        }
       } else {
-        setResponse(res)
+        setResponse(generateMockResponse(selectedService, symptoms))
       }
     } catch (error: any) {
       console.error('AI service error:', error?.message || error)

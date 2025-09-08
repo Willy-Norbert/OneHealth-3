@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar'
 import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 import { useNotifications } from '@/context/NotificationsContext'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 
 export function AppShell({ children, menu }: { children: React.ReactNode, menu: { href: string; label: string }[] }) {
@@ -69,7 +69,7 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
                   </svg>
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
-                      {unreadCount}
+                      {unreadCount as number}
                     </span>
                   )}
                 </button>
@@ -80,7 +80,7 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
                       <Link href="/notifications" className="text-xs text-blue-600 hover:underline" onClick={()=>setNotifOpen(false)}>View all</Link>
                     </div>
                     <div className="max-h-80 overflow-auto">
-                      {notifications.length ? notifications.slice(0,4).map((n)=> (
+                      {notifications.length ? notifications.slice(0,4).map((n:any)=> (
                         <div key={n._id} className="px-4 py-3 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-50">
                           {n.message}
                         </div>
@@ -96,24 +96,31 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu: 
               </div>
 
               {/* User menu */}
-              <div className="relative">
-                <div className="flex items-center gap-3">
+              <div className="relative group">
+                <div className="flex items-center gap-3 cursor-pointer">
                   <div className="hidden sm:block text-right">
                     <p className="text-sm font-medium text-gray-900">{user?.name || user?.email}</p>
                     <p className="text-xs text-gray-500">{user?.role?.toUpperCase()}</p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-semibold">
-                    {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  {user?.profileImage ? (
+                    <Image src={user.profileImage} alt={user?.name || 'User'} width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-semibold">
+                      {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition">
+                  <div className="py-1">
+                    <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Home</Link>
+                    <Link href="/patient/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Profile</Link>
+                    <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                      </svg>
+                      Logout
+                    </button>
                   </div>
-                  <button
-                    onClick={logout}
-                    className="btn-outline btn-sm"
-                  >
-                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                    </svg>
-                    Logout
-                  </button>
                 </div>
               </div>
             </div>

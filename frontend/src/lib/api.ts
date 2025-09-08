@@ -106,6 +106,9 @@ export const api = {
     checkout: (body: any) => apiFetch('/payments/checkout', { method: 'POST', body: JSON.stringify(body) }),
     verify: (body: any) => apiFetch('/payments/verify', { method: 'POST', body: JSON.stringify(body) }),
   },
+  emergencies: {
+    create: (body: any) => apiFetch('/emergencies', { method: 'POST', body: JSON.stringify(body) }),
+  },
   meetings: {
     user: (userId: string) => apiFetch(`/meetings/user/${userId}`, { method: 'GET' }),
     get: (id: string) => apiFetch(`/meetings/${id}`, { method: 'GET' }),

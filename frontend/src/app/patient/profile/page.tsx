@@ -2,7 +2,7 @@
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuth } from '@/context/AuthContext'
 import { api } from '@/lib/api'
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 export default function ProfilePage() {
   const { user, refreshProfile } = useAuth()
@@ -22,6 +22,24 @@ export default function ProfilePage() {
       relationship: user?.emergencyContact?.relationship || ''
     }
   })
+  const [avatarUploading, setAvatarUploading] = useState(false)
+
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const res: any = await api.uploads.image(file)
+      if (res?.url) {
+        await api.users.updateProfile({ avatar: res.url })
+        await refreshProfile()
+      }
+    } catch (err) {
+      console.error('Avatar upload failed', err)
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -110,11 +128,15 @@ export default function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="card">
               <div className="card-body text-center">
-                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-semibold text-blue-600">
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
+                {user?.profileImage ? (
+                  <img src={user.profileImage} alt={user?.name || 'Avatar'} className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
+                ) : (
+                  <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-semibold text-blue-600">
+                      {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                )}
                 <h3 className="text-xl font-semibold text-gray-900">{user?.name}</h3>
                 <p className="text-gray-500">{user?.email}</p>
                 <div className="mt-4">
@@ -122,6 +144,14 @@ export default function ProfilePage() {
                     {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
                   </span>
                 </div>
+                {isEditing && (
+                  <div className="mt-4">
+                    <label className="btn-outline btn-sm cursor-pointer">
+                      {avatarUploading ? 'Uploading...' : 'Change Photo'}
+                      <input type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           </div>
