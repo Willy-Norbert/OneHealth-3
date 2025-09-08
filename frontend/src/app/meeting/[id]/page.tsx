@@ -99,7 +99,7 @@ export default function MeetingRoom() {
 
     let isMakingOffer = false
     let ignoreOffer = false
-    const polite = true // resolve glare by being polite on this side
+    const politeRef = { current: false } // default: existing user is impolite; joiner becomes polite
 
     ;(async () => {
       try {
@@ -140,6 +140,8 @@ export default function MeetingRoom() {
           const me = socket.id
           const other = users.find((u) => u.id !== me)
           remoteUserRef.current = other?.id || null
+          // If I received room-users, I am the joiner => be polite
+          politeRef.current = true
         })
 
         socket.on('user-joined', async (userId: string) => {
@@ -171,7 +173,7 @@ export default function MeetingRoom() {
             const offerDesc = new RTCSessionDescription(offer)
             const readyForOffer = pc.signalingState === 'stable' || pc.signalingState === 'have-local-offer'
             const offerCollision = isMakingOffer || !readyForOffer
-            ignoreOffer = !polite && offerCollision
+            ignoreOffer = !politeRef.current && offerCollision
             if (ignoreOffer) return
 
             if (offerCollision) {
@@ -213,6 +215,8 @@ export default function MeetingRoom() {
         pc.onnegotiationneeded = async () => {
           try {
             if (pc.signalingState !== 'stable') return
+            if (!remoteUserRef.current) return
+            if (isMakingOffer) return
             isMakingOffer = true
             const offer = await pc.createOffer()
             await pc.setLocalDescription(offer)
