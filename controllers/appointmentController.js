@@ -202,7 +202,7 @@ console.log('🗂 Active SlotLocks for hospital/department:',
     const appointmentData = {
       ...value,
       patient: req.user._id,
-      status: 'pending',
+      status: 'confirmed', // Changed from 'pending' to 'confirmed'
       paymentStatus: 'pending',
       slotLockId: lockId,
       doctor: doctorUserId || undefined, // Use the resolved Doctor User ID here
@@ -234,9 +234,46 @@ console.log("👤 Authenticated user:", req.user);
           const doctorUser = appointment.doctor ? await User.findById(appointment.doctor) : null;
           const patientUser = await User.findById(appointment.patient);
 
+          // For virtual appointments without a specific doctor, we need to assign a doctor
+          // or create a placeholder meeting. Let's create a meeting with a placeholder doctor
+          let meetingDoctor = appointment.doctor;
+          if (!meetingDoctor) {
+            // Find any doctor in the department for this meeting
+            const DoctorModel = require('../models/Doctor');
+            const departmentDoctor = await DoctorModel.findOne({ 
+              hospital: appointment.hospital,
+              department: appointment.department 
+            }).populate('user');
+            
+            if (departmentDoctor) {
+              meetingDoctor = departmentDoctor.user._id;
+              console.log("Backend: createAppointment - Assigned department doctor for meeting:", meetingDoctor);
+            } else {
+              console.log("Backend: createAppointment - No doctor found in department, skipping meeting creation");
+              // Skip meeting creation if no doctor is available
+              return res.status(201).json({
+                status: 'success',
+                message: 'Appointment booked successfully. Meeting will be created when a doctor is assigned.',
+                data: {
+                  appointment: {
+                    _id: appointment._id,
+                    hospital: appointment.hospital,
+                    patient: appointment.patient,
+                    doctor: appointment.doctor || null,
+                    appointmentDate: appointment.appointmentDate,
+                    appointmentTime: appointment.appointmentTime,
+                    consultationFee: appointment.consultationFee,
+                    meeting: null,
+                    status: appointment.status,
+                  },
+                },
+              });
+            }
+          }
+
           const meetingCreationData = {
             meeting_id: meeting_id,
-            doctor: appointment.doctor,
+            doctor: meetingDoctor,
             patient: appointment.patient,
             link: meetingLink,
             startTime: appointment.appointmentDate, // Use appointment date/time as meeting start/end
@@ -260,7 +297,7 @@ console.log("👤 Authenticated user:", req.user);
         }
       }
 
-      await appointment.populate(['hospital', 'patient', ...(doctorUserId ? ['doctor'] : []), 'department', 'meeting']); // Populate meeting here
+      await appointment.populate(['hospital', 'patient', ...(appointment.doctor ? ['doctor'] : []), 'department', 'meeting']); // Populate meeting here
     } catch (appointmentError) {
       // If appointment creation fails, cleanup the lock
       await SlotLock.findByIdAndDelete(slotLock._id);
@@ -299,6 +336,8 @@ res.status(201).json({
       consultationFee: appointment.consultationFee,
       meeting: appointment.meeting || null, // Return the populated meeting object
       status: appointment.status,
+      appointmentType: appointment.appointmentType,
+      reasonForVisit: appointment.reasonForVisit,
     },
   },
 });

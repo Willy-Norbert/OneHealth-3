@@ -5,7 +5,8 @@ const {
   getUser,
   updateUserRole,
   updateUserProfile,
-  deleteUser
+  deleteUser,
+  getPatients
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -276,7 +277,8 @@ const router = express.Router();
 router.use(protect);
 
 // User management routes
-router.get('/', restrictTo('admin'), getAllUsers);
+router.get('/', restrictTo('admin','hospital'), getAllUsers);
+router.get('/patients', restrictTo('hospital','admin'), getPatients);
 router.get('/me', getUser); // Get current user profile
 router.get('/:id', getUser); // Admin or user themselves
 router.put('/:id/role', restrictTo('admin'), updateUserRole);

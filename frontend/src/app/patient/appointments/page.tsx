@@ -7,8 +7,9 @@ import { useState } from 'react'
 export default function AppointmentsPage() {
   const { data: hospitals } = useSWR('hospitals', () => api.hospitals.list() as any)
   const { data: myAppointments, mutate } = useSWR('myAppointments', () => api.appointments.my() as any)
-  const [form, setForm] = useState<any>({ hospital: '', department: '', appointmentType: 'in-person', appointmentDate: '', appointmentTime: '', reasonForVisit: '' })
+  const [form, setForm] = useState<any>({ hospital: '', department: '', doctor: '', appointmentType: 'in-person', appointmentDate: '', appointmentTime: '', reasonForVisit: '' })
   const [departments, setDepartments] = useState<any[]>([])
+  const [doctors, setDoctors] = useState<any[]>([])
   const [slots, setSlots] = useState<string[]>([])
   const [result, setResult] = useState<any>(null)
   const [showBookingForm, setShowBookingForm] = useState(false)
@@ -16,6 +17,17 @@ export default function AppointmentsPage() {
   const loadDepartments = async (hospitalId: string) => {
     const res = await api.departments.byHospital(hospitalId) as any
     setDepartments(res?.data?.departments || [])
+  }
+
+  const loadDoctors = async (hospitalId: string, departmentId: string) => {
+    if (!hospitalId || !departmentId) return
+    try {
+      const res = await api.doctors.byHospitalDepartment(hospitalId, departmentId) as any
+      setDoctors(res?.data?.doctors || [])
+    } catch (error) {
+      console.error('Error loading doctors:', error)
+      setDoctors([])
+    }
   }
 
   const loadSlots = async () => {
@@ -41,10 +53,20 @@ export default function AppointmentsPage() {
       ...form,
       patientDetails: { fullName: 'Current User', email: 'user@example.com', phoneNumber: '000', age: 30, gender: 'Male' },
     }
-    const res = await api.appointments.create(payload as any)
-    setResult(res)
-    mutate()
-    setShowBookingForm(false)
+    try {
+      const res = await api.appointments.create(payload as any)
+      setResult(res)
+      mutate()
+      setShowBookingForm(false)
+      // Reset form
+      setForm({ hospital: '', department: '', doctor: '', appointmentType: 'in-person', appointmentDate: '', appointmentTime: '', reasonForVisit: '' })
+      setDepartments([])
+      setDoctors([])
+      setSlots([])
+    } catch (error) {
+      console.error('Error creating appointment:', error)
+      setResult({ status: 'error', message: 'Failed to create appointment' })
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -150,12 +172,29 @@ export default function AppointmentsPage() {
                            <select
                              className="input"
                              value={form.department}
-                             onChange={e => setForm({ ...form, department: e.target.value })}
+                             onChange={e => { 
+                               setForm({ ...form, department: e.target.value, doctor: '' }); 
+                               loadDoctors(form.hospital, e.target.value) 
+                             }}
                              required
                            >
                              <option value="">Select Department</option>
                              {departments.map((d) =>
                                <option key={d._id} value={d._id}>{d.name}</option>
+                             )}
+                           </select>
+                         </div>
+
+                         <div className="form-group">
+                           <label className="form-label">Doctor (Optional)</label>
+                           <select
+                             className="input"
+                             value={form.doctor}
+                             onChange={e => setForm({ ...form, doctor: e.target.value })}
+                           >
+                             <option value="">Any Available Doctor</option>
+                             {doctors.map((d) =>
+                               <option key={d._id} value={d._id}>{d.user?.name || d.name} - {d.specialization}</option>
                              )}
                            </select>
                          </div>
@@ -246,6 +285,9 @@ export default function AppointmentsPage() {
                           </h4>
                           <span className={`badge ${getStatusBadge(appointment.status)}`}>
                             {appointment.status}
+                          </span>
+                          <span className={`badge ${appointment.appointmentType === 'virtual' ? 'badge-purple' : 'badge-blue'}`}>
+                            {appointment.appointmentType === 'virtual' ? '📹 Virtual' : '🏥 In-Person'}
                           </span>
                         </div>
                         

@@ -57,6 +57,9 @@ export const api = {
     list: () => apiFetch('/hospitals', { method: 'GET', auth: false }),
     get: (id: string) => apiFetch(`/hospitals/${id}`, { method: 'GET', auth: false }),
   },
+  patients: {
+    list: () => apiFetch('/users/patients', { method: 'GET' }),
+  },
   departments: {
     list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
     byHospital: (id: string) => apiFetch(`/departments/hospital/${id}`, { method: 'GET', auth: false }),
@@ -88,6 +91,7 @@ export const api = {
     reassign: (id: string, body: any) => apiFetch(`/appointments/${id}/reassign`, { method: 'PATCH', body: JSON.stringify(body) }),
     cancel: (id: string) => apiFetch(`/appointments/${id}/cancel`, { method: 'PATCH' }),
     get: (id: string) => apiFetch(`/appointments/${id}`, { method: 'GET' }),
+    hospitalStats: () => apiFetch('/appointments/hospital-stats', { method: 'GET' }),
   },
   payments: {
     checkout: (body: any) => apiFetch('/payments/checkout', { method: 'POST', body: JSON.stringify(body) }),

@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/auth/login/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/auth/login/page.js"
+      "static/chunks/app/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -11,10 +11,30 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/auth/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auth/login/page.js"
+    ],
     "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
+    ],
+    "/hospital/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospital/page.js"
+    ],
+    "/hospital/appointments/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospital/appointments/page.js"
+    ],
+    "/hospital/departments/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospital/departments/page.js"
     ],
     "/patient/page": [
       "static/chunks/webpack.js",
@@ -25,6 +45,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/patient/appointments/page.js"
+    ],
+    "/meeting/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/meeting/[id]/page.js"
     ],
     "/patient/teleconsult/page": [
       "static/chunks/webpack.js",
@@ -41,20 +66,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/patient/ai/page.js"
     ],
-    "/patient/emergency/page": [
+    "/patient/orders/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/patient/emergency/page.js"
+      "static/chunks/app/patient/orders/page.js"
     ],
     "/patient/records/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/patient/records/page.js"
     ],
-    "/patient/orders/page": [
+    "/hospital/doctors/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/patient/orders/page.js"
+      "static/chunks/app/hospital/doctors/page.js"
+    ],
+    "/hospital/analytics/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/hospital/analytics/page.js"
     ],
     "/auth/register/page": [
       "static/chunks/webpack.js",
@@ -85,6 +115,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/doctor/prescriptions/page.js"
+    ],
+    "/doctor/records/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor/records/page.js"
+    ],
+    "/doctor/profile/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/doctor/profile/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",
