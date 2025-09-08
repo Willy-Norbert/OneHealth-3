@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Joi = require('joi');
 const { createNotification } = require('../utils/notificationService');
 const { sendPrescriptionEmail } = require('../services/emailService'); // Import email service
+const PDFDocument = require('pdfkit');
 
 // @desc    Create a new prescription
 // @route   POST /api/prescriptions
@@ -263,5 +264,52 @@ exports.getMyPrescriptions = async (req, res) => {
       status: 'error', 
       message: 'Internal server error. Please try again later.' 
     });
+  }
+};
+
+// @desc    Generate PDF for a prescription
+// @route   GET /api/prescriptions/:id/pdf
+// @access  Private (Patient owner, Doctor author, Admin)
+exports.getPrescriptionPdf = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const rx = await Prescription.findById(id)
+      .populate([{ path: 'patient', select: 'name email' }, { path: 'doctor', select: 'name specialization' }, { path: 'appointment', select: 'appointmentDate appointmentTime' }]);
+    if (!rx) return res.status(404).json({ status: 'error', message: 'Prescription not found' });
+
+    // Authorization
+    const isOwner = rx.patient._id.toString() === req.user._id.toString();
+    const isAuthor = rx.doctor._id.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAuthor && !isAdmin) {
+      return res.status(403).json({ status: 'error', message: 'Not authorized' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=prescription-${rx._id}.pdf`);
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    doc.pipe(res);
+
+    doc.fontSize(20).text('Prescription', { align: 'center' }).moveDown(1);
+    doc.fontSize(12).text(`Patient: ${rx.patient.name}`);
+    doc.text(`Doctor: ${rx.doctor.name} (${rx.doctor.specialization || 'Doctor'})`);
+    doc.text(`Date: ${rx.appointment?.appointmentDate ? new Date(rx.appointment.appointmentDate).toLocaleDateString() : new Date().toLocaleDateString()}`);
+    doc.moveDown(1);
+    doc.fontSize(14).text('Diagnosis');
+    doc.fontSize(12).text(rx.diagnosis || '-', { paragraphGap: 8 });
+    doc.fontSize(14).text('Medications');
+    doc.moveDown(0.5);
+    rx.medications.forEach((m, idx) => {
+      doc.fontSize(12).text(`${idx + 1}. ${m.name} — ${m.dosage} (${m.frequency})${m.instructions ? ' — ' + m.instructions : ''}`);
+    });
+    if (rx.notes) {
+      doc.moveDown(1);
+      doc.fontSize(14).text('Notes');
+      doc.fontSize(12).text(rx.notes);
+    }
+    doc.end();
+  } catch (error) {
+    console.error('Error generating prescription PDF:', error);
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 };

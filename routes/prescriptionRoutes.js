@@ -4,6 +4,7 @@ const {
   getPatientPrescriptions,
   getDoctorAuthoredPrescriptions,
   getMyPrescriptions,
+  getPrescriptionPdf,
 } = require('../controllers/prescriptionController');
 const { protect, restrictTo } = require('../middleware/auth');
 
@@ -150,5 +151,6 @@ router.get('/doctor-authored', restrictTo('doctor'), getDoctorAuthoredPrescripti
  *         description: Access denied
  */
 router.get('/my', getMyPrescriptions);
+router.get('/:id/pdf', getPrescriptionPdf);
 
 module.exports = router;
