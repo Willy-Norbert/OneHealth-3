@@ -1,5 +1,6 @@
 "use client"
 import { useState, Suspense } from 'react'
+import Image from 'next/image'
 import { api } from '@/lib/api'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -57,6 +58,17 @@ export default function ResetPasswordPage() {
             <svg className="absolute left-0 top-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
               <path d="M0,0 L0,100 Q50,50 0,0 Z" fill="#059669" />
             </svg>
+            <div className="relative z-10 h-full w-full flex items-center justify-center p-6">
+              <div className="bg-white/15 rounded-full p-6 md:p-8 shadow-xl">
+                <Image
+                  src="https://static.vecteezy.com/system/resources/previews/020/801/603/non_2x/doctor-friendly-and-caring-medical-worker-illustration-vector.jpg"
+                  alt="Doctor Illustration"
+                  width={220}
+                  height={220}
+                  className="rounded-full object-contain"
+                />
+              </div>
+            </div>
           </div>
           <div className="md:col-span-3 p-10">
             <div className="flex items-center justify-between mb-8">

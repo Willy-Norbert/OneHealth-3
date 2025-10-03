@@ -61,7 +61,7 @@ export default function PharmacyHero() {
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="aspect-[4/3] relative">
                   <Image
-                    src="/placeholder.svg?height=600&width=800&text=Pharmacy+Services"
+                    src="/pharmacy-hero.jpg"
                     alt={t("pharmacy_hero.image_alt")}
                     fill
                     className="object-cover"

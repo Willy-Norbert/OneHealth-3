@@ -41,7 +41,7 @@ export default function ServicesHero() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <div className="aspect-[4/3] relative">
                 <Image
-                  src="/placeholder.svg?height=600&width=800&text=Healthcare+Services"
+                  src="/hero.png"
                   alt={t("servicesHero.imageAlt")}
                   fill
                   className="object-cover"

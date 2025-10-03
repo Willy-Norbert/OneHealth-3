@@ -44,7 +44,7 @@ export default function TeleconsultationHero() {
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="aspect-[4/3] relative">
                   <Image
-                    src="/placeholder.svg?height=600&width=800&text=Teleconsultation"
+                    src="/teleconsultation.png"
                     alt={t("teleconsultation3.serviceTag")}
                     fill
                     className="object-cover"

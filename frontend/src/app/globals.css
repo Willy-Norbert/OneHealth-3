@@ -41,6 +41,17 @@ html, body, #__next {
   height: 100%;
 }
 
+/* Prevent horizontal overflow that causes right-side white gap on wide screens */
+html, body, #__next, main {
+  overflow-x: hidden;
+}
+
+/* Ensure media never overflows container width */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
 body {
   @apply bg-gray-50 text-gray-800 font-sans antialiased;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

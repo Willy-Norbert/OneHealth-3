@@ -188,19 +188,19 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            <div>
+          <div>
               <select 
                 className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent"
                 value={form.role} 
                 onChange={e=>setForm({...form, role: e.target.value})}
               >
-                <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
-                <option value="hospital">Hospital</option>
-              </select>
-            </div>
+              <option value="patient">Patient</option>
+              <option value="doctor">Doctor</option>
+              <option value="hospital">Hospital</option>
+            </select>
+          </div>
 
-            {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-red-600 text-sm">{error}</p>}
             
             <button 
               type="submit" 

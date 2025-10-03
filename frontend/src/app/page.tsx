@@ -12,16 +12,14 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
-      <div className="relative overflow-hidden container">
-        <div className="m-10">
-          <Hero />
-          <ServiceCards />
-          <DepartmentSection />
-          <StatsSection />
-          <DoctorsSection />
-          <TestimonialsSection />
-          <ContactSection />
-        </div>
+      <div className="relative overflow-hidden">
+        <Hero />
+        <ServiceCards />
+        <DepartmentSection />
+        <StatsSection />
+        <DoctorsSection />
+        <TestimonialsSection />
+        <ContactSection />
         <Footer />
       </div>
     </main>
