@@ -1,0 +1,28 @@
+{
+  "functions": {
+    "app/meeting/[id]/page.tsx": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/meeting/:id",
+      "destination": "/meeting/:id"
+    }
+  ]
+}
