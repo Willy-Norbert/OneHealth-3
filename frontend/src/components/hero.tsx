@@ -92,6 +92,88 @@ export default function HeroSection() {
                 <div className="text-sm text-muted-foreground">Years Of Experience The Medical Field</div>
               </div>
             </div>
+
+            {/* Recognized by Section */}
+            <div className="pt-12">
+              <div className="text-center mb-8">
+                <h3 className="text-lg font-semibold text-muted-foreground mb-2">Recognized by</h3>
+                <p className="text-sm text-muted-foreground">Trusted by leading hospitals across Rwanda</p>
+              </div>
+              
+              {/* Hospital Logos Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-center justify-items-center">
+                {/* King Faisal Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">KFH</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">King Faisal Hospital</span>
+                </div>
+
+                {/* CHUK - University Teaching Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">CHUK</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">CHUK Hospital</span>
+                </div>
+
+                {/* Rwanda Military Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">RMH</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">Rwanda Military Hospital</span>
+                </div>
+
+                {/* Kibagabaga Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">KH</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">Kibagabaga Hospital</span>
+                </div>
+
+                {/* La Croix du Sud Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-orange-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">LCS</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">La Croix du Sud</span>
+                </div>
+
+                {/* Kanombe Military Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-teal-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">KMH</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">Kanombe Military Hospital</span>
+                </div>
+
+                {/* Muhima Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">MH</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">Muhima Hospital</span>
+                </div>
+
+                {/* Nyarugenge District Hospital */}
+                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
+                  <div className="w-16 h-16 bg-gradient-to-br from-pink-600 to-pink-800 rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-white font-bold text-sm">NDH</span>
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">Nyarugenge District Hospital</span>
+                </div>
+              </div>
+
+              {/* Additional Trust Indicators */}
+              <div className="mt-8 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Partnered with 50+ healthcare facilities across Rwanda
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Right Column */}

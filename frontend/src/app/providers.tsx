@@ -1,6 +1,7 @@
 "use client"
 import { AuthProvider } from '@/context/AuthContext'
 import { NotificationsProvider } from '@/context/NotificationsContext'
+import { NetworkProvider } from '@/context/NetworkContext'
 import { ThemeProvider } from 'next-themes'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import Image from 'next/image'
@@ -21,29 +22,31 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <LanguageProvider>
-        <AuthProvider>
-          <NotificationsProvider>
-            {/* Fixed background with slow scroll animation for all white sections */}
-            <div 
-              className="fixed inset-0 z-0 pointer-events-none"
-              style={{
-                backgroundImage: 'url(/bg_auth.png)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                opacity: 0.3,
-                transform: 'translateY(var(--scroll-offset, 0px))',
-                transition: 'transform 0.1s ease-out'
-              }}
-            >
-              <div className="absolute inset-0 bg-emerald-600/30" />
-            </div>
-            
-            <div className="relative z-10">
-              {children}
-            </div>
-          </NotificationsProvider>
-        </AuthProvider>
+        <NetworkProvider>
+          <AuthProvider>
+            <NotificationsProvider>
+              {/* Fixed background with slow scroll animation for all white sections */}
+              <div 
+                className="fixed inset-0 z-0 pointer-events-none"
+                style={{
+                  backgroundImage: 'url(/bg_auth.png)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  opacity: 0.3,
+                  transform: 'translateY(var(--scroll-offset, 0px))',
+                  transition: 'transform 0.1s ease-out'
+                }}
+              >
+                <div className="absolute inset-0 bg-emerald-600/30" />
+              </div>
+              
+              <div className="relative z-10">
+                {children}
+              </div>
+            </NotificationsProvider>
+          </AuthProvider>
+        </NetworkProvider>
       </LanguageProvider>
     </ThemeProvider>
   )
