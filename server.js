@@ -86,9 +86,9 @@ app.use(apiUsageMonitoring);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:5000',
+  'https://onehealthconnekt.onrender.com',
   'https://dashboard-onehealth.vercel.app',
-  'https://onehealthconnect-nu4v.onrender.com',
+  'https://onehealthconnekt.onrender.com',
   'https://73c65683-f30b-431e-8777-e30c30110c39.sandbox.lovable.dev',
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN,
@@ -136,7 +136,7 @@ const swaggerOptions = {
         url:
           process.env.NODE_ENV === 'production'
             ? 'https://onehealthconnect.onrender.com'
-            : 'http://localhost:5000',
+            : 'https://onehealthconnekt.onrender.com',
         description:
           process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },

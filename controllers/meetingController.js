@@ -85,7 +85,7 @@ exports.createMeeting = async (req, res) => {
 
     // Send meeting invitation emails to patient and doctor (and hospital if available)
     try {
-      const hostUrl = process.env.FRONTEND_URL || 'https://onehealthconnect-nu4v.onrender.com'
+      const hostUrl = process.env.FRONTEND_URL || 'https://onehealthconnekt.onrender.com'
       const meetingUrl = `${hostUrl}/meeting/${meeting_id}`
       const subject = 'Teleconsultation Meeting Invitation'
       const htmlBody = `

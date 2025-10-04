@@ -1,0 +1,8 @@
+export { default as EditModal } from './EditModal'
+export { default as ViewModal } from './ViewModal'
+export { default as DoctorEditModal } from './DoctorEditModal'
+export { default as DepartmentEditModal } from './DepartmentEditModal'
+export { default as AppointmentEditModal } from './AppointmentEditModal'
+export { default as PatientEditModal } from './PatientEditModal'
+export { default as MedicalRecordEditModal } from './MedicalRecordEditModal'
+export { default as PrescriptionEditModal } from './PrescriptionEditModal'
