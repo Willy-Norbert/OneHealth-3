@@ -14,7 +14,7 @@ export default function DoctorAppointmentsPage() {
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id)
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/appointments/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnect-nu4v.onrender.com'}/appointments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` },
         body: JSON.stringify({ status })

@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, ArrowRight, Check, Hospital, CreditCard, User, Calendar, FileText } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnect-nu4v.onrender.com/api'
 
 interface Hospital {
   _id: string

@@ -209,3 +209,4 @@ export default function DepartmentEditModal({ isOpen, onClose, department, onSuc
     </EditModal>
   )
 }
+

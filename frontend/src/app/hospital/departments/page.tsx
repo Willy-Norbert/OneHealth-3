@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import HealthSpinner from '@/components/ui/HealthSpinner'
+import { DepartmentEditModal } from '@/components/modals'
 
 export default function HospitalDepartmentsPage() {
   const { data: departments, mutate } = useSWR('hospital-departments', () => api.departments.list() as any)

@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import ScheduleEditor from '@/components/ScheduleEditor'
+import { DoctorEditModal } from '@/components/modals'
 
 export default function HospitalDoctorsPage() {
   const { data, mutate } = useSWR('doctors-list', () => api.doctors.list() as any)
@@ -424,7 +425,7 @@ export default function HospitalDoctorsPage() {
                         if (!confirm('Delete this doctor?')) return;
                         try {
                           setDeletingId(doctor._id)
-                          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/doctors/${doctor._id}`, {
+                          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnect-nu4v.onrender.com'}/doctors/${doctor._id}`, {
                             method:'DELETE',
                             headers:{ 'Content-Type':'application/json', Authorization: `Bearer ${require('js-cookie').get('token') || ''}` }
                           })
@@ -432,152 +433,15 @@ export default function HospitalDoctorsPage() {
                         } finally { setDeletingId(null) }
                       }}>{deletingId===doctor._id? 'Deleting...' : 'Delete'}</button>
       {/* Edit Doctor Modal */}
-      {editDoctor && (
-        <div className="modal-overlay">
-          <div className="modal max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">Edit Doctor</h2>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setEditLoading(true);
-                try {
-                  const token = require('js-cookie').get('token') || '';
-                  const payload = {
-                    name: editDoctor.user?.name,
-                    email: editDoctor.user?.email,
-                    phoneNumber: editDoctor.user?.phoneNumber,
-                    profileImage: editDoctor.user?.profileImage,
-                    licenseNumber: editDoctor.licenseNumber,
-                    specialization: editDoctor.specialization,
-                    consultationFee: Number(editDoctor.consultationFee||0),
-                    experience: Number(editDoctor.experience||0),
-                    languages: (editDoctor.languages||[]).join(', '),
-                    bio: editDoctor.bio,
-                  };
-                  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/doctors/${editDoctor._id}/hospital-update`, {
-                    method:'PUT',
-                    headers:{ 'Content-Type':'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify(payload)
-                  });
-                  if (!res.ok) throw new Error(await res.text());
-                  await mutate();
-                  setEditDoctor(null);
-                } catch (e) {
-                  alert('Failed to save doctor');
-                } finally {
-                  setEditLoading(false);
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="form-label">Name</label>
-                <input
-                  className="input w-full"
-                  type="text"
-                  value={editDoctor.user?.name || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, user: { ...d.user, name: e.target.value } }))}
-                  required
-                />
-              </div>
-              <div>
-                <label className="form-label">Email</label>
-                <input
-                  className="input w-full"
-                  type="email"
-                  value={editDoctor.user?.email || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, user: { ...d.user, email: e.target.value } }))}
-                  required
-                />
-              </div>
-              <div>
-                <label className="form-label">Phone Number</label>
-                <input
-                  className="input w-full"
-                  type="tel"
-                  value={editDoctor.user?.phoneNumber || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, user: { ...d.user, phoneNumber: e.target.value } }))}
-                />
-              </div>
-              <div>
-                <label className="form-label">Profile Image</label>
-                <input
-                  className="input w-full"
-                  type="text"
-                  value={editDoctor.user?.profileImage || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, user: { ...d.user, profileImage: e.target.value } }))}
-                />
-              </div>
-              <div>
-                <label className="form-label">License Number</label>
-                <input
-                  className="input w-full"
-                  type="text"
-                  value={editDoctor.licenseNumber || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, licenseNumber: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label className="form-label">Specialization</label>
-                <input
-                  className="input w-full"
-                  type="text"
-                  value={editDoctor.specialization || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, specialization: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label className="form-label">Consultation Fee (RWF)</label>
-                <input
-                  className="input w-full"
-                  type="number"
-                  value={editDoctor.consultationFee || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, consultationFee: e.target.value }))}
-                  min={0}
-                />
-              </div>
-              <div>
-                <label className="form-label">Experience (years)</label>
-                <input
-                  className="input w-full"
-                  type="number"
-                  value={editDoctor.experience || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, experience: e.target.value }))}
-                  min={0}
-                />
-              </div>
-              <div>
-                <label className="form-label">Languages (comma separated)</label>
-                <input
-                  className="input w-full"
-                  type="text"
-                  value={Array.isArray(editDoctor.languages) ? editDoctor.languages.join(', ') : editDoctor.languages || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, languages: e.target.value.split(',').map((s: string) => s.trim()) }))}
-                />
-              </div>
-              <div>
-                <label className="form-label">Bio</label>
-                <textarea
-                  className="input w-full"
-                  rows={2}
-                  value={editDoctor.bio || ''}
-                  onChange={e => setEditDoctor((d: any) => ({ ...d, bio: e.target.value }))}
-                />
-              </div>
-              <div className="flex items-center space-x-4 mt-4">
-                <button type="submit" className="btn-primary" disabled={editLoading}>
-                  {editLoading ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button type="button" className="btn-outline" onClick={()=>setEditDoctor(null)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <DoctorEditModal
+        isOpen={!!editDoctor}
+        onClose={() => setEditDoctor(null)}
+        doctor={editDoctor}
+        onSuccess={() => {
+          mutate()
+          setEditDoctor(null)
+        }}
+      />
                     </div>
                   </div>
                 ))}

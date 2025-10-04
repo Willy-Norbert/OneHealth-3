@@ -215,7 +215,7 @@ export default function HospitalPatientsPage() {
                         <button className="btn-outline btn-sm" onClick={async ()=>{
                           try {
                             const token = require('js-cookie').get('token') || ''
-                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/medical-records?patient=${patient._id}`, { headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` } })
+                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnect-nu4v.onrender.com'}/medical-records?patient=${patient._id}`, { headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` } })
                             const j = await res.json()
                             setRecordsModal({ open: true, patient, records: j?.data?.records || [] })
                           } catch (e) {
