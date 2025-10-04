@@ -496,8 +496,47 @@ export default function ScheduleEditor({ doctorId, onDone }: { doctorId?: string
 
       {/* Calendar View */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Calendar View</label>
-        <p className="text-xs text-gray-500 mb-3">View your availability schedule for the current month</p>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-gray-700">Calendar View</label>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const prevMonth = new Date(currentMonth)
+                prevMonth.setMonth(prevMonth.getMonth() - 1)
+                setCurrentMonth(prevMonth)
+              }}
+              className="p-1 hover:bg-gray-100 rounded"
+              disabled={locked}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-sm font-medium min-w-[120px] text-center">
+              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+            <button
+              onClick={() => {
+                const nextMonth = new Date(currentMonth)
+                nextMonth.setMonth(nextMonth.getMonth() + 1)
+                setCurrentMonth(nextMonth)
+              }}
+              className="p-1 hover:bg-gray-100 rounded"
+              disabled={locked}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setCurrentMonth(new Date())}
+              className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+            >
+              Today
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">View your availability schedule for the selected month</p>
         
         <div className="bg-white border rounded-lg p-4">
           <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-500 mb-2">
@@ -507,25 +546,23 @@ export default function ScheduleEditor({ doctorId, onDone }: { doctorId?: string
           </div>
           
           <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: 35 }, (_, i) => {
-              const today = new Date()
-              const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+            {Array.from({ length: 42 }, (_, i) => {
+              const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
               const startDate = new Date(firstDay)
               startDate.setDate(startDate.getDate() - firstDay.getDay() + i)
               
-              const isCurrentMonth = startDate.getMonth() === today.getMonth()
-              const isToday = startDate.toDateString() === today.toDateString()
+              const isCurrentMonth = startDate.getMonth() === currentMonth.getMonth()
+              const isToday = startDate.toDateString() === new Date().toDateString()
               const isException = (availability.exceptions || []).find((ex: any) => 
                 new Date(ex.date).toDateString() === startDate.toDateString()
               )
-              const isWeekdayAvailable = availability.weekdays?.includes(
-                startDate.toLocaleDateString('en-US', { weekday: 'long' })
-              )
+              const weekdayName = startDate.toLocaleDateString('en-US', { weekday: 'long' })
+              const isWeekdayAvailable = availability.weekdays?.includes(weekdayName)
               
               return (
                 <div
                   key={i}
-                  className={`p-2 text-center text-xs rounded ${
+                  className={`p-2 text-center text-xs rounded cursor-pointer hover:bg-gray-100 ${
                     !isCurrentMonth 
                       ? 'text-gray-300' 
                       : isToday 
@@ -538,6 +575,13 @@ export default function ScheduleEditor({ doctorId, onDone }: { doctorId?: string
                             ? 'bg-gray-50 text-gray-700'
                             : 'bg-gray-200 text-gray-500'
                   }`}
+                  onClick={() => {
+                    if (locked || !isCurrentMonth) return
+                    setSelectedDate(startDate.toISOString().split('T')[0])
+                    setDateAvailability(!isWeekdayAvailable)
+                    setShowDateForm(true)
+                  }}
+                  title={isCurrentMonth ? `${startDate.toLocaleDateString()} - ${weekdayName} - ${isWeekdayAvailable ? 'Available' : 'Unavailable'}` : ''}
                 >
                   {startDate.getDate()}
                   {isException && (
@@ -554,6 +598,10 @@ export default function ScheduleEditor({ doctorId, onDone }: { doctorId?: string
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-gray-50 border rounded"></div>
               <span>Available</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-gray-200 rounded"></div>
+              <span>Unavailable</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-green-100 rounded"></div>

@@ -38,7 +38,7 @@ function baseTemplate(title, body) {
     <div style="font-family: 'Inter', sans-serif; max-width: 640px; margin: 0 auto; background-color: #f4f6f8; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0;">
       <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #0ea5e9; padding: 20px; text-align: center;">
-          <img src="${process.env.EMAIL_LOGO_URL || ''}" alt="Logo" style="max-width: 150px; margin-bottom: 10px;"/>
+          <img src="https://onehealth-ebon.vercel.app/irabaruta-logo.png" alt="Logo" style="max-width: 150px; margin-bottom: 10px;"/>
           <h1 style="color: #ffffff; font-size: 24px; margin: 0;">${title}</h1>
         </div>
         <div style="padding: 30px 20px; line-height: 1.6; color: #333333;">
