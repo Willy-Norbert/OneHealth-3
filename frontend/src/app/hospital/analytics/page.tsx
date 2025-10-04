@@ -25,16 +25,21 @@ export default function HospitalAnalyticsPage() {
 
   return (
     <AppShell
-      menu={[
-        { href: '/hospital', label: 'Overview' },
-        { href: '/hospital/doctors', label: 'Doctors' },
-        { href: '/hospital/appointments', label: 'Appointments' },
-        { href: '/hospital/departments', label: 'Departments' },
-        { href: '/hospital/analytics', label: 'Analytics' },
-        { href: '/hospital/emergency', label: 'Emergency' },
-        { href: '/hospital/profile', label: 'Profile' },
-      ]}
-    >
+    menu={[
+      { href: '/hospital', label: 'Overview' },
+      { href: '/hospital/doctors', label: 'Doctors' },
+      { href: '/hospital/departments', label: 'Departments' },
+      { href: '/hospital/appointments', label: 'Appointments' },
+      { href: '/hospital/patients', label: 'Patients' },
+      { href: '/hospital/lab-results', label: 'Medical Records' },
+      { href: '/hospital/drug-interactions', label: 'Prescriptions' },
+      { href: '/hospital/analytics', label: 'Analytics' },
+      { href: '/hospital/profile', label: 'Profile' },
+      { href: '/hospital/notifications', label: 'Notifications' },
+      { href: '/hospital/emergency', label: 'Emergency' },
+      
+    ]}
+  >
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">

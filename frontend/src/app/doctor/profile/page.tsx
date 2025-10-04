@@ -79,14 +79,17 @@ export default function DoctorProfilePage() {
 
   return (
     <AppShell
-      menu={[
-        { href: '/doctor', label: 'Overview' },
-        { href: '/doctor/appointments', label: 'Appointments' },
-        { href: '/doctor/meetings', label: 'Meetings' },
-        { href: '/doctor/prescriptions', label: 'Prescriptions' },
-        { href: '/doctor/profile', label: 'Profile' },
-      ]}
-    >
+    menu={[
+      { href: '/doctor', label: 'Overview' },
+      { href: '/doctor/appointments', label: 'Appointments' },
+      { href: '/doctor/lab-results', label: 'Medical Records' },
+      { href: '/doctor/settings', label: 'Settings' },
+      { href: '/doctor/meetings', label: 'Teleconsultations' },
+      { href: '/doctor/prescriptions', label: 'Prescriptions' },
+      { href: '/doctor/records', label: 'Medical Records' },
+      { href: '/doctor/profile', label: 'Profile' },
+    ]}
+  >
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">

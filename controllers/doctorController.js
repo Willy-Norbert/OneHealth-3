@@ -497,57 +497,274 @@ exports.updateMySettings = async (req, res) => {
 exports.getMyAvailability = async (req, res) => {
   try {
     console.log('[GET /doctors/availability] user:', req.user?._id, 'role:', req.user?.role)
-    if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required', data: null });
-    if (req.user.role !== 'doctor') return res.status(403).json({ success: false, message: 'Forbidden', data: null });
+    
+    // Enhanced authentication check
+    if (!req.user) {
+      console.error('[GET /doctors/availability] No user in request');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required', 
+        data: null 
+      });
+    }
+    
+    if (req.user.role !== 'doctor') {
+      console.error('[GET /doctors/availability] Invalid role:', req.user.role);
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only doctors can access availability settings', 
+        data: null 
+      });
+    }
+
+    // Validate user ID
+    if (!req.user._id) {
+      console.error('[GET /doctors/availability] No user ID');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid user ID', 
+        data: null 
+      });
+    }
+
     let doc;
     try {
-      doc = await Doctor.findOne({ user: req.user._id }).select('settings');
+      console.log('[GET /doctors/availability] Searching for doctor with user ID:', req.user._id);
+      
+      // Enhanced query with better error handling
+      doc = await Doctor.findOne({ user: req.user._id })
+        .select('settings user hospital department')
+        .populate('user', 'name email')
+        .populate('hospital', 'name')
+        .populate('department', 'name');
+        
+      console.log('[GET /doctors/availability] Found doctor:', doc ? 'Yes' : 'No');
+      if (doc) {
+        console.log('[GET /doctors/availability] Doctor details:', {
+          id: doc._id,
+          name: doc.user?.name,
+          hospital: doc.hospital?.name,
+          department: doc.department?.name
+        });
+      }
     } catch (err) {
       console.error('[GET /doctors/availability] DB error:', err);
-      return res.status(500).json({ success: false, message: 'Database error', data: { error: err.message } });
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Database connection error. Please try again.', 
+        data: { error: err.message } 
+      });
     }
+
     if (!doc) {
-      console.warn('[GET /doctors/availability] Doctor profile not found for user', req.user?._id)
-      // Return empty defaults instead of 404 so UI can render gracefully
-      return res.status(200).json({ success: true, message: 'No availability found', data: { availability: {} , locked: false } });
+      console.warn('[GET /doctors/availability] Doctor profile not found for user', req.user?._id);
+      
+      // Return structured default data instead of empty object
+      const defaultAvailability = {
+        weekdays: [],
+        timeRanges: [
+          { start: '08:00', end: '17:00' }
+        ],
+        exceptions: []
+      };
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Doctor profile not found. Using default availability.', 
+        data: { 
+          availability: defaultAvailability,
+          locked: false,
+          doctorProfileExists: false
+        } 
+      });
     }
-    return res.status(200).json({ success: true, message: 'OK', data: { availability: doc.settings?.defaultAvailability || {} , locked: !!doc.settings?.availabilityLockedByHospital } });
+
+    // Ensure settings object exists
+    if (!doc.settings) {
+      doc.settings = {};
+    }
+
+    // Ensure defaultAvailability exists
+    if (!doc.settings.defaultAvailability) {
+      doc.settings.defaultAvailability = {
+        weekdays: [],
+        timeRanges: [
+          { start: '08:00', end: '17:00' }
+        ],
+        exceptions: []
+      };
+    }
+
+    const responseData = {
+      availability: doc.settings.defaultAvailability,
+      locked: !!doc.settings.availabilityLockedByHospital,
+      doctorProfileExists: true,
+      doctor: {
+        name: doc.user?.name,
+        hospital: doc.hospital?.name,
+        department: doc.department?.name
+      }
+    };
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Availability retrieved successfully', 
+      data: responseData 
+    });
   } catch (e) {
-    console.error('[GET /doctors/availability] error:', e)
-    return res.status(500).json({ success: false, message: 'Error', data: { error: e.message } });
+    console.error('[GET /doctors/availability] Unexpected error:', e);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error. Please contact support.', 
+      data: { error: e.message } 
+    });
   }
 };
 
 exports.updateMyAvailability = async (req, res) => {
   try {
     console.log('[PUT /doctors/availability] user:', req.user?._id, 'role:', req.user?.role, 'body:', req.body)
-    if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required', data: null });
-    if (req.user.role !== 'doctor') return res.status(403).json({ success: false, message: 'Forbidden', data: null });
-    const doc = await Doctor.findOne({ user: req.user._id }).select('settings');
+    
+    // Enhanced authentication check
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required', 
+        data: null 
+      });
+    }
+    
+    if (req.user.role !== 'doctor') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only doctors can update availability settings', 
+        data: null 
+      });
+    }
+
+    // Validate user ID
+    if (!req.user._id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid user ID', 
+        data: null 
+      });
+    }
+
+    let doc;
+    try {
+      doc = await Doctor.findOne({ user: req.user._id }).select('settings');
+    } catch (err) {
+      console.error('[PUT /doctors/availability] DB error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Database connection error. Please try again.', 
+        data: { error: err.message } 
+      });
+    }
+
     if (!doc) {
-      console.warn('[PUT /doctors/availability] Doctor profile not found for user', req.user?._id)
-      return res.status(404).json({ success: false, message: 'Doctor profile not found', data: null });
+      console.warn('[PUT /doctors/availability] Doctor profile not found for user', req.user?._id);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Doctor profile not found. Please contact admin to create your profile.', 
+        data: null 
+      });
     }
+
+    // Check if availability is locked by hospital
     if (doc.settings?.availabilityLockedByHospital) {
-      return res.status(423).json({ success: false, message: 'Availability is locked by hospital', data: null });
+      return res.status(423).json({ 
+        success: false, 
+        message: 'Your availability is currently locked by hospital administration. Please contact your hospital admin.', 
+        data: { locked: true } 
+      });
     }
+
+    // Enhanced validation schema
     const schema = Joi.object({
-      weekdays: Joi.array().items(Joi.string().valid('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')).optional(),
-      timeRanges: Joi.array().items(Joi.object({ start: Joi.string().required(), end: Joi.string().required() })).optional(),
-      exceptions: Joi.array().items(Joi.object({ date: Joi.alternatives().try(Joi.string(), Joi.date()).required(), available: Joi.boolean().default(false) })).optional(),
+      weekdays: Joi.array().items(
+        Joi.string().valid('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')
+      ).optional(),
+      timeRanges: Joi.array().items(
+        Joi.object({ 
+          start: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(), 
+          end: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required() 
+        })
+      ).optional(),
+      exceptions: Joi.array().items(
+        Joi.object({ 
+          date: Joi.alternatives().try(Joi.string().isoDate(), Joi.date()).required(), 
+          available: Joi.boolean().default(false) 
+        })
+      ).optional(),
     });
+
     const { error, value } = schema.validate(req.body, { abortEarly: false });
     if (error) {
-      console.warn('[PUT /doctors/availability] validation failed:', error.details?.map(d=>d.message))
-      return res.status(400).json({ success: false, message: 'Validation failed', data: { details: error.details.map(d=>d.message) } });
+      console.warn('[PUT /doctors/availability] validation failed:', error.details?.map(d=>d.message));
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid availability data provided', 
+        data: { 
+          details: error.details.map(d => d.message),
+          field: error.details[0]?.path?.join('.')
+        } 
+      });
     }
+
+    // Ensure settings object exists
     doc.settings = doc.settings || {};
-    doc.settings.defaultAvailability = { ...(doc.settings.defaultAvailability || {}), ...value };
-    await doc.save();
-    return res.status(200).json({ success: true, message: 'Availability updated', data: { availability: doc.settings.defaultAvailability } });
+    doc.settings.defaultAvailability = doc.settings.defaultAvailability || {};
+
+    // Merge new availability data
+    doc.settings.defaultAvailability = { 
+      ...doc.settings.defaultAvailability, 
+      ...value 
+    };
+
+    // Validate time ranges
+    if (value.timeRanges) {
+      for (const range of value.timeRanges) {
+        const start = new Date(`2000-01-01T${range.start}`);
+        const end = new Date(`2000-01-01T${range.end}`);
+        if (start >= end) {
+          return res.status(400).json({
+            success: false,
+            message: 'End time must be after start time',
+            data: { field: 'timeRanges' }
+          });
+        }
+      }
+    }
+
+    try {
+      await doc.save();
+      console.log('[PUT /doctors/availability] Successfully updated availability for doctor:', req.user._id);
+      
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Availability updated successfully', 
+        data: { 
+          availability: doc.settings.defaultAvailability,
+          updated: new Date().toISOString()
+        } 
+      });
+    } catch (saveErr) {
+      console.error('[PUT /doctors/availability] Save error:', saveErr);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to save availability. Please try again.', 
+        data: { error: saveErr.message } 
+      });
+    }
   } catch (e) {
-    console.error('[PUT /doctors/availability] error:', e)
-    return res.status(500).json({ success: false, message: 'Error', data: { error: e.message } });
+    console.error('[PUT /doctors/availability] Unexpected error:', e);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error. Please contact support.', 
+      data: { error: e.message } 
+    });
   }
 };
 
@@ -556,12 +773,99 @@ exports.updateMyAvailability = async (req, res) => {
 // @access  Private (Hospital)
 exports.getDoctorAvailabilityByHospital = async (req, res) => {
   try {
-    if (req.user.role !== 'hospital') return res.status(403).json({ success: false, message: 'Forbidden', data: null });
-    const doc = await Doctor.findById(req.params.id).select('settings');
-    if (!doc) return res.status(404).json({ success: false, message: 'Doctor not found', data: null });
-    return res.status(200).json({ success: true, message: 'OK', data: { availability: doc.settings?.defaultAvailability || {}, locked: !!doc.settings?.availabilityLockedByHospital } });
+    console.log('[GET /doctors/:id/availability] hospital user:', req.user?._id, 'doctor id:', req.params.id);
+    
+    // Enhanced authentication check
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required', 
+        data: null 
+      });
+    }
+    
+    if (req.user.role !== 'hospital') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only hospital administrators can access doctor availability', 
+        data: null 
+      });
+    }
+
+    // Validate doctor ID
+    if (!req.params.id || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid doctor ID', 
+        data: null 
+      });
+    }
+
+    let doc;
+    try {
+      doc = await Doctor.findById(req.params.id)
+        .select('settings user hospital department')
+        .populate('user', 'name email')
+        .populate('hospital', 'name')
+        .populate('department', 'name');
+    } catch (err) {
+      console.error('[GET /doctors/:id/availability] DB error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Database connection error. Please try again.', 
+        data: { error: err.message } 
+      });
+    }
+
+    if (!doc) {
+      console.warn('[GET /doctors/:id/availability] Doctor not found:', req.params.id);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Doctor not found', 
+        data: null 
+      });
+    }
+
+    // Ensure settings object exists
+    if (!doc.settings) {
+      doc.settings = {};
+    }
+
+    // Ensure defaultAvailability exists
+    if (!doc.settings.defaultAvailability) {
+      doc.settings.defaultAvailability = {
+        weekdays: [],
+        timeRanges: [
+          { start: '08:00', end: '17:00' }
+        ],
+        exceptions: []
+      };
+    }
+
+    const responseData = {
+      availability: doc.settings.defaultAvailability,
+      locked: !!doc.settings.availabilityLockedByHospital,
+      doctor: {
+        id: doc._id,
+        name: doc.user?.name,
+        email: doc.user?.email,
+        hospital: doc.hospital?.name,
+        department: doc.department?.name
+      }
+    };
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Doctor availability retrieved successfully', 
+      data: responseData 
+    });
   } catch (e) {
-    return res.status(500).json({ success: false, message: 'Error', data: { error: e.message } });
+    console.error('[GET /doctors/:id/availability] Unexpected error:', e);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error. Please contact support.', 
+      data: { error: e.message } 
+    });
   }
 };
 

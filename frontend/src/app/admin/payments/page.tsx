@@ -5,7 +5,7 @@ export default function AdminPaymentsPage() {
   const { data } = useSWR('admin-payments', () => apiFetch('/payments?all=true'))
   async function apiFetch(path: string) {
     const token = document.cookie.split('token=')[1]?.split(';')[0]
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${path}`, { headers: { Authorization: `Bearer ${token}` } })
     return res.json()
   }
   const payments = (data as any)?.data?.payments || []

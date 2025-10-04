@@ -74,10 +74,12 @@ export default function MeetingsPage() {
       menu={[
         { href: '/doctor', label: 'Overview' },
         { href: '/doctor/appointments', label: 'Appointments' },
+        { href: '/doctor/lab-results', label: 'Medical Records' },
         { href: '/doctor/settings', label: 'Settings' },
         { href: '/doctor/meetings', label: 'Teleconsultations' },
         { href: '/doctor/prescriptions', label: 'Prescriptions' },
         { href: '/doctor/records', label: 'Medical Records' },
+        { href: '/doctor/profile', label: 'Profile' },
       ]}
     >
       <div className="space-y-8">

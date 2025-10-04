@@ -148,10 +148,13 @@ export default function EmergencyPage() {
         { href: '/patient/appointments', label: 'Appointments' },
         { href: '/patient/teleconsult', label: 'Teleconsultation' },
         { href: '/patient/pharmacy', label: 'Pharmacy' },
+        { href: '/patient/prescriptions', label: 'Prescriptions' },
+        { href: '/patient/payments', label: 'Payments' },
         { href: '/patient/ai', label: 'AI Assistant' },
         { href: '/patient/emergency', label: 'Emergency' },
         { href: '/patient/records', label: 'Medical Records' },
         { href: '/patient/orders', label: 'My Orders' },
+        { href: '/patient/profile', label: 'Profile' },
       ]}
     >
       <div className="space-y-8">

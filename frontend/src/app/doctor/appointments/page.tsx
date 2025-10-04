@@ -14,7 +14,7 @@ export default function DoctorAppointmentsPage() {
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id)
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/appointments/${id}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/appointments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` },
         body: JSON.stringify({ status })
@@ -66,14 +66,17 @@ export default function DoctorAppointmentsPage() {
 
   return (
     <AppShell
-      menu={[
-        { href: '/doctor', label: 'Overview' },
-        { href: '/doctor/appointments', label: 'Appointments' },
-        { href: '/doctor/meetings', label: 'Teleconsultations' },
-        { href: '/doctor/prescriptions', label: 'Prescriptions' },
-        { href: '/doctor/records', label: 'Medical Records' },
-      ]}
-    >
+    menu={[
+      { href: '/doctor', label: 'Overview' },
+      { href: '/doctor/appointments', label: 'Appointments' },
+      { href: '/doctor/lab-results', label: 'Medical Records' },
+      { href: '/doctor/settings', label: 'Settings' },
+      { href: '/doctor/meetings', label: 'Teleconsultations' },
+      { href: '/doctor/prescriptions', label: 'Prescriptions' },
+      { href: '/doctor/records', label: 'Medical Records' },
+      { href: '/doctor/profile', label: 'Profile' },
+    ]}
+  >
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">

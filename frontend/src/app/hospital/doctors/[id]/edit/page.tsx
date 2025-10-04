@@ -62,7 +62,22 @@ export default function HospitalDoctorEditPage() {
   }
 
   return (
-    <AppShell>
+    <AppShell
+    menu={[
+      { href: '/hospital', label: 'Overview' },
+      { href: '/hospital/doctors', label: 'Doctors' },
+      { href: '/hospital/departments', label: 'Departments' },
+      { href: '/hospital/appointments', label: 'Appointments' },
+      { href: '/hospital/patients', label: 'Patients' },
+      { href: '/hospital/lab-results', label: 'Medical Records' },
+      { href: '/hospital/drug-interactions', label: 'Prescriptions' },
+      { href: '/hospital/analytics', label: 'Analytics' },
+      { href: '/hospital/profile', label: 'Profile' },
+      { href: '/hospital/notifications', label: 'Notifications' },
+      { href: '/hospital/emergency', label: 'Emergency' },
+      
+    ]}
+  >
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Edit Doctor</h1>

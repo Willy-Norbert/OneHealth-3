@@ -38,9 +38,11 @@ export default function DoctorRecordsPage() {
       menu={[
         { href: '/doctor', label: 'Overview' },
         { href: '/doctor/appointments', label: 'Appointments' },
-        { href: '/doctor/meetings', label: 'Meetings' },
+        { href: '/doctor/lab-results', label: 'Medical Records' },
+        { href: '/doctor/settings', label: 'Settings' },
+        { href: '/doctor/meetings', label: 'Teleconsultations' },
         { href: '/doctor/prescriptions', label: 'Prescriptions' },
-        { href: '/doctor/records', label: 'Records' },
+        { href: '/doctor/records', label: 'Medical Records' },
         { href: '/doctor/profile', label: 'Profile' },
       ]}
     >

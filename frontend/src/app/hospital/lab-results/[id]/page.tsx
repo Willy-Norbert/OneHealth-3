@@ -12,7 +12,7 @@ export default function HospitalLabResultDetailPage() {
 
   return (
     <RoleGuard allow={['hospital','admin']}>
-    <AppShell
+   <AppShell
       menu={[
         { href: '/hospital', label: 'Overview' },
         { href: '/hospital/doctors', label: 'Doctors' },
@@ -22,6 +22,10 @@ export default function HospitalLabResultDetailPage() {
         { href: '/hospital/lab-results', label: 'Medical Records' },
         { href: '/hospital/drug-interactions', label: 'Prescriptions' },
         { href: '/hospital/analytics', label: 'Analytics' },
+        { href: '/hospital/profile', label: 'Profile' },
+        { href: '/hospital/notifications', label: 'Notifications' },
+        { href: '/hospital/emergency', label: 'Emergency' },
+        
       ]}
     >
       <div className="space-y-6">

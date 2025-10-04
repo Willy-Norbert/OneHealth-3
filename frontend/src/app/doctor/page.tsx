@@ -47,6 +47,7 @@ export default function DoctorDashboard() {
         { href: '/doctor/meetings', label: 'Teleconsultations' },
         { href: '/doctor/prescriptions', label: 'Prescriptions' },
         { href: '/doctor/records', label: 'Medical Records' },
+        { href: '/doctor/profile', label: 'Profile' },
       ]}
     >
       <div className="space-y-8">

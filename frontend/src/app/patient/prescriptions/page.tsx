@@ -17,6 +17,7 @@ export default function PatientPrescriptionsPage() {
         { href: '/patient/teleconsult', label: 'Teleconsultation' },
         { href: '/patient/pharmacy', label: 'Pharmacy' },
         { href: '/patient/prescriptions', label: 'Prescriptions' },
+        { href: '/patient/payments', label: 'Payments' },
         { href: '/patient/ai', label: 'AI Assistant' },
         { href: '/patient/emergency', label: 'Emergency' },
         { href: '/patient/records', label: 'Medical Records' },
@@ -72,7 +73,7 @@ export default function PatientPrescriptionsPage() {
                           )}
                         </div>
                         <div className="ml-4 flex flex-col gap-2">
-                          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/prescriptions/${rx._id}/pdf`} target="_blank" rel="noopener noreferrer" className="btn-outline btn-sm">Download PDF</a>
+                          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/prescriptions/${rx._id}/pdf`} target="_blank" rel="noopener noreferrer" className="btn-outline btn-sm">Download PDF</a>
                         </div>
                       </div>
                     </div>

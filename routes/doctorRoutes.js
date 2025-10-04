@@ -93,15 +93,17 @@ router.get('/hospital/:hospitalId/department/:departmentId', getDoctorsByHospita
 router.get('/department/:departmentId', getDoctorsByDepartment);
 router.get('/user/:userId', getDoctorByUserId); // Changed from /profile/:userId to /user/:userId
 router.get('/', getAllDoctors);
-router.get('/:id', getDoctor);
-
 
 // Doctor self-settings and self-availability (should not be wrapped by hospital middleware)
+// These MUST come before the generic /:id route to avoid conflicts
 router.get('/settings', protect, restrictTo('doctor'), getMySettings);
 router.put('/settings', protect, restrictTo('doctor'), updateMySettings);
 const { getMyAvailability, updateMyAvailability, getDoctorAvailabilityByHospital, updateDoctorAvailabilityByHospital, lockDoctorAvailabilityByHospital } = require('../controllers/doctorController');
 router.get('/availability', protect, restrictTo('doctor'), getMyAvailability);
 router.put('/availability', protect, restrictTo('doctor'), updateMyAvailability);
+
+// Generic routes (must come after specific routes)
+router.get('/:id', getDoctor);
 
 // Routes that require hospital context
 router.use(protect, getHospitalId, ensureHospitalLink);
@@ -109,8 +111,8 @@ router.post('/', restrictTo('admin', 'hospital', 'doctor'), createDoctor);
 router.put('/:id', updateDoctor); // Admin, hospital owner, or doctor themselves
 router.put('/:id/hospital-update', restrictTo('hospital'), updateDoctorByHospital); // New route for hospital to update doctor
 router.delete('/:id', restrictTo('admin', 'hospital'), deleteDoctor);
-router.get('/:id/availability', protect, restrictTo('hospital'), getDoctorAvailabilityByHospital);
-router.put('/:id/availability', protect, restrictTo('hospital'), updateDoctorAvailabilityByHospital);
+router.get('/:id/availability', protect, restrictTo('hospital','doctor'), getDoctorAvailabilityByHospital);
+router.put('/:id/availability', protect, restrictTo('hospital','doctor'), updateDoctorAvailabilityByHospital);
 router.put('/:id/availability/lock', protect, restrictTo('hospital'), lockDoctorAvailabilityByHospital);
 
 module.exports = router;

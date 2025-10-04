@@ -1,15 +1,13 @@
 "use client"
 import { AppShell } from '@/components/layout/AppShell'
 import useSWR from 'swr'
-import { api } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 import { useState, useEffect } from 'react'
 import ScheduleEditor from '@/components/ScheduleEditor'
 
 export default function DoctorSettingsPage() {
   const { data, mutate } = useSWR('doctor-settings', async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/doctors/settings`, { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${require('js-cookie').get('token') || ''}` } })
-    if (!res.ok) throw new Error('Failed to load settings')
-    return res.json()
+    return await apiFetch('/doctors/settings', { auth: true })
   })
 
   const [form, setForm] = useState({ emailNotifications: true, inAppNotifications: true, timezone: 'UTC' })
@@ -28,7 +26,7 @@ export default function DoctorSettingsPage() {
   async function save() {
     setSaving(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/doctors/settings`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/doctors/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${require('js-cookie').get('token') || ''}` },
         body: JSON.stringify(form)
@@ -46,10 +44,12 @@ export default function DoctorSettingsPage() {
       menu={[
         { href: '/doctor', label: 'Overview' },
         { href: '/doctor/appointments', label: 'Appointments' },
+        { href: '/doctor/lab-results', label: 'Medical Records' },
         { href: '/doctor/settings', label: 'Settings' },
         { href: '/doctor/meetings', label: 'Teleconsultations' },
         { href: '/doctor/prescriptions', label: 'Prescriptions' },
         { href: '/doctor/records', label: 'Medical Records' },
+        { href: '/doctor/profile', label: 'Profile' },
       ]}
     >
       <div className="space-y-8">
