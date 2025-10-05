@@ -300,3 +300,4 @@ export default function DoctorEditModal({ isOpen, onClose, doctor, onSuccess }: 
   )
 }
 
+

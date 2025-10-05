@@ -97,74 +97,38 @@ export default function HeroSection() {
             <div className="pt-12">
               <div className="text-center mb-8">
                 <h3 className="text-lg font-semibold text-muted-foreground mb-2">Recognized by</h3>
-                <p className="text-sm text-muted-foreground">Trusted by leading hospitals across Rwanda</p>
+                <p className="text-sm text-muted-foreground">Trusted by leading organizations</p>
               </div>
               
-              {/* Hospital Logos Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-center justify-items-center">
-                {/* King Faisal Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">KFH</span>
+              {/* Partners Logos Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 items-center justify-items-center">
+                {/* Premium Medical */}
+                <a href="https://premiumedical.com/" target="_blank" rel="noopener noreferrer" aria-label="Premium Medical" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
+                  <div className="w-36 h-20 flex items-center justify-center">
+                    <img src="https://premiumedical.com/wp-content/uploads/2022/10/log-e1666540406920.jpg" alt="Premium Medical" className="object-contain w-full h-full" />
                   </div>
-                  <span className="text-xs text-center font-medium text-foreground">King Faisal Hospital</span>
-                </div>
+                </a>
 
-                {/* CHUK - University Teaching Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">CHUK</span>
+                {/* Dental Experts Clinic */}
+                <a href="https://www.facebook.com/dentalexpertsrw/" target="_blank" rel="noopener noreferrer" aria-label="Dental Experts Clinic" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
+                  <div className="w-44 h-24 flex items-center justify-center">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZoduySQPqsR12D66iJvu-VX7ilJlNSVyuSQ&s" alt="Dental Experts Clinic" className="object-contain w-full h-full" />
                   </div>
-                  <span className="text-xs text-center font-medium text-foreground">CHUK Hospital</span>
-                </div>
+                </a>
 
-                {/* Rwanda Military Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">RMH</span>
+                {/* Westerwelle Foundation */}
+                <a href="https://westerwelle-foundation.com/" target="_blank" rel="noopener noreferrer" aria-label="Westerwelle Foundation" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
+                  <div className="w-44 h-24 flex items-center justify-center">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvArwo7G-zPI7DojV6VEHWD3jDZ7MmedblkHldcgAlG6vw0CUOPow8xUL8hLXLxir5j48&usqp=CAU" alt="Westerwelle Foundation" className="object-contain w-full h-full" />
                   </div>
-                  <span className="text-xs text-center font-medium text-foreground">Rwanda Military Hospital</span>
-                </div>
+                </a>
 
-                {/* Kibagabaga Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">KH</span>
+                {/* Getway */}
+                <a href="https://getwayconnection.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Getway" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
+                  <div className="w-36 h-20 flex items-center justify-center">
+                    <img src="https://media.licdn.com/dms/image/v2/D4E0BAQEoGO6xjnMmuA/company-logo_200_200/B4EZaRqYJpHcAI-/0/1746200528347?e=1762387200&v=beta&t=tqKOXkLIoH4bKvCZNGz8UzMDwRa9s3jlKuBnWqauPiA" alt="Getway" className="object-contain w-full h-full" />
                   </div>
-                  <span className="text-xs text-center font-medium text-foreground">Kibagabaga Hospital</span>
-                </div>
-
-                {/* La Croix du Sud Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-orange-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">LCS</span>
-                  </div>
-                  <span className="text-xs text-center font-medium text-foreground">La Croix du Sud</span>
-                </div>
-
-                {/* Kanombe Military Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-teal-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">KMH</span>
-                  </div>
-                  <span className="text-xs text-center font-medium text-foreground">Kanombe Military Hospital</span>
-                </div>
-
-                {/* Muhima Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">MH</span>
-                  </div>
-                  <span className="text-xs text-center font-medium text-foreground">Muhima Hospital</span>
-                </div>
-
-                {/* Nyarugenge District Hospital */}
-                <div className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm">
-                  <div className="w-16 h-16 bg-gradient-to-br from-pink-600 to-pink-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">NDH</span>
-                  </div>
-                  <span className="text-xs text-center font-medium text-foreground">Nyarugenge District Hospital</span>
-                </div>
+                </a>
               </div>
 
               {/* Additional Trust Indicators */}
