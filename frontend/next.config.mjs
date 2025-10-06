@@ -45,6 +45,11 @@ const nextConfig = {
   // Ensure proper routing for dynamic routes
   async rewrites() {
     return [
+      // Proxy API to backend to avoid CORS in production
+      {
+        source: '/api/:path*',
+        destination: 'https://onehealthconnekt.onrender.com/:path*'
+      },
       {
         source: '/meeting/:id',
         destination: '/meeting/:id'
