@@ -91,6 +91,7 @@ const allowedOrigins = [
   'https://onehealthconnekt.onrender.com',
   'https://73c65683-f30b-431e-8777-e30c30110c39.sandbox.lovable.dev',
   'https://onehealthconnect.onrender.com',
+  'https://onehealthlineconnectsss.vercel.app/ ',
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN,
   // Add your Vercel domain here

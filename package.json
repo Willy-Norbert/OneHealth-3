@@ -12,6 +12,9 @@
   "keywords": [],
   "author": "irabaruta & urban",
   "license": "ISC",
+  "engines": {
+    "node": "20.x"
+  },
   "description": "",
   "dependencies": {
     "@google/generative-ai": "^0.19.0",
