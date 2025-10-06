@@ -1,0 +1,11 @@
+src/app
+src/pages
+
+# Ignore any Next.js build outputs accidentally committed
+.next
+out
+
+# Ignore local config
+.vercel
+.env*
+
