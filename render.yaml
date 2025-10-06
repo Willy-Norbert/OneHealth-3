@@ -7,7 +7,7 @@ services:
     startCommand: NODE_ENV=production next start -p $PORT
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://onehealthconnekt.onrender.com
+        value: https://onehealthconnekt.onrender.com/api
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
