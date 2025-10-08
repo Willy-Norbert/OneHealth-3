@@ -1,6 +1,22 @@
 import Cookies from 'js-cookie'
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // If NEXT_PUBLIC_API_URL is set, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL
+  }
+  
+  // In production, use the backend URL directly
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://onehealthconnekt.onrender.com'
+  }
+  
+  // In development, use localhost
+  return 'http://localhost:5000'
+}
+
+export const API_BASE_URL = getApiBaseUrl()
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 

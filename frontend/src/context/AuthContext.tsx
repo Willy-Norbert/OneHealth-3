@@ -23,6 +23,9 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>
   logout: () => void
   refreshProfile: () => Promise<void>
+  // new: indicate pending login and cooldown until timestamp (ms)
+  loginPending?: boolean
+  loginCooldownUntil?: number | null
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -32,6 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  // track login request state and cooldown after server 429 responses
+  const [loginPending, setLoginPending] = useState(false)
+  const [loginCooldownUntil, setLoginCooldownUntil] = useState<number | null>(null)
 
   const decode = useCallback((jwt: string): AuthUser | null => {
     try {
@@ -90,27 +96,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [validateToken])
 
   const login = useCallback(async (email: string, password: string) => {
+    // Prevent attempts while client-side cooldown is active
+    if (loginCooldownUntil && Date.now() < loginCooldownUntil) {
+      const err: any = new Error('Too many attempts. Please try again later.')
+      err.status = 429
+      err.retryAfter = Math.ceil((loginCooldownUntil - Date.now()) / 1000)
+      throw err
+    }
+
     setIsLoading(true)
+    setLoginPending(true)
     try {
       const res = await api.login({ email, password }) as any
       console.log('Login response:', res)
-      
+
       const jwt = (res as any).token || (res as any).data?.token
       if (!jwt) {
         const errorMsg = (res as any).message || (res as any).data?.message || 'No token returned from server'
         throw new Error(errorMsg)
       }
-      
+
       setToken(jwt)
       Cookies.set('token', jwt, { expires: 7 }) // 7 days
       await refreshProfile(jwt)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error in AuthContext:', error)
+      // If server returned retryAfter, set client cooldown to avoid rapid retries
+      if (error?.status === 429 && Number.isFinite(error?.retryAfter)) {
+        setLoginCooldownUntil(Date.now() + error.retryAfter * 1000)
+      }
       throw error // Re-throw to let the login page handle it
     } finally {
       setIsLoading(false)
+      setLoginPending(false)
     }
-  }, [])
+  }, [loginCooldownUntil])
 
   const logout = useCallback(() => {
     setIsLoggingOut(true)
@@ -142,8 +162,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login, 
     logout, 
     refreshProfile,
-    isLoggingOut
-  }), [user, token, isLoading, login, logout, refreshProfile, isLoggingOut])
+    isLoggingOut,
+    // expose new auth state for UI
+    loginPending,
+    loginCooldownUntil,
+  }), [user, token, isLoading, login, logout, refreshProfile, isLoggingOut, loginPending, loginCooldownUntil])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

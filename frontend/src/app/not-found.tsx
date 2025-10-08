@@ -24,7 +24,8 @@ export default function NotFound() {
   }
 
   const handleRefresh = () => {
-    window.location.reload()
+    // prefer Next.js navigation refresh when possible
+    try { (window as any).__next_router?.refresh?.() } catch { window.location.reload() }
   }
 
   return (

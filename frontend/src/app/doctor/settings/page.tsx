@@ -26,7 +26,7 @@ export default function DoctorSettingsPage() {
   async function save() {
     setSaving(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/doctors/settings`, {
+      const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/doctors/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${require('js-cookie').get('token') || ''}` },
         body: JSON.stringify(form)

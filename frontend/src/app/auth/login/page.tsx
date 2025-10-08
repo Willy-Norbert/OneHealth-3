@@ -49,12 +49,13 @@ function GridIcon() {
 }
 
 function LoginInner() {
-  const { login } = useAuth()
+  const { login, loginPending, loginCooldownUntil } = useAuth()
   const router = useRouter()
   const search = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [now, setNow] = useState(Date.now())
   const [error, setError] = useState<string | null>(null)
 
   // Google Identity Services loader (robust)
@@ -73,7 +74,7 @@ function LoginInner() {
           setError(null)
           try {
             const idToken = response.credential
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/auth/google`, {
+            const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/google`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
             })
             if (!res.ok) throw new Error('Google login failed')
@@ -130,7 +131,7 @@ function LoginInner() {
       ;(window as any).FB.login(async (response: any) => {
           if (response.authResponse) {
             const accessToken = response.authResponse.accessToken
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/auth/facebook`, {
+            const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/facebook`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accessToken })
             })
             if (!res.ok) throw new Error('Facebook login failed')
@@ -157,7 +158,7 @@ function LoginInner() {
     setError(null); setLoading(true)
     try {
       const idToken = response.tokenId
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/auth/google`, {
+      const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/google`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
       })
       if (!res.ok) throw new Error('Google login failed')
@@ -189,6 +190,14 @@ function LoginInner() {
       setError(errorMessage)
     } finally { setLoading(false) }
   }
+
+  // tick every second to show cooldown remaining
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const retrySecondsLeft = loginCooldownUntil ? Math.max(0, Math.ceil((loginCooldownUntil - now) / 1000)) : 0
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden">
@@ -299,11 +308,15 @@ function LoginInner() {
             
             <button 
                 type="submit"
-                disabled={loading}
+                disabled={loading || loginPending || retrySecondsLeft > 0}
               className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white py-4 rounded-lg font-medium hover:from-emerald-600 hover:to-green-700 transition-all duration-200 disabled:opacity-50"
               >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading || loginPending ? 'Signing in...' : 'Sign In'}
               </button>
+
+            {retrySecondsLeft > 0 && (
+              <p className="text-sm text-red-600 mt-2">Too many attempts. Try again in {Math.ceil(retrySecondsLeft / 60)} minute(s).</p>
+            )}
           </form>
 
           <div className="text-center mt-6 text-sm text-gray-600">

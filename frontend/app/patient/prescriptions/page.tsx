@@ -73,7 +73,7 @@ export default function PatientPrescriptionsPage() {
                           )}
                         </div>
                         <div className="ml-4 flex flex-col gap-2">
-                          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/prescriptions/${rx._id}/pdf`} target="_blank" rel="noopener noreferrer" className="btn-outline btn-sm">Download PDF</a>
+                          <a href={`${ ' https://onehealthconnekt.onrender.com'}/prescriptions/${rx._id}/pdf`} target="_blank" rel="noopener noreferrer" className="btn-outline btn-sm">Download PDF</a>
                         </div>
                       </div>
                     </div>

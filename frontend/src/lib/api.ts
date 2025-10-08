@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie'
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'
+export const API_BASE_URL = 'https://onehealthconnekt.onrender.com'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -16,23 +16,46 @@ export async function apiFetch<T>(path: string, options: RequestInit & { auth?: 
     cache: 'no-store',
   })
 
-  if (!res.ok) {
-    const text = await res.text()
-    
-    // Handle 401 specifically - clear token and redirect
-    if (res.status === 401) {
-      Cookies.remove('token')
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login'
-      }
-    }
-    
-    throw new Error(text || `Request failed: ${res.status}`)
-  }
+  // Read raw text first so we can handle non-JSON error responses as well as JSON bodies
+  const raw = await res.text()
+  let body: any = undefined
   try {
-    return (await res.json()) as T
+    body = raw ? JSON.parse(raw) : undefined
   } catch {
-    // some endpoints may not return JSON in error cases
+    body = raw
+  }
+
+  // Handle 401 specifically - clear token and redirect
+  if (res.status === 401) {
+    Cookies.remove('token')
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login'
+    }
+  }
+
+  // Surface 429 retry-after info if present (body.retryAfter or Retry-After header)
+  if (res.status === 429) {
+  const retryAfterFromBody = (body?.retryAfter ?? body?.retry_after ?? body?.retry) || undefined
+    const retryHeader = res.headers.get('Retry-After')
+    const retryFromHeader = retryHeader ? parseInt(retryHeader, 10) : undefined
+    const retryAfter = typeof retryAfterFromBody === 'number' && !Number.isNaN(retryAfterFromBody) ? retryAfterFromBody : retryFromHeader
+
+    const err: any = new Error(body?.message || raw || 'Too many requests')
+    err.status = 429
+    if (typeof retryAfter === 'number' && !Number.isNaN(retryAfter)) err.retryAfter = retryAfter
+    throw err
+  }
+
+  if (!res.ok) {
+    const err: any = new Error(body?.message || raw || `Request failed: ${res.status}`)
+    err.status = res.status
+    err.payload = body
+    throw err
+  }
+
+  try {
+    return (body ?? {}) as T
+  } catch {
     return {} as T
   }
 }

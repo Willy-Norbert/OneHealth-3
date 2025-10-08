@@ -571,7 +571,10 @@ export default function AppointmentBooking() {
               <Check className="w-8 h-8 text-green-600" />
             </div>
             <p className="text-lg">Your appointment has been confirmed and you will receive an email shortly.</p>
-            <Button onClick={() => window.location.href = '/appointments/my-appointments'}>
+            <Button onClick={() => {
+              // prefer client-side navigation
+              try { (window as any).__next_router?.push?.('/appointments/my-appointments') } catch {}
+            }}>
               View My Appointments
             </Button>
           </CardContent>

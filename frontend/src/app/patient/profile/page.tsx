@@ -29,12 +29,14 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false)
 
   const handleDeleteAccount = async () => {
+    // Guard confirm to only run in browser
+    if (typeof window === 'undefined') return
     if (!window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) return
     setDeleting(true)
     setDeleteError(undefined)
     try {
       await api.users.deleteAccount()
-      window.location.href = '/auth/login'
+      try { (window as any).__next_router?.push?.('/auth/login') } catch { window.location.href = '/auth/login' }
     } catch (err: any) {
       setDeleteError(err?.message || 'Failed to delete account')
     } finally {

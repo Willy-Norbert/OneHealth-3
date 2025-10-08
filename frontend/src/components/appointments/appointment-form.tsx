@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, Video, MapPin, FileText, Check } from "lucide-react"
 
 export default function AppointmentForm() {
+  const router = useRouter()
   const [appointmentType, setAppointmentType] = useState("virtual")
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
@@ -199,7 +201,7 @@ export default function AppointmentForm() {
             <div className="flex justify-end">
               <Button 
                 className="bg-green-600 hover:bg-green-700 px-8"
-                onClick={() => window.location.href = '/appointments/book'}
+                onClick={() => router.push('/appointments/book')}
               >
                 Book Appointment
               </Button>

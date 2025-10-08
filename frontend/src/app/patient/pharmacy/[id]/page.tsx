@@ -10,7 +10,16 @@ type MedicationItem = { name: string; dosage?: string; instructions?: string; qu
 
 export default function PharmacyProfilePage() {
   const router = useRouter()
-  const pharmacyId = (typeof window !== 'undefined') ? window.location.pathname.split('/').pop() || '' : ''
+  // prefer getting id from router (client) if available, otherwise fallback to safe window check
+  let pharmacyId = ''
+  try {
+    // next/navigation doesn't expose pathname directly; fall back to window when in browser
+    if (typeof window !== 'undefined') {
+      pharmacyId = window.location.pathname.split('/').pop() || ''
+    }
+  } catch {
+    pharmacyId = ''
+  }
   const { data: pharmacyRes } = useSWR(pharmacyId ? `pharmacy-${pharmacyId}` : null, () => api.pharmacy.get(pharmacyId) as any)
   const { data: insuranceRes } = useSWR('insurance', () => api.insurance.list() as any)
 

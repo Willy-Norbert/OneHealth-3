@@ -4,7 +4,7 @@
 
 ### Base Configuration
 ```javascript
-const API_BASE_URL = 'https://onehealthconnekt.onrender.com';
+const API_BASE_URL = ' https://onehealthconnekt.onrender.com';
 const getAuthHeaders = () => ({
   'Authorization': `Bearer ${localStorage.getItem('token')}`,
   'Content-Type': 'application/json'

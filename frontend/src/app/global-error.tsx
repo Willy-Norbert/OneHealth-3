@@ -1,5 +1,6 @@
 "use client"
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 
 interface GlobalErrorProps {
@@ -8,6 +9,7 @@ interface GlobalErrorProps {
 }
 
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
+  const router = useRouter()
   useEffect(() => {
     // Log the error to an error reporting service
     console.error('Global application error:', error)
@@ -18,7 +20,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   }
 
   const handleGoHome = () => {
-    window.location.href = '/'
+    router.push('/')
   }
 
   return (

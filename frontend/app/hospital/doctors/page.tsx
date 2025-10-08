@@ -425,7 +425,7 @@ export default function HospitalDoctorsPage() {
                         if (!confirm('Delete this doctor?')) return;
                         try {
                           setDeletingId(doctor._id)
-                          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'}/doctors/${doctor._id}`, {
+                          await fetch(`${ ' https://onehealthconnekt.onrender.com'}/doctors/${doctor._id}`, {
                             method:'DELETE',
                             headers:{ 'Content-Type':'application/json', Authorization: `Bearer ${require('js-cookie').get('token') || ''}` }
                           })

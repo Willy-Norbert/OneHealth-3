@@ -199,7 +199,9 @@ export default function AppointmentForm() {
             <div className="flex justify-end">
               <Button 
                 className="bg-green-600 hover:bg-green-700 px-8"
-                onClick={() => window.location.href = '/appointments/book'}
+                onClick={() => {
+                  try { (window as any).__next_router?.push?.('/appointments/book') } catch { window.location.href = '/appointments/book' }
+                }}
               >
                 Book Appointment
               </Button>

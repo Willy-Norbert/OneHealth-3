@@ -88,10 +88,9 @@ const allowedOrigins = [
   'http://localhost:3001',
   'https://onehealthconnekt.onrender.com',
   'https://dashboard-onehealth.vercel.app',
-  'https://onehealthconnekt.onrender.com',
-  'https://73c65683-f30b-431e-8777-e30c30110c39.sandbox.lovable.dev',
   'https://onehealthconnect.onrender.com',
-  'https://onehealthlineconnectsss.vercel.app ',
+  'https://onehealthlineconnectsss.vercel.app',
+  'https://73c65683-f30b-431e-8777-e30c30110c39.sandbox.lovable.dev',
   process.env.FRONTEND_URL,
   process.env.CORS_ORIGIN,
   // Add your Vercel domain here
@@ -102,13 +101,25 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman or server-to-server requests
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn('❌ Blocked by CORS:', origin);
-        callback(new Error('Not allowed by CORS'));
+        return callback(null, true);
       }
+      
+      // Log blocked origins for debugging
+      console.warn('❌ Blocked by CORS:', origin);
+      console.log('✅ Allowed origins:', allowedOrigins);
+      
+      // In development, be more permissive
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 Development mode: allowing origin');
+        return callback(null, true);
+      }
+      
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -138,7 +149,7 @@ const swaggerOptions = {
         url:
           process.env.NODE_ENV === 'production'
             ? 'https://onehealthconnect.onrender.com'
-            : 'https://onehealthconnekt.onrender.com',
+            : ' https://onehealthconnekt.onrender.com',
         description:
           process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
@@ -215,6 +226,26 @@ app.get('/test', (req, res) => {
     message: 'API is working properly',
     timestamp: new Date().toISOString()
   });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Favicon route
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
+// Pharmacy route (redirect to pharmacies)
+app.get('/pharmacy', (req, res) => {
+  res.redirect('/pharmacies');
 });
 
 // Global error handler

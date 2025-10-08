@@ -22,7 +22,7 @@ export default function HospitalEmergencyPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://onehealthconnekt.onrender.com"}/emergencies`, {
+        const res = await fetch(`${ " https://onehealthconnekt.onrender.com"}/emergencies`, {
           credentials: "include",
           headers: { "Content-Type": "application/json" }
         });

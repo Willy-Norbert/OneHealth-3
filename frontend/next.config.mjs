@@ -2,6 +2,7 @@ import bundleAnalyzer from '@next/bundle-analyzer'
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
 /** @type {import('next').NextConfig} */
+const BACKEND_URL = (process.env.BACKEND_URL || 'https://onehealthconnekt.onrender.com').trim()
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -45,10 +46,10 @@ const nextConfig = {
   // Ensure proper routing for dynamic routes
   async rewrites() {
     return [
-      // Proxy API to backend to avoid CORS in production
+      // Proxy Socket.IO/WebSocket to backend (avoids mixed-origin ws errors)
       {
-        source: '/api/:path*',
-        destination: 'https://onehealthconnekt.onrender.com/:path*'
+        source: '/socket.io/:path*',
+        destination: `${BACKEND_URL}/socket.io/:path*`
       },
       {
         source: '/meeting/:id',
