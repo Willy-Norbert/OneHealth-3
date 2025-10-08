@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function FaqPage() {
   return (
     <DefaultLayout>
-    <main className="flex flex-col min-h-screen">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 dark:text-gray-100">
       <FaqHero />
       <FaqSearch />
       <FaqCategories />

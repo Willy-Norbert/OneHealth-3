@@ -200,11 +200,11 @@ function LoginInner() {
   const retrySecondsLeft = loginCooldownUntil ? Math.max(0, Math.ceil((loginCooldownUntil - now) / 1000)) : 0
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden bg-white dark:bg-gray-900 dark:text-gray-100">
       {/* Background image from public with subtle overlay */}
       <Image src="/bg_auth.png" alt="Background" fill priority sizes="100vw" className="object-cover opacity-60 z-0" />
       <div className="absolute inset-0 bg-emerald-600/30 z-10" />
-      <div className="relative z-20 w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-20 w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
         {/* Curved divider */}
         <div className="absolute left-0 top-0 w-2/5 h-full bg-gradient-to-br from-emerald-500 to-green-600 z-10">
           <CurvedDivider />
@@ -251,8 +251,8 @@ function LoginInner() {
 
           {/* Form header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h1>
-            <p className="text-gray-600">Welcome back to OneHealthline Connect</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Sign In</h1>
+            <p className="text-gray-600 dark:text-gray-300">Welcome back to OneHealthline Connect</p>
           </div>
 
           {/* Social login buttons */}
@@ -269,9 +269,9 @@ function LoginInner() {
 
           {/* Divider */}
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-gray-500 text-sm">-OR-</span>
-            <div className="flex-1 border-t border-gray-300"></div>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-700"></div>
+            <span className="px-4 text-gray-500 dark:text-gray-400 text-sm">-OR-</span>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-700"></div>
           </div>
 
           {/* Form fields */}
@@ -280,7 +280,7 @@ function LoginInner() {
                 <input
                   type="email"
                 placeholder="Email:" 
-                className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors"
+                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100 placeholder-gray-400"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 required 
@@ -291,7 +291,7 @@ function LoginInner() {
                 <input
                   type="password"
                 placeholder="Password:" 
-                className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors pr-10"
+                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors pr-10 bg-transparent dark:text-gray-100 placeholder-gray-400"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 required 

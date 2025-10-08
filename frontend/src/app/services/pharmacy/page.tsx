@@ -13,7 +13,7 @@ import DefaultLayout from "@/components/layouts/DefaultLayout"
 export default function PharmacyPage() {
   return (
     <DefaultLayout>
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white dark:bg-gray-900 dark:text-gray-100">
       <PharmacyHero />
       <PharmacyFeatures />
       <PharmacyHowItWorks />

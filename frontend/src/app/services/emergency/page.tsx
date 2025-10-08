@@ -12,7 +12,7 @@ import DefaultLayout from "@/components/layouts/DefaultLayout"
 export default function EmergencyPage() {
   return (
     <DefaultLayout>
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white dark:bg-gray-900 dark:text-gray-100">
 
       <EmergencyHero />
       <EmergencyFeatures />

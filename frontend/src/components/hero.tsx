@@ -31,7 +31,7 @@ export default function HeroSection() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-black">
       {/* Decorative curved circular blobs - background layer */}
       <div className="absolute top-32 right-1/4 w-64 h-64 bg-pink-200/40 rounded-full blur-3xl" />
       <div className="absolute top-48 right-1/3 w-48 h-48 bg-rose-200/30 rounded-full blur-2xl" />
@@ -143,8 +143,8 @@ export default function HeroSection() {
           {/* Right Column */}
           <div className="relative">
             {/* Main Doctor Card */}
-            <Card className="overflow-hidden  border-8 border-white/50 relative bg-white">
-              <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-50 to-white">
+            <Card className="overflow-hidden border-8 border-white/50 relative bg-white dark:bg-gray-800 dark:border-gray-700/60">
+              <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
                 {/* More decorative blobs inside card */}
                 <div className="absolute top-12 right-12 w-32 h-32 bg-pink-300/40 rounded-full blur-2xl" />
                 <div className="absolute top-24 right-24 w-24 h-24 bg-blue-300/40 rounded-full blur-xl" />
@@ -153,7 +153,7 @@ export default function HeroSection() {
                 <div className="absolute top-48 right-20 w-20 h-20 bg-orange-300/40 rounded-full blur-xl" />
                 
                 <img 
-                  src={doctorHero} 
+                  src="/doctors.png"
                   alt="Professional Doctor" 
                   className="w-full h-full object-contain  relative "
                 />
@@ -185,17 +185,17 @@ export default function HeroSection() {
                 </div>
 
                 {/* Calendar Widget - Repositioned lower */}
-                <Card className="absolute bottom-32 right-6 p-4 bg-white shadow-2xl w-72 z-20">
+                <Card className="absolute bottom-32 right-6 p-4 bg-white dark:bg-gray-800 dark:border-gray-700 shadow-2xl w-72 z-20">
                   <div className="flex items-center justify-between mb-4">
-                    <button className="p-1 hover:bg-gray-100 rounded">
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <div className="flex gap-4 text-sm">
-                      <span className="text-muted-foreground">January</span>
-                      <span className="font-bold text-foreground">{currentMonth}</span>
-                      <span className="text-muted-foreground">March</span>
+                      <span className="text-muted-foreground dark:text-gray-300">January</span>
+                      <span className="font-bold text-foreground dark:text-gray-100">{currentMonth}</span>
+                      <span className="text-muted-foreground dark:text-gray-300">March</span>
                     </div>
-                    <button className="p-1 hover:bg-gray-100 rounded">
+                    <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -210,14 +210,14 @@ export default function HeroSection() {
                           selectedDate === day
                             ? 'bg-accent text-white font-bold shadow-md scale-110'
                             : day === 1 || day === 2 || day === 3 || day === 4 || day === 5
-                            ? 'text-foreground hover:bg-gray-100 font-medium'
+                            ? 'text-foreground hover:bg-gray-100 dark:hover:bg-gray-700 font-medium'
                             : day === 24 || day === 26
                             ? 'text-accent hover:bg-accent/10 font-medium'
                             : day > 5 && day < 12
-                            ? 'text-muted-foreground'
+                            ? 'text-muted-foreground dark:text-gray-400'
                             : day === 12
-                            ? 'text-muted-foreground bg-gray-50'
-                            : 'text-muted-foreground hover:bg-gray-100'
+                            ? 'text-muted-foreground bg-gray-50 dark:bg-gray-700/60'
+                            : 'text-muted-foreground dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         {day}
@@ -229,9 +229,9 @@ export default function HeroSection() {
                 {/* Doctor Cards */}
                 <div className="absolute bottom-6 left-6 right-6 space-y-2">
                   {doctors.map((doctor, idx) => (
-                    <Card key={idx} className="bg-white/95 backdrop-blur-sm p-3 flex items-center justify-between shadow-lg">
+                    <Card key={idx} className="bg-white/95 dark:bg-gray-800/90 backdrop-blur-sm p-3 flex items-center justify-between shadow-lg">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm">
                           <img 
                             src={doctor.image} 
                             alt={doctor.name}
@@ -239,8 +239,8 @@ export default function HeroSection() {
                           />
                         </div>
                         <div>
-                          <div className="font-bold text-foreground text-sm">{doctor.name}</div>
-                          <div className="text-xs text-muted-foreground">{doctor.specialty}</div>
+                          <div className="font-bold text-foreground dark:text-gray-100 text-sm">{doctor.name}</div>
+                          <div className="text-xs text-muted-foreground dark:text-gray-300">{doctor.specialty}</div>
                         </div>
                       </div>
                       <Button className="bg-accent hover:bg-accent/90 text-white text-sm h-8 px-4">
@@ -250,15 +250,15 @@ export default function HeroSection() {
                   ))}
 
                   {/* Appointment Info Card */}
-                  <Card className="bg-white/95 backdrop-blur-sm p-3 shadow-lg">
+                  <Card className="bg-white/95 dark:bg-gray-800/90 backdrop-blur-sm p-3 shadow-lg">
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <div className="text-xs text-muted-foreground mb-1">Date</div>
-                        <div className="font-bold text-foreground">15 February 2020</div>
+                        <div className="text-xs text-muted-foreground dark:text-gray-300 mb-1">Date</div>
+                        <div className="font-bold text-foreground dark:text-gray-100">15 February 2020</div>
                       </div>
                       <div>
-                        <div className="text-xs text-muted-foreground mb-1">Time</div>
-                        <div className="font-bold text-foreground">{selectedTime}</div>
+                        <div className="text-xs text-muted-foreground dark:text-gray-300 mb-1">Time</div>
+                        <div className="font-bold text-foreground dark:text-gray-100">{selectedTime}</div>
                       </div>
                       <div className="flex items-end justify-end">
                         <Button className="bg-primary hover:bg-primary/90 text-white text-sm h-8 px-4">
@@ -266,11 +266,11 @@ export default function HeroSection() {
                         </Button>
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <div className="text-xs text-muted-foreground mb-1">Doctor</div>
-                      <div className="font-bold text-foreground">Dr. Robert Long</div>
-                      <div className="text-xs text-muted-foreground">Radiology</div>
-                      <Button variant="outline" className="w-full mt-2 text-sm h-8">
+                    <div className="mt-3 pt-3 border-t border-border dark:border-gray-700">
+                      <div className="text-xs text-muted-foreground dark:text-gray-300 mb-1">Doctor</div>
+                      <div className="font-bold text-foreground dark:text-gray-100">Dr. Robert Long</div>
+                      <div className="text-xs text-muted-foreground dark:text-gray-300">Radiology</div>
+                      <Button variant="outline" className="w-full mt-2 text-sm h-8 dark:border-gray-700 dark:text-gray-100">
                         Cancel
                       </Button>
                     </div>

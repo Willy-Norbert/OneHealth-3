@@ -11,14 +11,16 @@ import DefaultLayout from "@/components/layouts/DefaultLayout"
 export default function TeleconsultationPage() {
   return (
     <DefaultLayout>  
-      <TeleconsultationHero />
-      <TeleconsultationFeatures />
-      <TeleconsultationHowItWorks />
-      <TeleconsultationSpecialties />
-      <TeleconsultationPricing />
-      <TeleconsultationTestimonials />
-      <TeleconsultationFaq />
-      <TeleconsultationCta />
+      <div className="bg-white dark:bg-gray-900 dark:text-gray-100">
+        <TeleconsultationHero />
+        <TeleconsultationFeatures />
+        <TeleconsultationHowItWorks />
+        <TeleconsultationSpecialties />
+        <TeleconsultationPricing />
+        <TeleconsultationTestimonials />
+        <TeleconsultationFaq />
+        <TeleconsultationCta />
+      </div>
     </DefaultLayout>
   )
 }

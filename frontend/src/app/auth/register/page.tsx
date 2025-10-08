@@ -66,11 +66,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden">
+    <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden bg-white dark:bg-gray-900 dark:text-gray-100">
       {/* Background image from public with subtle overlay */}
       <Image src="/bg_auth.png" alt="Background" fill priority sizes="100vw" className="object-cover opacity-60 z-0" />
       <div className="absolute inset-0 bg-emerald-600/30 z-10" />
-      <div className="relative z-20 w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-20 w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
         {/* Curved divider */}
         <div className="absolute left-0 top-0 w-2/5 h-full bg-gradient-to-br from-emerald-500 to-green-600 z-10">
           <CurvedDivider />
@@ -117,12 +117,12 @@ export default function RegisterPage() {
 
           {/* Form header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Create Account</h1>
           </div>
 
           {/* Social login buttons */}
           <div className="space-y-3 mb-6">
-            <button className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -132,7 +132,7 @@ export default function RegisterPage() {
               <span className="text-gray-700 font-medium">Sign up with Google</span>
             </button>
             
-            <button className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
@@ -142,9 +142,9 @@ export default function RegisterPage() {
 
           {/* Divider */}
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-gray-500 text-sm">-OR-</span>
-            <div className="flex-1 border-t border-gray-300"></div>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-700"></div>
+            <span className="px-4 text-gray-500 dark:text-gray-400 text-sm">-OR-</span>
+            <div className="flex-1 border-t border-gray-300 dark:border-gray-700"></div>
           </div>
 
           {/* Form fields */}
@@ -153,7 +153,7 @@ export default function RegisterPage() {
               <input 
                 type="text" 
                 placeholder="Full Name:" 
-                className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors"
+                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100 placeholder-gray-400"
                 value={form.name} 
                 onChange={e=>setForm({...form, name: e.target.value})} 
                 required 
@@ -164,7 +164,7 @@ export default function RegisterPage() {
               <input 
                 type="email" 
                 placeholder="Email:" 
-                className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors"
+                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100 placeholder-gray-400"
                 value={form.email} 
                 onChange={e=>setForm({...form, email: e.target.value})} 
                 required 
@@ -175,7 +175,7 @@ export default function RegisterPage() {
               <input 
                 type="password" 
                 placeholder="Password:" 
-                className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors pr-10"
+                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors pr-10 bg-transparent dark:text-gray-100 placeholder-gray-400"
                 value={form.password} 
                 onChange={e=>setForm({...form, password: e.target.value})} 
                 required 
@@ -190,7 +190,7 @@ export default function RegisterPage() {
 
           <div>
               <select 
-                className="w-full py-3 border-b border-gray-300 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent"
+                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100"
                 value={form.role} 
                 onChange={e=>setForm({...form, role: e.target.value})}
               >

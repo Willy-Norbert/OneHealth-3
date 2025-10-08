@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <main className="flex flex-col min-h-screen">
+    <main className="flex flex-col min-h-screen bg-white dark:bg-gray-900 dark:text-gray-100">
       <TermsHero />
       <TermsContent />
       <TermsCTA />

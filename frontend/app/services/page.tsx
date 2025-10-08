@@ -14,8 +14,8 @@ import ServicesCta from "@/components/services/services-cta"
 
 export default function ServicesPage() {
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="m-10 text-gray-900 dark:text-gray-100">
+    <main className="min-h-screen bg-white dark:bg-gray-900 dark:text-gray-100">
+      <div className="m-10">
         <Navbar />
         <ServicesHero />
         <ServicesOverview />
