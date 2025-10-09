@@ -8,6 +8,7 @@ const {
 } = require('../controllers/meetingController');
 const { generateMeetingLink } = require('../services/jitsiService');
 const Meeting = require('../models/Meeting');
+const fetch = require('node-fetch');
 const { protect } = require('../middleware/auth'); // Removed restrictTo as it's handled in controller
 
 const router = express.Router();
@@ -318,6 +319,50 @@ router.post('/:id/join-link', async (req, res) => {
     const roomName = `meeting-${meeting._id}`;
     const details = generateMeetingLink({ roomName, user: req.user });
     return res.status(200).json({ status: 'success', data: { joinUrl: details.meetingLink, room: details.roomName, domain: details.domain } });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+});
+
+// Generate fresh TURN credentials via Twilio Network Traversal API
+// POST /api/meetings/get-turn-token
+router.post('/get-turn-token', async (req, res) => {
+  try {
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    if (!sid || !token) {
+      return res.status(500).json({ status: 'error', message: 'TURN not configured' });
+    }
+    // Optional auth: require logged-in user
+    if (!req.user) return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Tokens.json`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${sid}:${token}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: '' // no params needed for default TTL
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      return res.status(resp.status).json({ status: 'error', message: txt });
+    }
+    const data = await resp.json();
+    // Twilio returns ice_servers array with urls/username/credential
+    const servers = (data.ice_servers || []).filter(s => s.urls);
+    const urls = servers.map(s => (Array.isArray(s.urls) ? s.urls : [s.urls])).flat().join(',');
+    const user = servers.find(s => s.username)?.username || '';
+    const pass = servers.find(s => s.credential)?.credential || '';
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        WEBRTC_TURN_URLS: urls,
+        WEBRTC_TURN_USER: user,
+        WEBRTC_TURN_PASS: pass
+      }
+    });
   } catch (e) {
     res.status(500).json({ status: 'error', message: e.message });
   }

@@ -34,8 +34,8 @@ export default function MeetingRoom() {
   const statsIntervalRef = useRef<any>(null)
   const iceRestartTimerRef = useRef<any>(null)
 
-  const API_BASE =  ' http://localhost:5000'
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL ||  ' http://localhost:5000'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000'
 
   // Fetch meeting meta (optional, for header details)
   const { data: meetingData } = useSWR(() => (id ? `meeting-${id}` : null), () => api.meetings.get(id) as any)
@@ -92,14 +92,9 @@ export default function MeetingRoom() {
     }
   }
 
-  const iceServers: RTCIceServer[] = useMemo(() => ([
+  const [dynamicIce, setDynamicIce] = useState<RTCIceServer[] | null>(null)
+  const defaultIce: RTCIceServer[] = useMemo(() => ([
     { urls: ['stun:stun.l.google.com:19302', 'stun:global.stun.twilio.com:3478'] },
-    // Optional: TURN server for NAT traversal
-    ...(process.env.NEXT_PUBLIC_TURN_USER && process.env.NEXT_PUBLIC_TURN_CRED ? [{
-      urls: ['turn:global.turn.twilio.com:3478?transport=udp', 'turn:global.turn.twilio.com:3478?transport=tcp'],
-      username: process.env.NEXT_PUBLIC_TURN_USER,
-      credential: process.env.NEXT_PUBLIC_TURN_CRED
-    } as any] : [])
   ]), [])
 
   function attachPcEventHandlers(pc: RTCPeerConnection) {
@@ -181,7 +176,7 @@ export default function MeetingRoom() {
   async function createPeerConnection(): Promise<RTCPeerConnection> {
     // Only create once per session
     if (pcRef.current) return pcRef.current
-    const pc = new RTCPeerConnection({ iceServers })
+    const pc = new RTCPeerConnection({ iceServers: dynamicIce || defaultIce })
     pcRef.current = pc
     attachPcEventHandlers(pc)
 
@@ -227,6 +222,19 @@ export default function MeetingRoom() {
 
     ;(async () => {
       try {
+        // Fetch fresh TURN credentials from backend
+        try {
+          const turn = await (api as any).meetings.getTurnToken()
+          const urls = String(turn?.data?.WEBRTC_TURN_URLS || '')
+          const user = String(turn?.data?.WEBRTC_TURN_USER || '')
+          const pass = String(turn?.data?.WEBRTC_TURN_PASS || '')
+          if (urls && user && pass) {
+            const servers: RTCIceServer[] = urls.split(',').map((u: string) => ({ urls: u.trim(), username: user, credential: pass }))
+            setDynamicIce([{ urls: ['stun:stun.l.google.com:19302'] }, ...servers])
+          }
+        } catch (e) {
+          console.warn('TURN fetch failed, using default STUN only')
+        }
         const { io } = await import('socket.io-client')
         const socket = io(WS_URL, { 
           auth: { token },
@@ -411,7 +419,7 @@ export default function MeetingRoom() {
       screenStreamRef.current = null
       clearRemoteMedia()
     }
-  }, [WS_URL, id, token, iceServers])
+  }, [WS_URL, id, token, defaultIce, dynamicIce])
 
   const toggleMic = () => {
     const enabled = !micOn

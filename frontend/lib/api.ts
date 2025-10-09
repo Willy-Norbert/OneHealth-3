@@ -167,6 +167,8 @@ export const api = {
     create: (body: any) => apiFetch('/meetings', { method: 'POST', body: JSON.stringify(body) }),
     updateStatus: (id: string, status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled') =>
       apiFetch(`/meetings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    getTurnToken: () => apiFetch('/meetings/get-turn-token', { method: 'POST' }),
+    joinLink: (id: string) => apiFetch(`/meetings/${id}/join-link`, { method: 'POST' }),
   },
   labResults: {
     list: (params?: Record<string, string | number>) => {
