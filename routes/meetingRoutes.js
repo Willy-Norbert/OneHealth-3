@@ -6,6 +6,8 @@ const {
   deleteMeeting,
   updateMeetingStatus
 } = require('../controllers/meetingController');
+const { generateMeetingLink } = require('../services/jitsiService');
+const Meeting = require('../models/Meeting');
 const { protect } = require('../middleware/auth'); // Removed restrictTo as it's handled in controller
 
 const router = express.Router();
@@ -302,5 +304,23 @@ router.patch('/:id/status', updateMeetingStatus);
  *         description: Not authorized to view these meetings
  */
 router.get('/user/:userId', getUserMeetings);
+
+// Create a secure join link (JWT if configured) for a meeting_id
+router.post('/:id/join-link', async (req, res) => {
+  try {
+    const meeting = await Meeting.findOne({ meeting_id: req.params.id }).populate(['doctor','patient']);
+    if (!meeting) return res.status(404).json({ status: 'error', message: 'Meeting not found' });
+    const uid = String(req.user._id);
+    const allowed = [String(meeting.doctor?._id || meeting.doctor), String(meeting.patient?._id || meeting.patient)];
+    if (!allowed.includes(uid) && req.user.role !== 'admin') {
+      return res.status(403).json({ status: 'error', message: 'Not authorized for this meeting' });
+    }
+    const roomName = `meeting-${meeting._id}`;
+    const details = generateMeetingLink({ roomName, user: req.user });
+    return res.status(200).json({ status: 'success', data: { joinUrl: details.meetingLink, room: details.roomName, domain: details.domain } });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
+});
 
 module.exports = router;

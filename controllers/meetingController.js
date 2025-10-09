@@ -83,9 +83,13 @@ exports.createMeeting = async (req, res) => {
 
     await newMeeting.populate(['doctor', 'patient']);
 
+    // TTL (auto-expire metadata only)
+    const ttlMinutes = parseInt(process.env.MEETING_TTL_MINUTES || '120', 10);
+    const expiresAt = new Date(new Date(startTime).getTime() + ttlMinutes * 60000);
+
     // Send meeting invitation emails to patient and doctor (and hospital if available)
     try {
-      const hostUrl = process.env.FRONTEND_URL || ' https://onehealthconnekt.onrender.com'
+      const hostUrl = process.env.FRONTEND_URL || ' http://localhost:5000'
       const meetingUrl = `${hostUrl}/meeting/${meeting_id}`
       const subject = 'Teleconsultation Meeting Invitation'
       const htmlBody = `

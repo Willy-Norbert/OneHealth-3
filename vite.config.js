@@ -9,7 +9,7 @@ export default defineConfig({
     port: 8080,
     proxy: {
       '': {
-        target: ' https://onehealthconnekt.onrender.com',
+        target: ' http://localhost:5000',
         changeOrigin: true,
       }
     }

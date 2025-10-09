@@ -2,22 +2,28 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  // Legacy display name (kept for backwards compatibility)
   name: {
     type: String,
-    required: [true, 'Please provide a name'],
     trim: true,
-    maxlength: [50, 'Name cannot be more than 50 characters']
+    maxlength: [100, 'Name cannot be more than 100 characters']
   },
+  // New patient-first fields
+  firstName: { type: String, trim: true },
+  lastName: { type: String, trim: true },
+
   email: {
     type: String,
     required: [true, 'Please provide an email'],
     unique: true,
     lowercase: true,
     match: [
-      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/,
       'Please provide a valid email'
     ]
   },
+  phone: { type: String, unique: true, sparse: true },
+
   password: {
     type: String,
     required: [true, 'Please provide a password'],
@@ -52,10 +58,52 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  profileImage: {
+
+  // Rwanda-specific identity
+  nationalId: { type: String },
+
+  // Address & social
+  address: { type: String },
+  district: { type: String },
+  province: { type: String },
+  ubudehe: { type: Number, min: 1, max: 4 },
+
+  // Emergency contact
+  emergencyContact: {
+    name: String,
+    relation: String,
+    phone: String
+  },
+
+  // Insurance
+  insurance: {
+    type: { type: String },
+    insurerName: String,
+    policyNumber: String,
+    policyHolderName: String,
+    expiryDate: Date,
+    frontUrl: String,
+    backUrl: String
+  },
+
+  // Clinical baseline
+  dob: Date,
+  gender: String,
+  bloodGroup: String,
+  allergies: [String],
+  medications: [String],
+  pastMedicalHistory: String,
+  chronicConditions: [String],
+  currentSymptoms: String,
+
+  // Files
+  profileImageUrl: {
     type: String,
-    default: 'https://res.cloudinary.com/your_cloud_name/image/upload/v1678901234/default_profile_image.png' // Replace with a generic default image URL
-  }
+    default: 'https://res.cloudinary.com/your_cloud_name/image/upload/v1678901234/default_profile_image.png'
+  },
+  idDocumentUrl: String,
+  additionalDocuments: [{ fileName: String, url: String }],
+  consentTelehealth: { type: Boolean, default: true }
 });
 
 // Hash password before saving

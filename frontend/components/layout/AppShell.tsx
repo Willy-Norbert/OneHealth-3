@@ -175,13 +175,17 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu?:
                     <p className="text-sm font-medium text-gray-900">{user?.name || user?.email}</p>
                     <p className="text-xs text-gray-500">{user?.role?.toUpperCase()}</p>
                   </div>
-                  {(user as any)?.profileImage ? (
-                    <Image src={(user as any).profileImage} alt={user?.name || 'User'} width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-semibold">
-                      {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                    </div>
-                  )}
+                  {(() => {
+                    const photo = (user as any)?.profileImageUrl || (user as any)?.profileImage
+                    if (photo) {
+                      return <Image src={photo} alt={user?.name || 'User'} width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
+                    }
+                    return (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-semibold">
+                        {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </div>
+                    )
+                  })()}
                 </button>
                 {userMenuOpen && (
                 <div className="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl">

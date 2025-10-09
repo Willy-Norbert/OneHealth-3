@@ -47,7 +47,36 @@ function GridIcon() {
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'patient' })
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    dob: '',
+    gender: 'Male',
+    nationalId: '',
+    address: '',
+    district: '',
+    province: '',
+    ubudehe: '1',
+    emergencyContactName: '',
+    emergencyContactRelation: '',
+    emergencyContactPhone: '',
+    insuranceType: 'None',
+    insurerName: '',
+    policyNumber: '',
+    policyHolderName: '',
+    policyExpiry: '',
+    bloodGroup: 'Unknown',
+    allergies: '',
+    medications: '',
+    pastMedicalHistory: '',
+    chronicConditions: '',
+    currentSymptoms: '',
+  })
+  const [files, setFiles] = useState<{profileImage?: File; idDocument?: File; insuranceFront?: File; insuranceBack?: File; medicalFiles: File[]}>({ medicalFiles: [] })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -56,7 +85,23 @@ export default function RegisterPage() {
     setError(null)
     setLoading(true)
     try {
-      await api.register(form)
+      const e164 = /^\+[1-9]\d{6,14}$/
+      if (!e164.test(form.phone)) throw new Error('Phone must be in E.164 format e.g. +2507XXXXXXXX')
+      if (!form.dob || new Date(form.dob) >= new Date()) throw new Error('Date of birth must be in the past')
+      if (form.password !== form.confirmPassword) throw new Error('Passwords do not match')
+      if (!files.profileImage) throw new Error('Profile image is required')
+      if (!files.idDocument) throw new Error('National ID scan is required')
+      if (form.insuranceType !== 'None' && !files.insuranceFront) throw new Error('Insurance card front is required')
+
+      const formData = new FormData()
+      Object.entries(form).forEach(([k, v]) => formData.append(k, String(v ?? '')))
+      if (files.profileImage) formData.append('profileImage', files.profileImage)
+      if (files.idDocument) formData.append('idDocument', files.idDocument)
+      if (files.insuranceFront) formData.append('insuranceFront', files.insuranceFront)
+      if (files.insuranceBack) formData.append('insuranceBack', files.insuranceBack)
+      files.medicalFiles.forEach(f => formData.append('medicalFiles', f))
+
+      await (api as any).patients.register(formData)
       router.push(`/auth/verify?email=${encodeURIComponent(form.email)}`)
     } catch (err: any) {
       setError(err?.message || 'Registration failed')
@@ -149,59 +194,82 @@ export default function RegisterPage() {
 
           {/* Form fields */}
           <form onSubmit={onSubmit} className="space-y-4">
-            <div>
-              <input 
-                type="text" 
-                placeholder="Full Name:" 
-                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100 placeholder-gray-400"
-                value={form.name} 
-                onChange={e=>setForm({...form, name: e.target.value})} 
-                required 
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <input type="text" placeholder="First name" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.firstName} onChange={e=>setForm({...form, firstName: e.target.value})} required />
+              <input type="text" placeholder="Last name" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.lastName} onChange={e=>setForm({...form, lastName: e.target.value})} required />
             </div>
-            
-            <div>
-              <input 
-                type="email" 
-                placeholder="Email:" 
-                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100 placeholder-gray-400"
-                value={form.email} 
-                onChange={e=>setForm({...form, email: e.target.value})} 
-                required 
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <input type="email" placeholder="Email" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.email} onChange={e=>setForm({...form, email: e.target.value})} required />
+              <input type="tel" placeholder="Phone (+2507XXXXXXXX)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.phone} onChange={e=>setForm({...form, phone: e.target.value})} required />
             </div>
-            
-            <div className="relative">
-              <input 
-                type="password" 
-                placeholder="Password:" 
-                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors pr-10 bg-transparent dark:text-gray-100 placeholder-gray-400"
-                value={form.password} 
-                onChange={e=>setForm({...form, password: e.target.value})} 
-                required 
-              />
-              <button type="button" className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </button>
+            <div className="grid grid-cols-2 gap-4">
+              <input type="password" placeholder="Password" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} required />
+              <input type="password" placeholder="Confirm password" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.confirmPassword} onChange={e=>setForm({...form, confirmPassword: e.target.value})} required />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <input type="date" placeholder="DOB" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.dob} onChange={e=>setForm({...form, dob: e.target.value})} required />
+              <select className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.gender} onChange={e=>setForm({...form, gender: e.target.value})} required>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+                <option>Prefer not to say</option>
+              </select>
+            </div>
+            <input type="text" placeholder="National ID number" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.nationalId} onChange={e=>setForm({...form, nationalId: e.target.value})} required />
+            <input type="text" placeholder="Home address (Street / Cell / Village)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.address} onChange={e=>setForm({...form, address: e.target.value})} required />
+            <div className="grid grid-cols-2 gap-4">
+              <input type="text" placeholder="District" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.district} onChange={e=>setForm({...form, district: e.target.value})} required />
+              <input type="text" placeholder="Province" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.province} onChange={e=>setForm({...form, province: e.target.value})} required />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <select className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.ubudehe} onChange={e=>setForm({...form, ubudehe: e.target.value})} required>
+                <option value="1">Ubudehe 1</option>
+                <option value="2">Ubudehe 2</option>
+                <option value="3">Ubudehe 3</option>
+                <option value="4">Ubudehe 4</option>
+              </select>
+              <input type="text" placeholder="Emergency contact name" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.emergencyContactName} onChange={e=>setForm({...form, emergencyContactName: e.target.value})} required />
+              <input type="text" placeholder="Relationship" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.emergencyContactRelation} onChange={e=>setForm({...form, emergencyContactRelation: e.target.value})} required />
+            </div>
+            <input type="tel" placeholder="Emergency contact phone (+250...)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.emergencyContactPhone} onChange={e=>setForm({...form, emergencyContactPhone: e.target.value})} required />
+            <div className="grid grid-cols-2 gap-4">
+              <select className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.insuranceType} onChange={e=>setForm({...form, insuranceType: e.target.value})} required>
+                <option>Mutuelle de Santé (CBHI)</option>
+                <option>RSSB</option>
+                <option>Private</option>
+                <option>None</option>
+              </select>
+              <select className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.bloodGroup} onChange={e=>setForm({...form, bloodGroup: e.target.value})} required>
+                {['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'].map(b=> <option key={b}>{b}</option>)}
+              </select>
+            </div>
+            {form.insuranceType !== 'None' && (
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder="Insurer name" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.insurerName} onChange={e=>setForm({...form, insurerName: e.target.value})} required={form.insuranceType !== 'None'} />
+                <input type="text" placeholder="Policy number" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.policyNumber} onChange={e=>setForm({...form, policyNumber: e.target.value})} required={form.insuranceType !== 'None'} />
+                <input type="text" placeholder="Policy holder name" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.policyHolderName} onChange={e=>setForm({...form, policyHolderName: e.target.value})} required={form.insuranceType !== 'None'} />
+                <input type="date" placeholder="Expiry date" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.policyExpiry} onChange={e=>setForm({...form, policyExpiry: e.target.value})} required={form.insuranceType !== 'None'} />
+              </div>
+            )}
+            <textarea placeholder="Known allergies (enter None if none)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.allergies} onChange={e=>setForm({...form, allergies: e.target.value})} required />
+            <textarea placeholder="Current medications (enter None if none)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.medications} onChange={e=>setForm({...form, medications: e.target.value})} required />
+            <textarea placeholder="Past medical history / surgeries (enter None if none)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.pastMedicalHistory} onChange={e=>setForm({...form, pastMedicalHistory: e.target.value})} required />
+            <input type="text" placeholder="Chronic conditions (comma separated, enter None if none)" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.chronicConditions} onChange={e=>setForm({...form, chronicConditions: e.target.value})} required />
+            <textarea placeholder="Current symptoms / reason for registration" className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100" value={form.currentSymptoms} onChange={e=>setForm({...form, currentSymptoms: e.target.value})} required />
 
-          <div>
-              <select 
-                className="w-full py-3 border-b border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:outline-none transition-colors bg-transparent dark:text-gray-100"
-                value={form.role} 
-                onChange={e=>setForm({...form, role: e.target.value})}
-              >
-              <option value="patient">Patient</option>
-              <option value="doctor">Doctor</option>
-              <option value="hospital">Hospital</option>
-            </select>
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <input type="file" accept=".png,.jpg,.jpeg,.pdf" onChange={e=>setFiles(prev=>({...prev, profileImage: e.target.files?.[0]}))} required />
+              <input type="file" accept=".png,.jpg,.jpeg,.pdf" onChange={e=>setFiles(prev=>({...prev, idDocument: e.target.files?.[0]}))} required />
+            </div>
+            {form.insuranceType !== 'None' && (
+              <div className="grid grid-cols-2 gap-4">
+                <input type="file" accept=".png,.jpg,.jpeg,.pdf" onChange={e=>setFiles(prev=>({...prev, insuranceFront: e.target.files?.[0]}))} required={form.insuranceType !== 'None'} />
+                <input type="file" accept=".png,.jpg,.jpeg,.pdf" onChange={e=>setFiles(prev=>({...prev, insuranceBack: e.target.files?.[0]}))} />
+              </div>
+            )}
+            <input type="file" accept=".png,.jpg,.jpeg,.pdf" multiple onChange={e=>setFiles(prev=>({...prev, medicalFiles: e.target.files ? Array.from(e.target.files) : []}))} />
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-            
+            {error && <p className="text-red-600 text-sm">{error}</p>}
             <button 
               type="submit" 
               disabled={loading} 

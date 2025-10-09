@@ -1,14 +1,16 @@
 const express = require('express');
 const { protect, restrictTo } = require('../middleware/auth');
-const {
-  getAllPatients,
-  getPatient,
-  createPatient,
-  updatePatient,
-  getPatientsByHospital,
-  addHospitalVisit,
-  getDoctorPatients // Added getDoctorPatients
-} = require('../controllers/patientController');
+const patientController = require('../controllers/patientController');
+
+// Helper to avoid boot-time crashes if a handler is undefined
+function getHandler(name) {
+  const fn = patientController && patientController[name];
+  if (typeof fn === 'function') return fn;
+  return (req, res, next) => {
+    console.error(`[patients] Handler missing: ${name}`);
+    return res.status(500).json({ success: false, message: `${name} handler missing` });
+  };
+}
 
 const router = express.Router();
 
@@ -441,18 +443,57 @@ const router = express.Router();
  *         description: Can only access your own hospital patients
  */
 
+// Public patient registration (multipart) with safe fallbacks to avoid boot-time crashes
+const safePatientRegisterUpload = typeof patientController.patientRegisterUpload === 'function'
+  ? patientController.patientRegisterUpload
+  : (req, res, next) => { console.error('[patients/register] upload middleware missing'); next(); };
+
+// Clean registration route without verbose logging
+router.post('/register', safePatientRegisterUpload, getHandler('publicRegisterPatient'));
+
+// Test route to verify the endpoint is accessible
+router.get('/register/test', (req, res) => {
+  console.log('=== PATIENT REGISTER TEST ===');
+  res.json({ message: 'Patient register endpoint is accessible', timestamp: new Date().toISOString() });
+});
+
+// Development route to clear test data (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  router.delete('/register/clear-test-data', async (req, res) => {
+    try {
+      const User = require('../models/User');
+      const Patient = require('../models/Patient');
+      
+      // Delete test users (be careful with this!)
+      const testUsers = await User.find({ email: { $regex: /test|demo|example/i } });
+      const userIds = testUsers.map(u => u._id);
+      
+      await User.deleteMany({ _id: { $in: userIds } });
+      await Patient.deleteMany({ user: { $in: userIds } });
+      
+      res.json({ 
+        message: 'Test data cleared', 
+        deletedUsers: testUsers.length,
+        deletedPatients: userIds.length 
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+}
+
 // Protect all routes
 router.use(protect);
 
 // Patient routes
-router.get('/', restrictTo('admin', 'hospital'), getAllPatients);
-router.post('/', restrictTo('admin', 'patient'), createPatient);
-router.get('/my-patients', restrictTo('doctor'), getDoctorPatients); // New route for doctors to get their patients
-router.get('/:id', restrictTo('admin', 'hospital', 'doctor', 'patient'), getPatient); // Authorization checked in controller
-router.put('/:id', updatePatient); // Authorization checked in controller
-router.post('/:id/visits', restrictTo('admin', 'hospital'), addHospitalVisit);
+router.get('/', restrictTo('admin', 'hospital'), getHandler('getAllPatients'));
+router.post('/', restrictTo('admin', 'patient'), getHandler('createPatient'));
+router.get('/my-patients', restrictTo('doctor'), getHandler('getDoctorPatients'));
+router.get('/:id', restrictTo('admin', 'hospital', 'doctor', 'patient'), getHandler('getPatient'));
+router.put('/:id', getHandler('updatePatient'));
+router.post('/:id/visits', restrictTo('admin', 'hospital'), getHandler('addHospitalVisit'));
 
 // Hospital-specific patient routes (defined in hospital routes)
-router.get('/hospital/:hospitalId', restrictTo('admin', 'hospital'), getPatientsByHospital);
+router.get('/hospital/:hospitalId', restrictTo('admin', 'hospital'), getHandler('getPatientsByHospital'));
 
 module.exports = router;

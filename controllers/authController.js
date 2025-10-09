@@ -6,7 +6,7 @@ const { sendWelcomeEmail, sendOTPEmail } = require('../services/emailService');
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -18,11 +18,12 @@ const register = async (req, res) => {
     }
 
     // Create user in inactive, unverified state
+    // Force role to patient on public auth/register endpoint for safety
     const newUser = await User.create({
       name,
       email,
       password,
-      role: role || 'patient',
+      role: 'patient',
       isActive: false,
       isVerified: false,
     });
@@ -32,6 +33,13 @@ const register = async (req, res) => {
     newUser.otpCode = otp;
     newUser.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     await newUser.save({ validateBeforeSave: false });
+
+    // Dev-only visibility for verification code (never log passwords)
+    if (process.env.NODE_ENV !== 'production') {
+      const maskEmail = (em) => em.replace(/(^.).+(@.*$)/, (m, a, b) => a + '***' + b);
+      console.log(`[DEV] Registered user:`, { id: newUser._id.toString(), email: maskEmail(newUser.email), role: newUser.role });
+      console.log(`[DEV] Email verification OTP: ${otp} (expires in 10m)`);
+    }
 
     // Send emails
     try {

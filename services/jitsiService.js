@@ -1,8 +1,10 @@
 const crypto = require('crypto');
 
 // Jitsi configuration
-// JITSI_APP_ID and JITSI_SECRET are no longer needed for public Jitsi without JWT
 const JITSI_DOMAIN = process.env.JITSI_DOMAIN || 'meet.jit.si';
+const JITSI_APP_ID = process.env.JITSI_APP_ID || '';
+const JITSI_SECRET = process.env.JITSI_SECRET || '';
+const USE_JWT = Boolean(JITSI_APP_ID && JITSI_SECRET);
 
 /**
  * Generate a unique room name for meetings
@@ -15,7 +17,30 @@ const generateRoomName = (prefix, id) => {
   return `${prefix}-${id}-${randomString}`;
 };
 
-// generateJitsiJWT is no longer needed for public Jitsi without JWT
+// Optional: JWT for secured Jitsi deployments
+function generateJitsiJWT(roomName, user) {
+  if (!USE_JWT) return null;
+  const jwt = require('jsonwebtoken');
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + 10 * 60; // 10 minutes
+  const payload = {
+    aud: 'jitsi',
+    iss: JITSI_APP_ID,
+    sub: JITSI_DOMAIN,
+    room: roomName,
+    exp,
+    nbf: now - 10,
+    context: {
+      user: {
+        name: user?.name || 'User',
+        email: user?.email || undefined,
+        avatar: user?.profileImageUrl || user?.profileImage || undefined,
+        id: String(user?._id || ''),
+      }
+    }
+  };
+  return jwt.sign(payload, JITSI_SECRET, { algorithm: 'HS256' });
+}
 
 /**
  * Generate complete Jitsi meeting link without JWT
@@ -24,15 +49,11 @@ const generateRoomName = (prefix, id) => {
  * @returns {Object} Meeting details with link
  */
 const generateMeetingLink = (options) => {
-  const { roomName } = options;
-  
-  const meetingLink = `https://${JITSI_DOMAIN}/${roomName}`;
-
-  return {
-    roomName,
-    meetingLink,
-    domain: JITSI_DOMAIN
-  };
+  const { roomName, user } = options;
+  const token = generateJitsiJWT(roomName, user);
+  const base = `https://${JITSI_DOMAIN}/${roomName}`;
+  const meetingLink = token ? `${base}?jwt=${token}` : base;
+  return { roomName, meetingLink, domain: JITSI_DOMAIN, token: token || undefined };
 };
 
 /**
@@ -40,12 +61,9 @@ const generateMeetingLink = (options) => {
  * @param {Object} appointment - Appointment object
  * @returns {Object} Meeting details
  */
-const generateAppointmentMeeting = (appointment) => {
+const generateAppointmentMeeting = (appointment, user) => {
   const roomName = generateRoomName('appointment', appointment._id);
-  
-  return generateMeetingLink({
-    roomName
-  });
+  return generateMeetingLink({ roomName, user });
 };
 
 /**
@@ -53,12 +71,9 @@ const generateAppointmentMeeting = (appointment) => {
  * @param {Object} meeting - Meeting object
  * @returns {Object} Meeting details
  */
-const generateCustomMeeting = (meeting) => {
+const generateCustomMeeting = (meeting, user) => {
   const roomName = generateRoomName('meeting', meeting._id);
-  
-  return generateMeetingLink({
-    roomName
-  });
+  return generateMeetingLink({ roomName, user });
 };
 
 /**

@@ -3,6 +3,41 @@ const User = require('../models/User');
 const Hospital = require('../models/Hospital');
 const Appointment = require('../models/Appointment');
 const MedicalRecord = require('../models/MedicalRecord');
+const multer = require('multer');
+const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+const crypto = require('crypto');
+const { sendOTPEmail } = require('../services/emailService');
+
+// Multer storage to temp disk
+const upload = multer({
+  dest: path.join(__dirname, '..', 'uploads', 'tmp'),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg','image/png','application/pdf','image/jpg'];
+    if (allowed.includes(file.mimetype)) return cb(null, true);
+    cb(new Error('Invalid file type. Allowed: pdf, jpg, jpeg, png'));
+  }
+});
+
+exports.patientRegisterUpload = upload.fields([
+  { name: 'profileImage', maxCount: 1 },
+  { name: 'idDocument', maxCount: 1 },
+  { name: 'insuranceFront', maxCount: 1 },
+  { name: 'insuranceBack', maxCount: 1 },
+  { name: 'medicalFiles', maxCount: 10 }
+]);
+
+function isE164(phone) {
+  return /^\+[1-9]\d{6,14}$/.test(phone);
+}
+
+async function uploadToCloud(file) {
+  const result = await cloudinary.uploader.upload(file.path, { folder: 'onehealth/patients' });
+  try { fs.unlinkSync(file.path); } catch {}
+  return result.secure_url;
+}
 
 // @desc    Get all patients (with hospital filtering)
 // @route   GET /api/patients
@@ -147,59 +182,262 @@ exports.getPatient = async (req, res) => {
   }
 };
 
-// @desc    Create patient profile
-// @route   POST /api/patients
-// @access  Private (Admin or Patient themselves)
-exports.createPatient = async (req, res) => {
+// @desc    Public patient registration (creates User + stores files)
+// @route   POST /api/patients/register
+// @access  Public
+exports.publicRegisterPatient = async (req, res) => {
   try {
-    console.log('=== CREATE PATIENT ===');
-    console.log('Request body:', req.body);
-    console.log('User:', req.user.role, req.user._id);
+    // Minimal logging for registration attempt
+    console.log(`📝 Registration attempt for: ${req.body.email || 'unknown email'}`);
 
-    // Check if patient profile already exists
-    const existingPatient = await Patient.findOne({ user: req.body.user || req.user._id });
-    if (existingPatient) {
-      return res.status(400).json({
-        success: false,
-        message: 'Patient profile already exists',
-        data: null
+    const {
+      firstName, lastName, email, phone, password,
+      dob, gender, nationalId, address, district, province, ubudehe,
+      emergencyContactName, emergencyContactRelation, emergencyContactPhone,
+      insuranceType, insurerName, policyNumber, policyHolderName, policyExpiry,
+      bloodGroup, allergies, medications, pastMedicalHistory, chronicConditions, currentSymptoms
+    } = req.body;
+
+    // Enhanced validation to match frontend
+    if (!firstName || !lastName || !email || !phone || !password) {
+      return res.status(400).json({ status: 'fail', message: 'Missing required personal information fields' });
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ status: 'fail', message: 'Please enter a valid email address' });
+    }
+    
+    // Phone E.164 validation
+    if (!isE164(phone)) {
+      return res.status(400).json({ status: 'fail', message: 'Phone must be in E.164 format (e.g., +2507XXXXXXXX)' });
+    }
+    
+    // Password strength validation
+    if (password.length < 8) {
+      return res.status(400).json({ status: 'fail', message: 'Password must be at least 8 characters' });
+    }
+    
+    // Identity & Address validation
+    if (!dob || new Date(dob) >= new Date()) {
+      return res.status(400).json({ status: 'fail', message: 'Date of birth must be in the past' });
+    }
+    if (!nationalId || !address || !district || !province) {
+      return res.status(400).json({ status: 'fail', message: 'Missing required identity and address fields' });
+    }
+    
+    // Emergency contact validation
+    if (!emergencyContactName || !emergencyContactRelation || !emergencyContactPhone) {
+      return res.status(400).json({ status: 'fail', message: 'Please fill in all emergency contact fields' });
+    }
+    if (!isE164(emergencyContactPhone)) {
+      return res.status(400).json({ status: 'fail', message: 'Emergency contact phone must be in E.164 format (e.g., +2507XXXXXXXX)' });
+    }
+    
+    // Insurance validation (conditional)
+    if (insuranceType && insuranceType !== 'None') {
+      if (!insurerName || !policyNumber || !policyHolderName || !policyExpiry) {
+        return res.status(400).json({ status: 'fail', message: 'Please fill in all insurance fields' });
+      }
+    }
+    
+    // Medical history validation
+    if (!allergies || !medications || !pastMedicalHistory || !chronicConditions || !currentSymptoms) {
+      return res.status(400).json({ status: 'fail', message: 'Please fill in all medical history fields (enter "None" if not applicable)' });
+    }
+
+    const existing = await User.findOne({ $or: [{ email }, { phone }] });
+    if (existing) {
+      const field = existing.email === email ? 'email' : 'phone';
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: `This ${field} is already registered. Please use a different ${field} or try logging in.` 
       });
     }
 
-    // Create patient data
-    const patientData = {
-      ...req.body,
-      user: req.body.user || req.user._id
+    // File validation (required files)
+    if (!req.files?.profileImage?.[0]) {
+      return res.status(400).json({ status: 'fail', message: 'Profile image is required' });
+    }
+    if (!req.files?.idDocument?.[0]) {
+      return res.status(400).json({ status: 'fail', message: 'National ID scan is required' });
+    }
+    if (insuranceType && insuranceType !== 'None' && !req.files?.insuranceFront?.[0]) {
+      return res.status(400).json({ status: 'fail', message: 'Insurance card front is required' });
+    }
+
+    // Upload files
+    const profileImageUrl = await uploadToCloud(req.files.profileImage[0]);
+    const idDocumentUrl = await uploadToCloud(req.files.idDocument[0]);
+    const insuranceFrontUrl = req.files?.insuranceFront?.[0] ? await uploadToCloud(req.files.insuranceFront[0]) : undefined;
+    const insuranceBackUrl = req.files?.insuranceBack?.[0] ? await uploadToCloud(req.files.insuranceBack[0]) : undefined;
+
+    const additionalDocuments = [];
+    if (req.files?.medicalFiles) {
+      for (const f of req.files.medicalFiles) {
+        const url = await uploadToCloud(f);
+        additionalDocuments.push({ fileName: f.originalname, url });
+      }
+    }
+
+    // Create User with all patient data
+    const userData = {
+      firstName, lastName,
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      phone,
+      password,
+      role: 'patient',
+      isActive: false,
+      isVerified: false,
+      dob,
+      gender,
+      nationalId,
+      address,
+      district,
+      province,
+      ubudehe: parseInt(ubudehe) || 1,
+      emergencyContact: { 
+        name: emergencyContactName, 
+        relation: emergencyContactRelation, 
+        phone: emergencyContactPhone 
+      },
+      insurance: { 
+        type: insuranceType || 'None', 
+        insurerName: insuranceType !== 'None' ? insurerName : undefined, 
+        policyNumber: insuranceType !== 'None' ? policyNumber : undefined, 
+        policyHolderName: insuranceType !== 'None' ? policyHolderName : undefined, 
+        expiryDate: insuranceType !== 'None' ? policyExpiry : undefined, 
+        frontUrl: insuranceFrontUrl, 
+        backUrl: insuranceBackUrl 
+      },
+      bloodGroup: bloodGroup || 'Unknown', // Optional field with default
+      allergies: Array.isArray(allergies) ? allergies : (allergies ? [allergies] : []),
+      medications: Array.isArray(medications) ? medications : (medications ? [medications] : []),
+      pastMedicalHistory,
+      chronicConditions: Array.isArray(chronicConditions) ? chronicConditions : (chronicConditions ? [chronicConditions] : []),
+      currentSymptoms,
+      profileImageUrl,
+      idDocumentUrl,
+      additionalDocuments
     };
 
-    // If user is creating their own profile, validate user is patient role
-    if (!req.body.user && req.user.role !== 'patient') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only patients can create their own profile',
-        data: null
-      });
+    const user = await User.create(userData);
+
+    // Generate and send OTP for email verification
+    const otp = ('' + (crypto.randomInt(100000, 999999))).padStart(6, '0');
+    user.otpCode = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save({ validateBeforeSave: false });
+
+    // Send OTP email
+    try {
+      await sendOTPEmail(user, otp, 'Account Verification');
+      console.log(`✅ Email sent to ${user.email} with OTP: ${otp}`);
+    } catch (emailError) {
+      console.error(`❌ Failed to send email to ${user.email}:`, emailError.message);
+      // Continue registration even if email fails
     }
 
-    const patient = await Patient.create(patientData);
-    await patient.populate([
-      { path: 'user', select: 'name email phone' },
-      { path: 'primaryHospital', select: 'name location' }
-    ]);
+    // Generate unique patient ID
+    let patientId;
+    let attempts = 0;
+    do {
+      const patientCount = await Patient.countDocuments();
+      patientId = `PAT-${String(patientCount + 1 + attempts).padStart(6, '0')}`;
+      attempts++;
+      
+      // Check if this ID already exists
+      const existingPatient = await Patient.findOne({ patientId });
+      if (!existingPatient) break;
+      
+      if (attempts > 10) {
+        throw new Error('Unable to generate unique patient ID');
+      }
+    } while (true);
 
-    console.log('Patient created:', patient.patientId);
+    // Also create Patient profile shell
+    const patient = await Patient.create({
+      user: user._id,
+      patientId,
+      dateOfBirth: dob,
+      gender,
+      phone,
+      address: { street: address, district, province, city: undefined },
+      emergencyContact: { 
+        name: emergencyContactName, 
+        relationship: emergencyContactRelation, 
+        phone: emergencyContactPhone 
+      },
+      bloodType: bloodGroup || 'Unknown',
+      allergies: user.allergies,
+      chronicConditions: user.chronicConditions,
+      insurance: { 
+        provider: insuranceType || 'None', 
+        policyNumber: insuranceType !== 'None' ? policyNumber : undefined, 
+        expiryDate: insuranceType !== 'None' ? policyExpiry : undefined 
+      }
+    });
+
+    // Development logging for new registrations
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🎉 New Patient Registered Successfully!`);
+      console.log(`   👤 User: ${user.firstName} ${user.lastName}`);
+      console.log(`   📧 Email: ${user.email}`);
+      console.log(`   📱 Phone: ${user.phone}`);
+      console.log(`   🆔 Patient ID: ${patientId}`);
+      console.log(`   📧 OTP Code: ${otp} (expires in 10 minutes)`);
+      console.log(`   ✅ Status: ${user.isActive ? 'Active' : 'Pending Verification'}`);
+    }
 
     res.status(201).json({
-      success: true,
-      message: 'Patient profile created successfully',
-      data: { patient }
+      status: 'success', 
+      data: { 
+        userId: user._id, 
+        patientId: patient._id,
+        emailVerificationRequired: true,
+        message: 'Registration successful. Please check your email to verify your account.'
+      } 
     });
   } catch (error) {
-    console.error('Error in createPatient:', error);
-    res.status(400).json({
-      success: false,
-      message: error.message,
-      data: null
+    console.error('Public patient register error:', error);
+    
+    // Clean up uploaded files if user creation failed
+    try {
+      if (req.files?.profileImage?.[0]) fs.unlinkSync(req.files.profileImage[0].path);
+      if (req.files?.idDocument?.[0]) fs.unlinkSync(req.files.idDocument[0].path);
+      if (req.files?.insuranceFront?.[0]) fs.unlinkSync(req.files.insuranceFront[0].path);
+      if (req.files?.insuranceBack?.[0]) fs.unlinkSync(req.files.insuranceBack[0].path);
+      if (req.files?.medicalFiles) {
+        req.files.medicalFiles.forEach(f => {
+          try { fs.unlinkSync(f.path); } catch {}
+        });
+      }
+    } catch (cleanupError) {
+      console.error('File cleanup error:', cleanupError);
+    }
+    
+    // Handle specific error types
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: `${field === 'email' ? 'Email' : field === 'phone' ? 'Phone' : 'Field'} already exists` 
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: `Validation error: ${errors.join(', ')}` 
+      });
+    }
+    
+    res.status(500).json({ 
+      status: 'fail', 
+      message: error.message || 'Registration failed. Please try again.' 
     });
   }
 };

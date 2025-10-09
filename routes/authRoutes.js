@@ -146,7 +146,7 @@ router.post('/register', register);
 router.post('/login', login);
 
 // Social logins
-router.post('e', googleLogin);
+router.post('/google', googleLogin);
 router.post('/facebook', facebookLogin);
 
 /**

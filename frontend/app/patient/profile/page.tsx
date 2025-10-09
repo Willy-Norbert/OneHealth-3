@@ -27,6 +27,7 @@ export default function ProfilePage() {
     }
   })
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [docLoading, setDocLoading] = useState<string | null>(null)
 
   const handleDeleteAccount = async () => {
     if (!window.confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) return
@@ -49,8 +50,8 @@ export default function ProfilePage() {
     try {
       const res: any = await api.uploads.image(file)
       if (res?.url) {
-        // Optimistically update local UI before server confirms
-        await api.users.updateProfile({ avatar: res.url })
+        // Update backend profile image URL
+        await api.users.updateProfile({ profileImageUrl: res.url })
         await refreshProfile()
         setToastMsg('Profile photo updated')
         setTimeout(()=>setToastMsg(undefined), 3000)
@@ -59,6 +60,59 @@ export default function ProfilePage() {
       console.error('Avatar upload failed', err)
     } finally {
       setAvatarUploading(false)
+    }
+  }
+
+  const uploadSingleDocument = async (file: File, kind: 'id' | 'insuranceFront' | 'insuranceBack') => {
+    setDocLoading(kind)
+    try {
+      const res: any = await api.uploads.image(file)
+      if (!res?.url) return
+      if (kind === 'id') {
+        await api.users.updateProfile({ idDocumentUrl: res.url })
+      } else if (kind === 'insuranceFront') {
+        await api.users.updateProfile({ insurance: { frontUrl: res.url } })
+      } else {
+        await api.users.updateProfile({ insurance: { backUrl: res.url } })
+      }
+      await refreshProfile()
+      setToastMsg('Document updated')
+      setTimeout(()=>setToastMsg(undefined), 2500)
+    } finally {
+      setDocLoading(null)
+    }
+  }
+
+  const uploadAdditionalDocuments = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setDocLoading('additional')
+    try {
+      const uploaded: { fileName: string; url: string }[] = []
+      for (const f of Array.from(files)) {
+        const res: any = await api.uploads.image(f)
+        if (res?.url) uploaded.push({ fileName: f.name, url: res.url })
+      }
+      if (uploaded.length) {
+        const current = (user as any)?.additionalDocuments || []
+        await api.users.updateProfile({ additionalDocuments: [...current, ...uploaded] })
+        await refreshProfile()
+        setToastMsg('Files uploaded')
+        setTimeout(()=>setToastMsg(undefined), 2500)
+      }
+    } finally {
+      setDocLoading(null)
+    }
+  }
+
+  const removeAdditionalDocument = async (idx: number) => {
+    const current = (user as any)?.additionalDocuments || []
+    const next = current.filter((_: any, i: number) => i !== idx)
+    setDocLoading('removeDoc')
+    try {
+      await api.users.updateProfile({ additionalDocuments: next })
+      await refreshProfile()
+    } finally {
+      setDocLoading(null)
     }
   }
 
@@ -138,15 +192,18 @@ export default function ProfilePage() {
           <div className="lg:col-span-1">
             <div className="card">
               <div className="card-body text-center">
-                {typeof user === 'object' && user && 'profileImage' in user && user.profileImage ? (
-                  <img src={user.profileImage as string} alt={user && 'name' in user ? (user.name as string) : 'Avatar'} className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
-                ) : (
-                  <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl font-semibold text-emerald-600">
-                      {user && 'name' in user && typeof user.name === 'string' ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </span>
-                  </div>
-                )}
+                {(() => {
+                  const photo = (user as any)?.profileImageUrl || (user as any)?.profileImage
+                  return photo ? (
+                    <img src={photo as string} alt={user && 'name' in user ? (user.name as string) : 'Avatar'} className="w-24 h-24 rounded-full object-cover mx-auto mb-4" />
+                  ) : (
+                    <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-semibold text-emerald-600">
+                        {user && 'name' in user && typeof user.name === 'string' ? (user.name as string).charAt(0).toUpperCase() : 'U'}
+                      </span>
+                    </div>
+                  )
+                })()}
                 <h3 className="text-xl font-semibold text-gray-900">{user && 'name' in user ? user.name : ''}</h3>
                 <p className="text-gray-500">{user && 'email' in user ? user.email : ''}</p>
                 <div className="mt-4">
@@ -186,6 +243,97 @@ export default function ProfilePage() {
                       : ''
                   }</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Documents */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="text-lg font-semibold text-gray-900">Documents</h3>
+            <p className="text-sm text-gray-500">Preview and update your uploaded documents</p>
+          </div>
+          <div className="card-body space-y-6">
+            {/* National ID */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-gray-900">National ID</h4>
+                <label className="btn-outline btn-sm cursor-pointer">
+                  {docLoading==='id' ? <HealthSpinner /> : 'Replace'}
+                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={e=>uploadSingleDocument(e.target.files?.[0]!, 'id')} />
+                </label>
+              </div>
+              { (user as any)?.idDocumentUrl ? (
+                (String((user as any).idDocumentUrl).toLowerCase().endsWith('.pdf') ? (
+                  <a href={(user as any).idDocumentUrl} target="_blank" className="text-emerald-700 underline">View PDF</a>
+                ) : (
+                  <img src={(user as any).idDocumentUrl} alt="ID" className="w-48 rounded-lg border" />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No ID uploaded</p>
+              )}
+            </div>
+
+            {/* Insurance */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">Insurance (Front)</h4>
+                  <label className="btn-outline btn-sm cursor-pointer">
+                    {docLoading==='insuranceFront' ? <HealthSpinner /> : 'Replace'}
+                    <input type="file" accept="image/*,.pdf" className="hidden" onChange={e=>uploadSingleDocument(e.target.files?.[0]!, 'insuranceFront')} />
+                  </label>
+                </div>
+                { (user as any)?.insurance?.frontUrl ? (
+                  (String((user as any).insurance.frontUrl).toLowerCase().endsWith('.pdf') ? (
+                    <a href={(user as any).insurance.frontUrl} target="_blank" className="text-emerald-700 underline">View PDF</a>
+                  ) : (
+                    <img src={(user as any).insurance.frontUrl} alt="Insurance Front" className="w-48 rounded-lg border" />
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Not uploaded</p>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">Insurance (Back)</h4>
+                  <label className="btn-outline btn-sm cursor-pointer">
+                    {docLoading==='insuranceBack' ? <HealthSpinner /> : 'Replace'}
+                    <input type="file" accept="image/*,.pdf" className="hidden" onChange={e=>uploadSingleDocument(e.target.files?.[0]!, 'insuranceBack')} />
+                  </label>
+                </div>
+                { (user as any)?.insurance?.backUrl ? (
+                  (String((user as any).insurance.backUrl).toLowerCase().endsWith('.pdf') ? (
+                    <a href={(user as any).insurance.backUrl} target="_blank" className="text-emerald-700 underline">View PDF</a>
+                  ) : (
+                    <img src={(user as any).insurance.backUrl} alt="Insurance Back" className="w-48 rounded-lg border" />
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Not uploaded</p>
+                )}
+              </div>
+            </div>
+
+            {/* Additional medical files */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-gray-900">Additional Medical Records</h4>
+                <label className="btn-outline btn-sm cursor-pointer">
+                  {docLoading==='additional' ? <HealthSpinner /> : 'Upload'}
+                  <input type="file" accept="image/*,.pdf" multiple className="hidden" onChange={e=>uploadAdditionalDocuments(e.target.files)} />
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {((user as any)?.additionalDocuments || []).map((doc: any, idx: number) => (
+                  <div key={idx} className="border rounded-lg p-3 flex items-center justify-between">
+                    <a href={doc.url} target="_blank" className="text-emerald-700 underline truncate mr-3">{doc.fileName || 'Document'}</a>
+                    <button className="btn-danger btn-xs" onClick={()=>removeAdditionalDocument(idx)} disabled={docLoading==='removeDoc'}>Remove</button>
+                  </div>
+                ))}
+                {((user as any)?.additionalDocuments || []).length === 0 && (
+                  <p className="text-sm text-gray-500">No additional files uploaded</p>
+                )}
               </div>
             </div>
           </div>

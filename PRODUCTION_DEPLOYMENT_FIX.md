@@ -21,12 +21,12 @@
 Set these environment variables in your Vercel dashboard:
 
 ```bash
-NEXT_PUBLIC_API_URL=https://onehealthconnekt.onrender.com
-BACKEND_URL=https://onehealthconnekt.onrender.com
+NEXT_PUBLIC_API_URL=http://localhost:5000
+BACKEND_URL=http://localhost:5000
 ```
 
 **OR** leave them empty to use the automatic detection:
-- Production: `https://onehealthconnekt.onrender.com`
+- Production: `http://localhost:5000`
 - Development: `http://localhost:5000`
 
 #### For Render Deployment (Backend)
@@ -44,7 +44,7 @@ AUTH_RATE_LIMIT_MAX=20
 1. **CORS**: The backend now properly allows requests from your Vercel domain
 2. **Rate Limiting**: More reasonable limits that won't block legitimate users
 3. **Direct API Calls**: Frontend calls backend directly (no proxy needed)
-   - Production: `https://onehealthconnekt.onrender.com/auth/login`
+   - Production: `http://localhost:5000/auth/login`
    - Development: `http://localhost:5000/auth/login`
 4. **Missing Routes**: Added fallback routes for common 404 errors
 
@@ -57,8 +57,8 @@ AUTH_RATE_LIMIT_MAX=20
 
 ### Production
 - Frontend: `https://onehealthlineconnectsss.vercel.app`
-- Backend: `https://onehealthconnekt.onrender.com`
-- API calls go directly to backend (`https://onehealthconnekt.onrender.com/auth/login`)
+- Backend: `http://localhost:5000`
+- API calls go directly to backend (`http://localhost:5000/auth/login`)
 
 ## Deployment Steps
 
