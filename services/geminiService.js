@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 let genAI;
 
-function getModel(modelName = 'gemini-1.5-flash') {
+function getModel(modelName = (process.env.GEMINI_MODEL || 'gemini-1.5-flash-002')) {
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY (or GOOGLE_API_KEY) is not set in environment variables');
   }

@@ -66,6 +66,10 @@ connectDB();
 
 const app = express();
 
+// Behind Render/Proxies: trust X-Forwarded-* so rate limit and IPs work
+// See: https://expressjs.com/en/guide/behind-proxies.html
+app.set('trust proxy', true);
+
 // Security middleware setup
 app.use(helmetConfig);
 app.use(securityHeaders);
