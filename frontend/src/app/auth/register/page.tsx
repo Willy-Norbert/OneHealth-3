@@ -69,7 +69,7 @@ export default function RegisterPage() {
     policyNumber: '',
     policyHolderName: '',
     policyExpiry: '',
-    bloodGroup: 'Unknown',
+    bloodGroup: 'B-',
     allergies: '',
     medications: '',
     pastMedicalHistory: '',

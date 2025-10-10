@@ -14,7 +14,22 @@ function createTransporter() {
     throw new Error('Email transport is not configured. Please set SMTP_HOST, SMTP_USER, SMTP_PASS');
   }
 
-  return nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
+  // Use pooled transporter for better performance and connection reuse in prod
+  // Add conservative timeouts to avoid blocking requests when SMTP is unreachable
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+    pool: true,
+    maxConnections: parseInt(process.env.SMTP_MAX_CONNECTIONS || '3', 10),
+    maxMessages: parseInt(process.env.SMTP_MAX_MESSAGES || '100', 10),
+    rateDelta: 1000,
+    rateLimit: parseInt(process.env.SMTP_RATE_LIMIT || '5', 10),
+    connectionTimeout: parseInt(process.env.SMTP_CONNECTION_TIMEOUT || '5000', 10), // 5s
+    greetingTimeout: parseInt(process.env.SMTP_GREETING_TIMEOUT || '5000', 10), // 5s
+    socketTimeout: parseInt(process.env.SMTP_SOCKET_TIMEOUT || '10000', 10), // 10s
+  });
 }
 
 let transporter;
@@ -28,8 +43,19 @@ async function sendEmail({ to, subject, html, text }) {
     return { disabled: true };
   }
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  const info = await getTransporter().sendMail({ from, to, subject, html, text });
-  return info;
+  const transporter = getTransporter();
+  const timeoutMs = parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '8000', 10); // 8s
+  const sendPromise = transporter.sendMail({ from, to, subject, html, text });
+  // Fail fast if SMTP is slow/unreachable to avoid blocking API responses
+  const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs));
+  try {
+    const result = await Promise.race([sendPromise, timeoutPromise]);
+    return result;
+  } catch (e) {
+    // Swallow SMTP errors to avoid crashing requests; log upstream callers can handle
+    try { console.warn('Email send failed:', e?.message || e); } catch {}
+    return { error: true, message: e?.message || 'send failed' };
+  }
 }
 
 // Templates
