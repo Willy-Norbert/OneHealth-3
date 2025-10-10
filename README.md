@@ -1,8 +1,8 @@
 # OneHealth Connect - Comprehensive Healthcare Management System
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://onehealthlineconnectsss.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://drive.google.com/drive/folders/1WF-NFJunWWYjeyWBCAkxUl7E5OwADwiU)
 [![Backend API](https://img.shields.io/badge/Backend%20API-Render-green?style=for-the-badge&logo=render)](https://onehealthconnekt.onrender.com/api-docs)
-
+[![Video Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://drive.google.com/drive/folders/1WF-NFJunWWYjeyWBCAkxUl7E5OwADwiU)
 ## Project Overview
 
 OneHealth Connect is a comprehensive digital healthcare platform designed to revolutionize healthcare access in Rwanda. The system connects patients with qualified medical professionals across multiple hospitals, providing teleconsultation services, appointment management, AI-powered health assistance, and emergency medical support.
