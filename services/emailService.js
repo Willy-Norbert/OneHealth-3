@@ -2,6 +2,8 @@ const nodemailer = require('nodemailer');
 
 // Lightweight debug logger for email flow (opt-in via EMAIL_DEBUG=true)
 const EMAIL_DEBUG = String(process.env.EMAIL_DEBUG || 'false').toLowerCase() === 'true';
+const RESEND_KEY = process.env.RESEND_API_KEY;
+const EMAIL_FALLBACK_RESEND = String(process.env.EMAIL_FALLBACK_RESEND || 'false').toLowerCase() === 'true';
 function dbg(...args) {
   if (EMAIL_DEBUG) {
     try { console.log('[email]', ...args); } catch {}
@@ -11,6 +13,29 @@ function mask(str, keep = 2) {
   if (!str || typeof str !== 'string') return '';
   if (str.length <= keep) return '*'.repeat(Math.max(0, str.length - 1)) + str.slice(-1);
   return str.slice(0, keep) + '*'.repeat(Math.max(0, str.length - keep));
+}
+
+async function sendViaResend({ from, to, subject, html, text }) {
+  if (!RESEND_KEY) return { skipped: true, reason: 'no_resend_key' };
+  const payload = { from, to: Array.isArray(to) ? to : [to], subject, html, text };
+  dbg('resend: sending', { to: (Array.isArray(to)?to:[to]).map((t)=>mask(String(t))) });
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const body = await res.json().catch(()=>({}));
+    if (!res.ok) {
+      dbg('resend: error', { status: res.status, body });
+      return { error: true, provider: 'resend', status: res.status, body };
+    }
+    dbg('resend: delivered', { id: body?.id });
+    return { provider: 'resend', id: body?.id, delivered: true };
+  } catch (e) {
+    dbg('resend: exception', { error: e?.message });
+    return { error: true, provider: 'resend', message: e?.message };
+  }
 }
 
 // Create transporter from environment variables
@@ -73,17 +98,22 @@ async function sendEmail({ to, subject, html, text }) {
   try {
     const result = await Promise.race([sendPromise, timeoutPromise]);
     // If we hit our artificial timeout, quietly succeed in best-effort mode
-    if ((result && result.timedOut) && String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') {
-      dbg('sendEmail: best-effort timeout reached', { elapsedMs: Date.now() - start });
-      return { queued: false, delivered: false, bestEffort: true };
+    if ((result && result.timedOut)) {
+      dbg('sendEmail: timeout reached', { elapsedMs: Date.now() - start });
+      if (EMAIL_FALLBACK_RESEND && RESEND_KEY) {
+        const fb = await sendViaResend({ from, to, subject, html, text });
+        if (!fb.error) return fb;
+      }
+      if (String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') return { queued: false, delivered: false, bestEffort: true };
     }
     return result;
   } catch (e) {
     // Swallow SMTP errors to avoid blocking or noisy logs in production
-    if (String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') {
-      dbg('sendEmail: error (best-effort)', { error: e?.message, elapsedMs: Date.now() - start });
-      return { queued: false, delivered: false, bestEffort: true };
+    if (EMAIL_FALLBACK_RESEND && RESEND_KEY) {
+      const fb = await sendViaResend({ from, to, subject, html, text });
+      if (!fb.error) return fb;
     }
+    if (String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') return { queued: false, delivered: false, bestEffort: true };
     // In strict mode, bubble minimal error without console noise
     dbg('sendEmail: error (strict)', { error: e?.message, elapsedMs: Date.now() - start });
     return { error: true, message: e?.message || 'send failed' };
