@@ -104,6 +104,8 @@ const userSchema = new mongoose.Schema({
   idDocumentUrl: String,
   additionalDocuments: [{ fileName: String, url: String }],
   consentTelehealth: { type: Boolean, default: true }
+  ,
+  firstLoginWelcomedAt: { type: Date }
 });
 
 // Hash password before saving

@@ -22,7 +22,7 @@ const meetingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['scheduled', 'in-progress', 'completed', 'cancelled'],
+    enum: ['scheduled', 'in-progress', 'completed', 'cancelled', 'missed'],
     default: 'scheduled',
   },
   startTime: {
@@ -31,6 +31,8 @@ const meetingSchema = new mongoose.Schema({
   endTime: {
     type: Date,
   },
+  reminderSent: { type: Boolean, default: false },
+  missedNotified: { type: Boolean, default: false },
   createdAt: {
     type: Date,
     default: Date.now,

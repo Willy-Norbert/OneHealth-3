@@ -81,6 +81,7 @@ const doctorSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
+  reminderLeadMinutes: { type: Number, default: 10 },
   rating: {
     average: { type: Number, default: 0, min: 0, max: 5 },
     count: { type: Number, default: 0 }

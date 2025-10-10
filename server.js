@@ -407,3 +407,50 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+
+// Lightweight in-process scheduler for meeting reminders and missed detection
+try {
+  const Meeting = require('./models/Meeting');
+  const { sendEmail, baseTemplate } = require('./services/emailService');
+  const { createNotification } = require('./utils/notificationService');
+  const SCHEDULER_INTERVAL_MS = parseInt(process.env.MEETING_SCHEDULER_INTERVAL_MS || '60000', 10);
+  const DEFAULT_REMINDER_MIN = parseInt(process.env.MEETING_REMINDER_MINUTES || '10', 10);
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      // Send reminders ~DEFAULT_REMINDER_MIN minutes before start
+      const soon = new Date(now.getTime() + DEFAULT_REMINDER_MIN * 60000);
+      const toRemind = await Meeting.find({ status: 'scheduled', reminderSent: false, startTime: { $lte: soon, $gte: now } }).populate(['doctor','patient']);
+      for (const m of toRemind) {
+        try {
+          const hostUrl = process.env.FRONTEND_URL || 'https://onehealthconnekt.onrender.com';
+          const meetingUrl = `${hostUrl}/meeting/${m.meeting_id}`;
+          const subject = 'Reminder: Teleconsultation starting soon';
+          const html = baseTemplate('Meeting Reminder', `<p>Your teleconsultation starts at ${new Date(m.startTime).toLocaleString()}.</p><p><a href="${meetingUrl}">Join Meeting</a></p>`);
+          if (m?.patient?.email) await sendEmail({ to: m.patient.email, subject, html });
+          if (m?.doctor?.email) await sendEmail({ to: m.doctor.email, subject, html });
+          await createNotification({ recipient: String(m.patient?._id || m.patient), type: 'appointment', message: 'Your meeting starts in ~10 minutes.', relatedEntity: { id: m._id, type: 'Appointment' } });
+          await createNotification({ recipient: String(m.doctor?._id || m.doctor), type: 'appointment', message: 'Your meeting starts in ~10 minutes.', relatedEntity: { id: m._id, type: 'Appointment' } });
+          m.reminderSent = true;
+          await m.save();
+        } catch {}
+      }
+      // Mark missed if past endTime and not started/completed/cancelled
+      const past = await Meeting.find({ status: 'scheduled', endTime: { $lt: now } }).populate(['doctor','patient']);
+      for (const m of past) {
+        m.status = 'missed';
+        await m.save();
+        if (!m.missedNotified) {
+          try {
+            await createNotification({ recipient: String(m.patient?._id || m.patient), type: 'appointment', message: 'You missed a scheduled meeting.', relatedEntity: { id: m._id, type: 'Appointment' } });
+            await createNotification({ recipient: String(m.doctor?._id || m.doctor), type: 'appointment', message: 'A scheduled meeting was missed.', relatedEntity: { id: m._id, type: 'Appointment' } });
+            m.missedNotified = true;
+            await m.save();
+          } catch {}
+        }
+      }
+    } catch (e) {
+      // ignore scheduler loop errors
+    }
+  }, SCHEDULER_INTERVAL_MS);
+} catch {}

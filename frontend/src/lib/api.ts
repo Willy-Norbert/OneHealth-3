@@ -9,7 +9,7 @@ const getApiBaseUrl = () => {
   
   // In production, use the backend URL directly
   if (process.env.NODE_ENV === 'production') {
-    return 'https://onehealthconnekt.onrender.com'
+    return 'http://localhost:5000'
   }
   
   // In development, use localhost
@@ -156,6 +156,10 @@ export const api = {
     byHospitalDepartment: (hospitalId: string, departmentId: string) => apiFetch(`/doctors/hospital/${hospitalId}/department/${departmentId}`, { method: 'GET', auth: false }),
     get: (id: string) => apiFetch(`/doctors/${id}`, { method: 'GET', auth: false }),
     create: (body: any) => apiFetch('/doctors', { method: 'POST', body: JSON.stringify(body) }),
+    mySettings: {
+      get: () => apiFetch('/doctors/settings', { method: 'GET' }),
+      update: (body: any) => apiFetch('/doctors/settings', { method: 'PUT', body: JSON.stringify(body) }),
+    },
   },
   insurance: {
     list: () => apiFetch('/insurance', { method: 'GET', auth: false }),
@@ -194,6 +198,8 @@ export const api = {
     user: (userId: string) => apiFetch(`/meetings/user/${userId}`, { method: 'GET' }),
     get: (id: string) => apiFetch(`/meetings/${id}`, { method: 'GET' }),
     create: (body: any) => apiFetch('/meetings', { method: 'POST', body: JSON.stringify(body) }),
+    reschedule: (id: string, body: { startTime: string; endTime: string; title?: string; description?: string }) =>
+      apiFetch(`/meetings/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     updateStatus: (id: string, status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled') =>
       apiFetch(`/meetings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   },

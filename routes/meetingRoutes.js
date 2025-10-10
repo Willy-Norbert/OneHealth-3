@@ -4,7 +4,8 @@ const {
   getMeeting,
   getUserMeetings,
   deleteMeeting,
-  updateMeetingStatus
+  updateMeetingStatus,
+  rescheduleMeeting
 } = require('../controllers/meetingController');
 const { generateMeetingLink } = require('../services/jitsiService');
 const Meeting = require('../models/Meeting');
@@ -243,6 +244,9 @@ router.delete('/:id', deleteMeeting);
  *         description: Not authorized to update this meeting
  */
 router.patch('/:id/status', updateMeetingStatus);
+
+// Reschedule meeting details
+router.patch('/:id', rescheduleMeeting);
 
 /**
  * @swagger

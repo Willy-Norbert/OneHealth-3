@@ -3,7 +3,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import useSWR from 'swr'
 import { api } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function MeetingsPage() {
   const { user } = useAuth()
@@ -47,26 +47,16 @@ export default function MeetingsPage() {
   }
 
   const [sched, setSched] = useState({ patient: '', start: '', end: '', title: '', description: '' })
+  const [resched, setResched] = useState<{ id: string; start: string; end: string; title: string; description: string }|null>(null)
   const [range, setRange] = useState<{from:string;to:string}>({ from: new Date(new Date().setHours(0,0,0,0)).toISOString(), to: new Date(new Date().setHours(23,59,59,999)).toISOString() })
+  const [showSettings, setShowSettings] = useState(false)
+  const [lead, setLead] = useState(10)
+  useEffect(()=>{ (async()=>{ try { const s = await api.doctors.mySettings.get() as any; const minutes = s?.data?.settings?.reminderLeadMinutes; if (typeof minutes === 'number') setLead(minutes) } catch {} })() },[])
   const { data: myPatients } = useSWR(() => `doctor-patients-${range.from}-${range.to}`, async () => {
-    // derive appointments in range with status=confirmed
-    const appts = await api.appointments.myDoctor() as any
-    const confirmed = (appts?.data?.appointments||[]).filter((a:any)=>{
-      const t = new Date(a.appointmentDate).getTime()
-      return a.status==='confirmed' && t>= new Date(range.from).getTime() && t<= new Date(range.to).getTime()
-    })
-    // unique patients with brief
-    const seen = new Set<string>()
-    const patients = [] as any[]
-    for (const a of confirmed) {
-      const p = a.patient
-      const id = p?._id || p
-      if (id && !seen.has(id)) {
-        seen.add(id)
-        patients.push({ _id: id, name: p?.name || p?.fullName || 'Patient', email: p?.email, appointmentTime: a.appointmentDate, appointmentId: a._id })
-      }
-    }
-    return { data: { patients } }
+    // Prefer API that returns doctor's patients directly
+    const res = await api.patients.myForDoctor() as any
+    const users = (res?.data?.patients || []).map((p:any)=>({ _id: p?.user?._id || p?._id, name: p?.user?.name || p?.name, email: p?.user?.email }))
+    return { data: { patients: users } }
   })
 
   return (
@@ -282,6 +272,22 @@ export default function MeetingsPage() {
                             Start Meeting
                           </button>
                         )}
+                        <button
+                          className="btn-outline btn-sm"
+                          onClick={() => {
+                            const mid = meeting.meeting_id || (meeting.link ? meeting.link.split('/').pop() : '')
+                            if (!mid) return
+                            setResched({
+                              id: mid,
+                              start: new Date(meeting.startTime).toISOString().slice(0,16),
+                              end: new Date(meeting.endTime || new Date(new Date(meeting.startTime).getTime()+30*60000)).toISOString().slice(0,16),
+                              title: meeting.title || '',
+                              description: meeting.description || ''
+                            })
+                          }}
+                        >
+                          Reschedule
+                        </button>
                         {meeting.status === 'ongoing' && (
                           <button
                             onClick={async () => {
@@ -324,16 +330,20 @@ export default function MeetingsPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Schedule New Meeting</h3>
             <p className="text-gray-600 mb-4">Create a new video consultation with a patient.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">From</label>
-                <input type="datetime-local" className="input" value={new Date(range.from).toISOString().slice(0,16)} onChange={(e)=> setRange(r=>({ ...r, from: new Date(e.target.value).toISOString() }))} />
-                <label className="text-sm text-gray-600">To</label>
-                <input type="datetime-local" className="input" value={new Date(range.to).toISOString().slice(0,16)} onChange={(e)=> setRange(r=>({ ...r, to: new Date(e.target.value).toISOString() }))} />
+              <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                <div>
+                  <label className="text-sm text-gray-600">From</label>
+                  <input type="datetime-local" className="input mt-1 w-full" value={new Date(range.from).toISOString().slice(0,16)} onChange={(e)=> setRange(r=>({ ...r, from: new Date(e.target.value).toISOString() }))} />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">To</label>
+                  <input type="datetime-local" className="input mt-1 w-full" value={new Date(range.to).toISOString().slice(0,16)} onChange={(e)=> setRange(r=>({ ...r, to: new Date(e.target.value).toISOString() }))} />
+                </div>
               </div>
               <select className="input" value={sched.patient} onChange={(e)=>setSched({...sched, patient: e.target.value})}>
                 <option value="">Select Patient</option>
                 {myPatients?.data?.patients?.map((p: any) => (
-                  <option key={p._id} value={p._id}>{p.name} — {new Date(p.appointmentTime).toLocaleString()} — {p.appointmentId}</option>
+                  <option key={p._id} value={p._id}>{p.name} ({p.email})</option>
                 ))}
               </select>
               <input className="input" type="datetime-local" value={sched.start} onChange={(e)=>setSched({...sched, start: e.target.value})} />
@@ -361,15 +371,71 @@ export default function MeetingsPage() {
               }}>Schedule Meeting</button>
             </div>
           </div>
+        {/* Reschedule modal */}
+        {resched && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-lg space-y-4">
+              <h3 className="text-lg font-semibold">Reschedule Meeting</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input className="input" type="datetime-local" value={resched.start} onChange={(e)=>setResched(v=>v?{...v, start: e.target.value }: v)} />
+                <input className="input" type="datetime-local" value={resched.end} onChange={(e)=>setResched(v=>v?{...v, end: e.target.value }: v)} />
+                <input className="input md:col-span-2" placeholder="Title" value={resched.title} onChange={(e)=>setResched(v=>v?{...v, title: e.target.value }: v)} />
+                <input className="input md:col-span-2" placeholder="Description" value={resched.description} onChange={(e)=>setResched(v=>v?{...v, description: e.target.value }: v)} />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button className="btn-outline" onClick={()=>setResched(null)}>Cancel</button>
+                <button className="btn-primary" onClick={async ()=>{
+                  try {
+                    await api.meetings.reschedule(resched.id, {
+                      startTime: new Date(resched.start).toISOString(),
+                      endTime: new Date(resched.end).toISOString(),
+                      title: resched.title,
+                      description: resched.description,
+                    })
+                    setResched(null)
+                    mutate()
+                  } catch (e) {
+                    console.error('Failed to reschedule', e)
+                  }
+                }}>Save</button>
+              </div>
+            </div>
+          </div>
+        )}
           
           <div className="card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Meeting Settings</h3>
             <p className="text-gray-600 mb-4">Configure your video consultation preferences.</p>
-            <button className="btn-outline">
+            <button className="btn-outline" onClick={()=>setShowSettings(true)}>
               Settings
             </button>
           </div>
         </div>
+        {/* Settings modal */}
+        {showSettings && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-lg space-y-4">
+              <h3 className="text-lg font-semibold">Meeting Settings</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="text-sm text-gray-600">Reminder lead time (minutes)</label>
+                  <input className="input mt-1 w-full" type="number" min={1} max={1440} value={lead} onChange={(e)=>setLead(parseInt(e.target.value||'10',10))} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button className="btn-outline" onClick={()=>setShowSettings(false)}>Cancel</button>
+                <button className="btn-primary" onClick={async ()=>{
+                  try {
+                    await api.doctors.mySettings.update({ reminderLeadMinutes: lead })
+                    setShowSettings(false)
+                  } catch (e) {
+                    console.error('Failed to save settings', e)
+                  }
+                }}>Save</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   )

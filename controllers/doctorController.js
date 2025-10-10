@@ -465,6 +465,7 @@ exports.updateMySettings = async (req, res) => {
       emailNotifications: Joi.boolean().optional(),
       inAppNotifications: Joi.boolean().optional(),
       timezone: Joi.string().optional(),
+      reminderLeadMinutes: Joi.number().integer().min(1).max(1440).optional(),
       defaultAvailability: Joi.object({
         weekdays: Joi.array().items(Joi.string().valid('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')).optional(),
         timeRanges: Joi.array().items(Joi.object({ start: Joi.string().required(), end: Joi.string().required() })).optional(),
@@ -482,7 +483,12 @@ exports.updateMySettings = async (req, res) => {
       console.warn('[PUT /doctors/settings] Doctor profile not found for user', req.user?._id)
       return res.status(404).json({ success: false, message: 'Doctor profile not found', data: null });
     }
-    doc.settings = { ...(doc.settings?.toObject?.() || doc.settings || {}), ...value };
+    // Apply general settings into doc.settings
+    const { reminderLeadMinutes, ...rest } = value;
+    doc.settings = { ...(doc.settings?.toObject?.() || doc.settings || {}), ...rest };
+    if (typeof reminderLeadMinutes === 'number') {
+      doc.reminderLeadMinutes = reminderLeadMinutes;
+    }
     await doc.save();
     return res.status(200).json({ success: true, message: 'Settings updated', data: { settings: doc.settings } });
   } catch (error) {

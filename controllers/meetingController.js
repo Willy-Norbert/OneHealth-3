@@ -4,6 +4,7 @@ const Appointment = require('../models/Appointment'); // Import Appointment mode
 const { sendEmail, baseTemplate } = require('../services/emailService');
 const Joi = require('joi');
 const crypto = require('crypto'); // For generating UUIDs
+const { createNotification } = require('../utils/notificationService');
 
 /**
  * Create a new custom meeting
@@ -321,6 +322,82 @@ exports.updateMeetingStatus = async (req, res) => {
     res.status(200).json({ status: 'success', message: 'Meeting status updated successfully', data: { meeting: updatedMeeting } });
   } catch (error) {
     console.error('Update meeting status error:', error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+/**
+ * Reschedule meeting time and details
+ * PATCH /api/meetings/:id
+ */
+exports.rescheduleMeeting = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schema = Joi.object({
+      startTime: Joi.date().required(),
+      endTime: Joi.date().required(),
+      title: Joi.string().allow(''),
+      description: Joi.string().allow(''),
+    });
+    const { error, value } = schema.validate(req.body);
+    if (error) return res.status(400).json({ status: 'error', message: error.details[0].message });
+
+    const meeting = await Meeting.findOne({ meeting_id: id }).populate(['doctor','patient']);
+    if (!meeting) return res.status(404).json({ status: 'error', message: 'Meeting not found' });
+
+    const isAuthorized = (
+      req.user._id.toString() === String(meeting.doctor?._id || meeting.doctor) ||
+      req.user._id.toString() === String(meeting.patient?._id || meeting.patient) ||
+      req.user.role === 'admin'
+    );
+    if (!isAuthorized) return res.status(403).json({ status: 'error', message: 'Not authorized to reschedule this meeting' });
+
+    meeting.startTime = new Date(value.startTime);
+    meeting.endTime = new Date(value.endTime);
+    if (value.title !== undefined) meeting.title = value.title;
+    if (value.description !== undefined) meeting.description = value.description;
+    meeting.status = 'scheduled';
+    await meeting.save();
+
+    // Emails
+    try {
+      const hostUrl = process.env.FRONTEND_URL || 'https://onehealthconnekt.onrender.com';
+      const meetingUrl = `${hostUrl}/meeting/${meeting.meeting_id}`;
+      const subject = 'Teleconsultation Meeting Rescheduled';
+      const htmlBody = `
+        <p>Your teleconsultation has been rescheduled.</p>
+        <ul>
+          <li><strong>Starts:</strong> ${new Date(meeting.startTime).toLocaleString()}</li>
+          <li><strong>Ends:</strong> ${new Date(meeting.endTime).toLocaleString()}</li>
+          <li><strong>Title:</strong> ${meeting.title || 'Teleconsultation'}</li>
+        </ul>
+        <p><a href="${meetingUrl}" style="color:#0ea5e9;">Join Meeting</a></p>
+      `;
+      if (meeting?.patient?.email) await sendEmail({ to: meeting.patient.email, subject, html: baseTemplate('Meeting Rescheduled', htmlBody) });
+      if (meeting?.doctor?.email) await sendEmail({ to: meeting.doctor.email, subject, html: baseTemplate('Meeting Rescheduled', htmlBody) });
+    } catch {}
+
+    // Notifications
+    try {
+      await createNotification({
+        recipient: String(meeting.patient?._id || meeting.patient),
+        sender: req.user._id,
+        type: 'appointment',
+        message: `Your meeting '${meeting.title || 'Teleconsultation'}' was rescheduled to ${new Date(meeting.startTime).toLocaleString()}.`,
+        relatedEntity: { id: meeting._id, type: 'Appointment' },
+      });
+      await createNotification({
+        recipient: String(meeting.doctor?._id || meeting.doctor),
+        sender: req.user._id,
+        type: 'appointment',
+        message: `Meeting '${meeting.title || 'Teleconsultation'}' with patient was rescheduled to ${new Date(meeting.startTime).toLocaleString()}.`,
+        relatedEntity: { id: meeting._id, type: 'Appointment' },
+      });
+    } catch {}
+
+    res.status(200).json({ status: 'success', message: 'Meeting rescheduled', data: { meeting } });
+  } catch (error) {
+    console.error('Reschedule meeting error:', error);
     res.status(500).json({ status: 'error', message: error.message });
   }
 };

@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { createSendToken } = require('../utils/jwt');
 const crypto = require('crypto');
 const { sendWelcomeEmail, sendOTPEmail } = require('../services/emailService');
+const { createNotification } = require('../utils/notificationService');
 
 const register = async (req, res) => {
   try {
@@ -99,6 +100,15 @@ const login = async (req, res) => {
     }
 
     
+    // Fire a welcome email/notification only on first login to dashboard
+    try {
+      if (!user.firstLoginWelcomedAt) {
+        await createNotification({ recipient: user._id, sender: user._id, type: 'user', message: `Welcome to OneHealth, ${user.name || 'User'}!`, relatedEntity: { id: user._id, type: 'User' } });
+        try { await sendWelcomeEmail(user); } catch {}
+        user.firstLoginWelcomedAt = new Date();
+        await user.save({ validateBeforeSave: false });
+      }
+    } catch {}
     createSendToken(user, 200, res);
   } catch (error) {
     console.error('Login error:', error);
