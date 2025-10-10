@@ -104,6 +104,12 @@ const allowedOrigins = [
   // Add any other production domains
 ].filter(Boolean);
 
+// Optional pattern-based CORS allowlist (e.g., all vercel.app subdomains)
+const allowedOriginPatterns = [
+  /\.vercel\.app$/i,
+  ...(process.env.CORS_ALLOW_REGEX ? [new RegExp(process.env.CORS_ALLOW_REGEX, 'i')] : []),
+];
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -114,6 +120,14 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+      // Check regex patterns (e.g., any *.vercel.app)
+      try {
+        const url = new URL(origin);
+        const host = url.host;
+        if (allowedOriginPatterns.some((re) => re.test(host))) {
+          return callback(null, true);
+        }
+      } catch {}
       
       // Log blocked origins for debugging
       console.warn('❌ Blocked by CORS:', origin);
