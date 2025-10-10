@@ -1,5 +1,18 @@
 const nodemailer = require('nodemailer');
 
+// Lightweight debug logger for email flow (opt-in via EMAIL_DEBUG=true)
+const EMAIL_DEBUG = String(process.env.EMAIL_DEBUG || 'false').toLowerCase() === 'true';
+function dbg(...args) {
+  if (EMAIL_DEBUG) {
+    try { console.log('[email]', ...args); } catch {}
+  }
+}
+function mask(str, keep = 2) {
+  if (!str || typeof str !== 'string') return '';
+  if (str.length <= keep) return '*'.repeat(Math.max(0, str.length - 1)) + str.slice(-1);
+  return str.slice(0, keep) + '*'.repeat(Math.max(0, str.length - keep));
+}
+
 // Create transporter from environment variables
 // Expected env vars:
 // SMTP_HOST, SMTP_PORT, SMTP_SECURE (true/false), SMTP_USER, SMTP_PASS, SMTP_FROM
@@ -16,6 +29,7 @@ function createTransporter() {
 
   // Use pooled transporter for better performance and connection reuse in prod
   // Add conservative timeouts to avoid blocking requests when SMTP is unreachable
+  dbg('creating transporter', { host, port, secure, user: mask(user), pool: true });
   return nodemailer.createTransport({
     host,
     port,
@@ -34,7 +48,10 @@ function createTransporter() {
 
 let transporter;
 function getTransporter() {
-  if (!transporter) transporter = createTransporter();
+  if (!transporter) {
+    dbg('initializing transporter singleton');
+    transporter = createTransporter();
+  }
   return transporter;
 }
 
@@ -45,22 +62,30 @@ async function sendEmail({ to, subject, html, text }) {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   const transporter = getTransporter();
   const timeoutMs = parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '8000', 10); // 8s
-  const sendPromise = transporter.sendMail({ from, to, subject, html, text });
+  const start = Date.now();
+  dbg('sendEmail: sending', { from: mask(from), to: Array.isArray(to) ? to.map(t=>mask(String(t))) : mask(String(to)), subject: subject ? mask(subject, 0) : '' , timeoutMs });
+  const sendPromise = transporter.sendMail({ from, to, subject, html, text }).then((info) => {
+    dbg('sendEmail: delivered', { messageId: info?.messageId, responseTimeMs: Date.now() - start });
+    return info;
+  });
   // Fail fast if SMTP is slow/unreachable to avoid blocking API responses
   const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs));
   try {
     const result = await Promise.race([sendPromise, timeoutPromise]);
     // If we hit our artificial timeout, quietly succeed in best-effort mode
     if ((result && result.timedOut) && String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') {
+      dbg('sendEmail: best-effort timeout reached', { elapsedMs: Date.now() - start });
       return { queued: false, delivered: false, bestEffort: true };
     }
     return result;
   } catch (e) {
     // Swallow SMTP errors to avoid blocking or noisy logs in production
     if (String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') {
+      dbg('sendEmail: error (best-effort)', { error: e?.message, elapsedMs: Date.now() - start });
       return { queued: false, delivered: false, bestEffort: true };
     }
     // In strict mode, bubble minimal error without console noise
+    dbg('sendEmail: error (strict)', { error: e?.message, elapsedMs: Date.now() - start });
     return { error: true, message: e?.message || 'send failed' };
   }
 }
