@@ -91,7 +91,7 @@ export default function Register() {
     policyNumber: "",
     policyHolderName: "",
     policyExpiry: "",
-    bloodGroup: "Unknown",
+    bloodGroup: "A-",
     allergies: "",
     medications: "",
     pastMedicalHistory: "",
@@ -229,7 +229,7 @@ export default function Register() {
       const { api } = await import('@/lib/api');
       console.log('Submitting registration data...');
       console.log('FormData contents:', Array.from(submitData.entries()));
-      const result = await (api as any).patients.register(submitData);
+      const result = await api.patients.register(submitData);
       console.log('Registration result:', result);
 
       setStatusKind('success');
@@ -688,7 +688,7 @@ export default function Register() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"].map((group) => (
+                      {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "A-"].map((group) => (
                         <SelectItem key={group} value={group}>
                           {group}
                         </SelectItem>

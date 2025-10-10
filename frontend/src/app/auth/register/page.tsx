@@ -101,7 +101,7 @@ export default function RegisterPage() {
       if (files.insuranceBack) formData.append('insuranceBack', files.insuranceBack)
       files.medicalFiles.forEach(f => formData.append('medicalFiles', f))
 
-      await (api as any).patients.register(formData)
+      await api.patients.register(formData)
       router.push('/dashboard')
     } catch (err: any) {
       setError(err?.message || 'Registration failed')

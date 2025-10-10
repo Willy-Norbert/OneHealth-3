@@ -117,6 +117,10 @@ export const api = {
     list: () => apiFetch('/users/patients', { method: 'GET' }),
     myForDoctor: () => apiFetch('/patients/my-patients', { method: 'GET' }),
     register: (form: FormData) => apiFetchMultipart('/patients/register', form, { auth: false }),
+  } as {
+    list: () => Promise<any>;
+    myForDoctor: () => Promise<any>;
+    register: (form: FormData) => Promise<any>;
   },
   departments: {
     list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
