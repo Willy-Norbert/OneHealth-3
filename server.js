@@ -68,7 +68,9 @@ const app = express();
 
 // Behind Render/Proxies: trust X-Forwarded-* so rate limit and IPs work
 // See: https://expressjs.com/en/guide/behind-proxies.html
-app.set('trust proxy', true);
+// Trust only the first proxy hop (Render/Ingress) to avoid permissive trust
+// See: https://expressjs.com/en/guide/behind-proxies.html
+app.set('trust proxy', 1);
 
 // Security middleware setup
 app.use(helmetConfig);
