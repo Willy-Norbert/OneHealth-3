@@ -50,10 +50,17 @@ async function sendEmail({ to, subject, html, text }) {
   const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), timeoutMs));
   try {
     const result = await Promise.race([sendPromise, timeoutPromise]);
+    // If we hit our artificial timeout, quietly succeed in best-effort mode
+    if ((result && result.timedOut) && String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') {
+      return { queued: false, delivered: false, bestEffort: true };
+    }
     return result;
   } catch (e) {
-    // Swallow SMTP errors to avoid crashing requests; log upstream callers can handle
-    try { console.warn('Email send failed:', e?.message || e); } catch {}
+    // Swallow SMTP errors to avoid blocking or noisy logs in production
+    if (String(process.env.EMAIL_BEST_EFFORT || 'true').toLowerCase() === 'true') {
+      return { queued: false, delivered: false, bestEffort: true };
+    }
+    // In strict mode, bubble minimal error without console noise
     return { error: true, message: e?.message || 'send failed' };
   }
 }
