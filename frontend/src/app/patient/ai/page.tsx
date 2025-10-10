@@ -335,7 +335,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={recs} urgency={'medium'} />
           ) }]))
           try {
-            const base =  ' http://localhost:5000'
+            const base =  ' https://onehealthconnekt.onrender.com'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -777,7 +777,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
       try {
 
-        const base =  ' http://localhost:5000'
+        const base =  ' https://onehealthconnekt.onrender.com'
 
         await fetch(`${base}/ai/chat/save`, {
 
@@ -1013,7 +1013,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
       try {
 
-        const base =  ' http://localhost:5000'
+        const base =  ' https://onehealthconnekt.onrender.com'
 
         const res = await fetch(`${base}/ai/chat/history?limit=30&conversationId=${encodeURIComponent(conversationId)}`, { credentials: 'include' })
 
@@ -1091,7 +1091,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
                 try {
 
-                  const base =  ' http://localhost:5000'
+                  const base =  ' https://onehealthconnekt.onrender.com'
 
                   await fetch(`${base}/ai/chat/conversations`, {
 
@@ -1347,7 +1347,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
       setLoading(true)
 
-      const base =  ' http://localhost:5000'
+      const base =  ' https://onehealthconnekt.onrender.com'
 
       const res = await fetch(`${base}/ai/chat/conversations`, { credentials: 'include' })
 
@@ -1379,7 +1379,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
     try {
 
-      const base =  ' http://localhost:5000'
+      const base =  ' https://onehealthconnekt.onrender.com'
 
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
 
@@ -1407,7 +1407,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
     try {
 
-      const base =  ' http://localhost:5000'
+      const base =  ' https://onehealthconnekt.onrender.com'
 
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
 

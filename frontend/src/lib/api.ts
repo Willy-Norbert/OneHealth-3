@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // In production, use the backend URL directly
   if (process.env.NODE_ENV === 'production') {
-    return 'http://localhost:5000'
+    return 'https://onehealthconnekt.onrender.com'
   }
   
   // In development, use localhost
-  return 'http://localhost:5000'
+  return 'https://onehealthconnekt.onrender.com'
 }
 
 export const API_BASE_URL = getApiBaseUrl()
