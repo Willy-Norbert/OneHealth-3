@@ -92,7 +92,7 @@ app.use(apiUsageMonitoring);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:5000',
+  'https://onehealthconnekt.onrender.com',
   'https://dashboard-onehealth.vercel.app',
   'https://onehealthconnect.onrender.com',
   'https://onehealthlineconnectsss.vercel.app',
@@ -169,7 +169,7 @@ const swaggerOptions = {
         url:
           process.env.NODE_ENV === 'production'
             ? 'https://onehealthconnect.onrender.com'
-            : ' http://localhost:5000',
+            : ' https://onehealthconnekt.onrender.com',
         description:
           process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
@@ -206,7 +206,7 @@ app.use('/hospitals', generalLimiter);
 app.use(validateInput);
 
 // API key validation (optional)
-if (process.env.API_KEYS) {
+if (process.env.API_KEYS ||'tgfl ojfl tyrt oxsv') {
   app.use(validateApiKey);
 }
 

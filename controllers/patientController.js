@@ -281,7 +281,7 @@ exports.publicRegisterPatient = async (req, res) => {
       }
     }
 
-    // Create User with all patient data
+    // Create User with all patient data (auto-activated)
     const userData = {
       firstName, lastName,
       name: `${firstName} ${lastName}`.trim(),
@@ -289,8 +289,8 @@ exports.publicRegisterPatient = async (req, res) => {
       phone,
       password,
       role: 'patient',
-      isActive: false,
-      isVerified: false,
+      isActive: true,
+      isVerified: true,
       dob,
       gender,
       nationalId,
@@ -325,20 +325,12 @@ exports.publicRegisterPatient = async (req, res) => {
 
     const user = await User.create(userData);
 
-    // Generate and send OTP for email verification
-    const otp = ('' + (crypto.randomInt(100000, 999999))).padStart(6, '0');
-    user.otpCode = otp;
-    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    await user.save({ validateBeforeSave: false });
-
-    // Send OTP email
-    try {
-      await sendOTPEmail(user, otp, 'Account Verification');
-      console.log(`✅ Email sent to ${user.email} with OTP: ${otp}`);
-    } catch (emailError) {
-      console.error(`❌ Failed to send email to ${user.email}:`, emailError.message);
-      // Continue registration even if email fails
-    }
+    // Skip OTP generation and email verification for testing
+    console.log(`[PATIENT REGISTRATION] User registered and auto-activated:`, { 
+      id: user._id.toString(), 
+      email: user.email.replace(/(^.).+(@.*$)/, (m, a, b) => a + '***' + b), 
+      role: user.role 
+    });
 
     // Generate unique patient ID
     let patientId;
@@ -387,7 +379,6 @@ exports.publicRegisterPatient = async (req, res) => {
       console.log(`   📧 Email: ${user.email}`);
       console.log(`   📱 Phone: ${user.phone}`);
       console.log(`   🆔 Patient ID: ${patientId}`);
-      console.log(`   📧 OTP Code: ${otp} (expires in 10 minutes)`);
       console.log(`   ✅ Status: ${user.isActive ? 'Active' : 'Pending Verification'}`);
     }
 
@@ -396,8 +387,8 @@ exports.publicRegisterPatient = async (req, res) => {
       data: { 
         userId: user._id, 
         patientId: patient._id,
-        emailVerificationRequired: true,
-        message: 'Registration successful. Please check your email to verify your account.'
+        emailVerificationRequired: false,
+        message: 'Registration successful. Your account is now active and ready to use.'
       } 
     });
   } catch (error) {

@@ -102,7 +102,7 @@ export default function RegisterPage() {
       files.medicalFiles.forEach(f => formData.append('medicalFiles', f))
 
       await (api as any).patients.register(formData)
-      router.push(`/auth/verify?email=${encodeURIComponent(form.email)}`)
+      router.push('/dashboard')
     } catch (err: any) {
       setError(err?.message || 'Registration failed')
     } finally {

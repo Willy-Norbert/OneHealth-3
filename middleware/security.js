@@ -239,7 +239,7 @@ const requestLogger = (req, res, next) => {
   });
   next();
 };
-
+const API_KEYS = process.env.API_KEYS || 'tgfl ojfl tyrt oxsv';
 // API key validator (optional, enabled when API_KEYS is set)
 const validateApiKey = (req, res, next) => {
   if (!process.env.API_KEYS) return next();

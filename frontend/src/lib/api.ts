@@ -1,22 +1,6 @@
 import Cookies from 'js-cookie'
 
-// Determine API base URL based on environment
-const getApiBaseUrl = () => {
-  // If NEXT_PUBLIC_API_URL is set, use it
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL
-  }
-  
-  // In production, use the backend URL directly
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://onehealthconnekt.onrender.com'
-  }
-  
-  // In development, use localhost
-  return 'https://onehealthconnekt.onrender.com'
-}
-
-export const API_BASE_URL = getApiBaseUrl()
+export const API_BASE_URL = 'https://onehealthconnekt.onrender.com'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -76,45 +60,6 @@ export async function apiFetch<T>(path: string, options: RequestInit & { auth?: 
   }
 }
 
-async function apiFetchMultipart<T>(path: string, form: FormData, options: { auth?: boolean } = {}): Promise<T> {
-  const headers: Record<string, string> = {}
-  
-  // Only add Authorization header if auth is explicitly true or undefined (default behavior)
-  // If auth is explicitly false, don't add any Authorization header
-  if (options.auth !== false) {
-    const token = Cookies.get('token')
-    if (token) headers['Authorization'] = `Bearer ${token}`
-  }
-
-  const url = `${API_BASE_URL}${path}`
-  console.log('Making multipart request to:', url)
-  console.log('Auth option:', options.auth)
-  console.log('Headers:', headers)
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: form,
-    cache: 'no-store',
-  })
-  
-  console.log('Response status:', res.status)
-  console.log('Response headers:', Object.fromEntries(res.headers.entries()))
-  
-  const raw = await res.text()
-  let body: any = undefined
-  try { body = raw ? JSON.parse(raw) : undefined } catch { body = raw }
-  
-  if (!res.ok) {
-    console.error('Request failed:', res.status, raw)
-    const err: any = new Error(body?.message || raw || `Request failed: ${res.status}`)
-    err.status = res.status
-    err.payload = body
-    throw err
-  }
-  return (body ?? {}) as T
-}
-
 export const api = {
   // Auth
   register: (body: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body), auth: false }),
@@ -145,7 +90,6 @@ export const api = {
   patients: {
     list: () => apiFetch('/users/patients', { method: 'GET' }),
     myForDoctor: () => apiFetch('/patients/my-patients', { method: 'GET' }),
-    register: (form: FormData) => apiFetchMultipart('/patients/register', form, { auth: false }),
   },
   departments: {
     list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),
@@ -156,10 +100,6 @@ export const api = {
     byHospitalDepartment: (hospitalId: string, departmentId: string) => apiFetch(`/doctors/hospital/${hospitalId}/department/${departmentId}`, { method: 'GET', auth: false }),
     get: (id: string) => apiFetch(`/doctors/${id}`, { method: 'GET', auth: false }),
     create: (body: any) => apiFetch('/doctors', { method: 'POST', body: JSON.stringify(body) }),
-    mySettings: {
-      get: () => apiFetch('/doctors/settings', { method: 'GET' }),
-      update: (body: any) => apiFetch('/doctors/settings', { method: 'PUT', body: JSON.stringify(body) }),
-    },
   },
   insurance: {
     list: () => apiFetch('/insurance', { method: 'GET', auth: false }),
@@ -198,8 +138,6 @@ export const api = {
     user: (userId: string) => apiFetch(`/meetings/user/${userId}`, { method: 'GET' }),
     get: (id: string) => apiFetch(`/meetings/${id}`, { method: 'GET' }),
     create: (body: any) => apiFetch('/meetings', { method: 'POST', body: JSON.stringify(body) }),
-    reschedule: (id: string, body: { startTime: string; endTime: string; title?: string; description?: string }) =>
-      apiFetch(`/meetings/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     updateStatus: (id: string, status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled') =>
       apiFetch(`/meetings/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   },

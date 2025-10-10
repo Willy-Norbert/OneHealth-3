@@ -234,12 +234,12 @@ export default function Register() {
 
       setStatusKind('success');
       setStatusTitle('Success');
-      setStatusMessage('Check your email to verify your account. Redirecting to verification...');
+      setStatusMessage('Registration successful! Your account is now active. Redirecting to dashboard...');
       setStatusOpen(true);
       setIsRedirecting(true);
       setTimeout(() => {
         setStatusOpen(false);
-        router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
+        router.push('/dashboard');
       }, 1200);
     } catch (err: any) {
       const msg = err?.message || "Registration failed. Please try again.";

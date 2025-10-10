@@ -3,34 +3,34 @@
 ## Current Configuration
 
 ### Backend URLs:
-- **Production**: `http://localhost:5000` ✅ (Verified working)
-- **Local**: `http://localhost:5000`
+- **Production**: `https://onehealthconnekt.onrender.com` ✅ (Verified working)
+- **Local**: `https://onehealthconnekt.onrender.com`
 
 ### Frontend API Configuration:
-- **Production**: Automatically uses `http://localhost:5000`
-- **Development**: Automatically uses `http://localhost:5000`
+- **Production**: Automatically uses `https://onehealthconnekt.onrender.com`
+- **Development**: Automatically uses `https://onehealthconnekt.onrender.com`
 - **Override**: Set `NEXT_PUBLIC_API_URL` environment variable
 
 ## Test API Calls
 
 ### Production (Vercel):
 ```javascript
-// These will call: http://localhost:5000/auth/login
+// These will call: https://onehealthconnekt.onrender.com/auth/login
 api.login({ email: 'test@example.com', password: 'password' })
-api.hospitals.list() // calls: http://localhost:5000/hospitals
+api.hospitals.list() // calls: https://onehealthconnekt.onrender.com/hospitals
 ```
 
 ### Development (Localhost):
 ```javascript
-// These will call: http://localhost:5000/auth/login
+// These will call: https://onehealthconnekt.onrender.com/auth/login
 api.login({ email: 'test@example.com', password: 'password' })
-api.hospitals.list() // calls: http://localhost:5000/hospitals
+api.hospitals.list() // calls: https://onehealthconnekt.onrender.com/hospitals
 ```
 
 ## Verification Steps
 
 1. **Check Backend is Running**:
-   - Visit: http://localhost:5000
+   - Visit: https://onehealthconnekt.onrender.com
    - Should see: "API is running..."
 
 2. **Test CORS**:
@@ -43,5 +43,5 @@ api.hospitals.list() // calls: http://localhost:5000/hospitals
    - Should allow up to 20 attempts per 15 minutes
 
 4. **Test Missing Routes**:
-   - Visit: http://localhost:5000/favicon.ico (should return 204)
-   - Visit: http://localhost:5000/pharmacy (should redirect to /pharmacies)
+   - Visit: https://onehealthconnekt.onrender.com/favicon.ico (should return 204)
+   - Visit: https://onehealthconnekt.onrender.com/pharmacy (should redirect to /pharmacies)

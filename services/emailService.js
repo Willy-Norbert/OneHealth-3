@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 
 // Lightweight debug logger for email flow (opt-in via EMAIL_DEBUG=true)
 const EMAIL_DEBUG = String(process.env.EMAIL_DEBUG || 'false').toLowerCase() === 'true';
+const SMTP_VERIFY_BEFORE_SEND = String(process.env.SMTP_VERIFY_BEFORE_SEND || 'false').toLowerCase() === 'true';
 const RESEND_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FALLBACK_RESEND = String(process.env.EMAIL_FALLBACK_RESEND || 'false').toLowerCase() === 'true';
 function dbg(...args) {
@@ -89,6 +90,15 @@ async function sendEmail({ to, subject, html, text }) {
   const timeoutMs = parseInt(process.env.EMAIL_SEND_TIMEOUT_MS || '8000', 10); // 8s
   const start = Date.now();
   dbg('sendEmail: sending', { from: mask(from), to: Array.isArray(to) ? to.map(t=>mask(String(t))) : mask(String(to)), subject: subject ? mask(subject, 0) : '' , timeoutMs });
+  if (SMTP_VERIFY_BEFORE_SEND) {
+    try {
+      dbg('sendEmail: transporter.verify start');
+      const ok = await transporter.verify();
+      dbg('sendEmail: transporter.verify result', { ok });
+    } catch (e) {
+      dbg('sendEmail: transporter.verify error', { error: e?.message });
+    }
+  }
   const sendPromise = transporter.sendMail({ from, to, subject, html, text }).then((info) => {
     dbg('sendEmail: delivered', { messageId: info?.messageId, responseTimeMs: Date.now() - start });
     return info;

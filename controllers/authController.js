@@ -18,43 +18,41 @@ const register = async (req, res) => {
       });
     }
 
-    // Create user in inactive, unverified state
+    // Create user in active, verified state (skip email verification)
     // Force role to patient on public auth/register endpoint for safety
     const newUser = await User.create({
       name,
       email,
       password,
       role: 'patient',
-      isActive: false,
-      isVerified: false,
+      isActive: true,
+      isVerified: true,
     });
 
-    // Generate OTP
-    const otp = ('' + (crypto.randomInt(100000, 999999))).padStart(6, '0');
-    newUser.otpCode = otp;
-    newUser.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    await newUser.save({ validateBeforeSave: false });
+    // Skip OTP generation and email sending for testing
+    console.log(`[REGISTRATION] User registered and auto-activated:`, { 
+      id: newUser._id.toString(), 
+      email: newUser.email.replace(/(^.).+(@.*$)/, (m, a, b) => a + '***' + b), 
+      role: newUser.role 
+    });
 
-    // Dev-only visibility for verification code (never log passwords)
-    if (process.env.NODE_ENV !== 'production') {
-      const maskEmail = (em) => em.replace(/(^.).+(@.*$)/, (m, a, b) => a + '***' + b);
-      console.log(`[DEV] Registered user:`, { id: newUser._id.toString(), email: maskEmail(newUser.email), role: newUser.role });
-      console.log(`[DEV] Email verification OTP: ${otp} (expires in 10m)`);
-    }
-
-    // Send emails
+    // Send welcome email only (no verification needed)
     try {
       await sendWelcomeEmail(newUser);
-      await sendOTPEmail(newUser, otp, 'Account Verification');
     } catch (e) {
-      // continue even if email fails, but inform client
-      console.error('Email send error:', e.message);
+      // continue even if email fails
+      console.error('Welcome email send error:', e.message);
     }
 
     res.status(201).json({
       status: 'success',
-      message: 'Registration successful. Verification code sent to email.',
-      data: { userId: newUser._id, email: newUser.email }
+      message: 'Registration successful. Account is active and ready to use.',
+      data: { 
+        userId: newUser._id, 
+        email: newUser.email,
+        emailVerificationRequired: false,
+        message: 'Registration successful. Your account is now active.'
+      }
     });
   } catch (error) {
     console.error('Registration error:', error);
