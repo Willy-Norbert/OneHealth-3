@@ -506,7 +506,7 @@ export default function AIPage() {
     const loadHistory = async () => {
       if (!conversationId) return
       try {
-        const base =  ' http://localhost:5000'
+        const base = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'
         const res = await fetch(`${base}/ai/chat/history?limit=30&conversationId=${encodeURIComponent(conversationId)}`, { credentials: 'include' })
         if (!res.ok) return
         const data = await res.json()
@@ -545,7 +545,7 @@ export default function AIPage() {
                 try { localStorage.setItem('ai_conversation_id', id) } catch {}
                 setMessages([])
                 try {
-                  const base =  ' http://localhost:5000'
+                  const base = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'
                   await fetch(`${base}/ai/chat/conversations`, {
                     method: 'POST',
                     credentials: 'include',
@@ -703,7 +703,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   const del = async (id: string) => {
     if (!confirm('Delete this conversation? This cannot be undone.')) return
     try {
-      const base =  ' http://localhost:5000'
+      const base = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         credentials: 'include'
