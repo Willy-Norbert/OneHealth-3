@@ -5,7 +5,7 @@ This is the Next.js (App Router) + TailwindCSS + TypeScript implementation for t
 Setup
 
 1. npm install
-2. Create .env.local with NEXT_PUBLIC_API_URL= http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/api
+2. Create .env.local with NEXT_PUBLIC_API_URL= https://onehealthconnekt.onrender.com/api
 3. npm run dev
 
 Notes

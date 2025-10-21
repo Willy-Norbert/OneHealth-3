@@ -6,12 +6,12 @@ export default function UsersPage() {
   const { data, mutate } = useSWR('users-admin', () => apiFetch('/users'))
 
   async function apiFetch(path: string) {
-    const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}${path}`, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, cache: 'no-store' })
+    const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}${path}`, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, cache: 'no-store' })
     return res.json()
   }
 
   const changeRole = async (id: string, role: string) => {
-    await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, body: JSON.stringify({ role }) })
+    await fetch(`${ ' https://onehealthconnekt.onrender.com'}/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` }, body: JSON.stringify({ role }) })
     mutate()
   }
 

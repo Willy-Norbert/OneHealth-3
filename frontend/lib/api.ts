@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // In production, use the backend URL directly
   if (process.env.NODE_ENV === 'production') {
-    return 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
+    return 'https://onehealthconnekt.onrender.com'
   }
   
   // In development, use localhost
-  return 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
+  return 'https://onehealthconnekt.onrender.com'
 }
 
 export const API_BASE_URL = getApiBaseUrl()

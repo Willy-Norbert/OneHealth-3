@@ -14,7 +14,7 @@ export default function DoctorAppointmentsPage() {
   const updateStatus = async (id: string, status: string) => {
     setUpdating(id)
     try {
-      await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/appointments/${id}`, {
+      await fetch(`${ ' https://onehealthconnekt.onrender.com'}/appointments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${document.cookie.split('token=')[1]?.split(';')[0]}` },
         body: JSON.stringify({ status })

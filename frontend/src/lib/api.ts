@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie'
 
-export const API_BASE_URL = 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
+export const API_BASE_URL = 'https://onehealthconnekt.onrender.com'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
