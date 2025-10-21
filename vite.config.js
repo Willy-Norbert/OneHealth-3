@@ -9,7 +9,7 @@ export default defineConfig({
     port: 8080,
     proxy: {
       '': {
-        target: ' https://onehealthconnekt.onrender.com',
+        target: ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io',
         changeOrigin: true,
       }
     }

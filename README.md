@@ -1,7 +1,7 @@
 # OneHealth Connect - Comprehensive Healthcare Management System
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://drive.google.com/drive/folders/1WF-NFJunWWYjeyWBCAkxUl7E5OwADwiU)
-[![Backend API](https://img.shields.io/badge/Backend%20API-Render-green?style=for-the-badge&logo=render)](https://onehealthconnekt.onrender.com/api-docs)
+[![Backend API](https://img.shields.io/badge/Backend%20API-Render-green?style=for-the-badge&logo=render)](http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/api-docs)
 [![Video Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://drive.google.com/drive/folders/1WF-NFJunWWYjeyWBCAkxUl7E5OwADwiU)
 ## Project Overview
 
@@ -469,10 +469,10 @@ node seed.js  # Creates realistic test data
    Configure the following environment variables:
    ```env
    # API Configuration
-   NEXT_PUBLIC_API_URL=https://onehealthconnekt.onrender.com
+   NEXT_PUBLIC_API_URL=http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io
    
    # Socket.io Configuration
-   NEXT_PUBLIC_SOCKET_URL=https://onehealthconnekt.onrender.com
+   NEXT_PUBLIC_SOCKET_URL=http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io
    
    # Feature Flags
    NEXT_PUBLIC_ENABLE_AI=true
@@ -550,8 +550,8 @@ Patient: patient1@onehealth.rw | Patient#123
 
 ### Live Application
 - **Frontend**: [https://onehealthlineconnectsss.vercel.app/](https://onehealthlineconnectsss.vercel.app/)
-- **Backend API**: [https://onehealthconnekt.onrender.com](https://onehealthconnekt.onrender.com)
-- **API Documentation**: [https://onehealthconnekt.onrender.com/api-docs](https://onehealthconnekt.onrender.com/api-docs)
+- **Backend API**: [http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io](http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io)
+- **API Documentation**: [http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/api-docs](http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/api-docs)
 
 ### Video Demonstration
 A comprehensive screen recording demonstrating all system features is available at the live application URL, showcasing:

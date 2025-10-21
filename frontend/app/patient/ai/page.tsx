@@ -63,7 +63,7 @@ export default function AIPage() {
     const cached = getCachedUserName();
     if (cached) return cached;
     try {
-      const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/me`, {
+      const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/auth/me`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -177,7 +177,7 @@ export default function AIPage() {
         setMessages(prev => ([...prev, { role: 'assistant', content: assistantBlock }]))
         // Save greeting exchange
         try {
-          const base =  ' https://onehealthconnekt.onrender.com'
+          const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
           await fetch(`${base}/ai/chat/save`, {
             method: 'POST',
             credentials: 'include',
@@ -264,7 +264,7 @@ export default function AIPage() {
         ) }]))
         // Persist failed exchange for history
         try {
-          const base =  ' https://onehealthconnekt.onrender.com'
+          const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
           await fetch(`${base}/ai/chat/save`, {
             method: 'POST',
             credentials: 'include',
@@ -289,7 +289,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={d.recommendations} urgency={d.urgencyLevel || d.urgency} />
           ) }]))
           try {
-            const base =  ' https://onehealthconnekt.onrender.com'
+            const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -312,7 +312,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={`Personalized tips (${recs.length})`} recommendations={recs} urgency={'low'} />
           ) }]))
           try {
-            const base =  ' https://onehealthconnekt.onrender.com'
+            const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -335,7 +335,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={recs} urgency={'medium'} />
           ) }]))
           try {
-            const base =  ' https://onehealthconnekt.onrender.com'
+            const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -364,7 +364,7 @@ export default function AIPage() {
         setMessages(prev => ([...prev, { role: 'assistant', content: assistantBlock }]))
         // Save mock exchange as well
         try {
-          const base =  ' https://onehealthconnekt.onrender.com'
+          const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
           await fetch(`${base}/ai/chat/save`, {
             method: 'POST',
             credentials: 'include',
@@ -388,7 +388,7 @@ export default function AIPage() {
       ) }]))
       // Persist exception exchange
       try {
-        const base =  ' https://onehealthconnekt.onrender.com'
+        const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
         await fetch(`${base}/ai/chat/save`, {
           method: 'POST',
           credentials: 'include',
@@ -506,7 +506,7 @@ export default function AIPage() {
     const loadHistory = async () => {
       if (!conversationId) return
       try {
-        const base =  ' https://onehealthconnekt.onrender.com'
+        const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
         const res = await fetch(`${base}/ai/chat/history?limit=30&conversationId=${encodeURIComponent(conversationId)}`, { credentials: 'include' })
         if (!res.ok) return
         const data = await res.json()
@@ -545,7 +545,7 @@ export default function AIPage() {
                 try { localStorage.setItem('ai_conversation_id', id) } catch {}
                 setMessages([])
                 try {
-                  const base =  ' https://onehealthconnekt.onrender.com'
+                  const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
                   await fetch(`${base}/ai/chat/conversations`, {
                     method: 'POST',
                     credentials: 'include',
@@ -673,7 +673,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   const refresh = async () => {
     try {
       setLoading(true)
-      const base =  ' https://onehealthconnekt.onrender.com'
+      const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
       const res = await fetch(`${base}/ai/chat/conversations`, { credentials: 'include' })
       if (!res.ok) return
       const data = await res.json()
@@ -689,7 +689,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
     const title = prompt('Rename conversation to:')
     if (!title) return
     try {
-      const base =  ' https://onehealthconnekt.onrender.com'
+      const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -703,7 +703,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   const del = async (id: string) => {
     if (!confirm('Delete this conversation? This cannot be undone.')) return
     try {
-      const base =  ' https://onehealthconnekt.onrender.com'
+      const base =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         credentials: 'include'

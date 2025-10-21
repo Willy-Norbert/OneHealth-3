@@ -26,7 +26,7 @@ export default function DoctorSettingsPage() {
   async function save() {
     setSaving(true)
     try {
-      const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/doctors/settings`, {
+      const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/doctors/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${require('js-cookie').get('token') || ''}` },
         body: JSON.stringify(form)

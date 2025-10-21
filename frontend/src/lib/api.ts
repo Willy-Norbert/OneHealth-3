@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie'
 
-export const API_BASE_URL = 'https://onehealthconnekt.onrender.com'
+export const API_BASE_URL = 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -60,6 +60,44 @@ export async function apiFetch<T>(path: string, options: RequestInit & { auth?: 
   }
 }
 
+async function apiFetchMultipart<T>(path: string, form: FormData, options: { auth?: boolean } = {}): Promise<T> {
+  const headers: Record<string, string> = {}
+  
+  // Only add Authorization header if auth is explicitly true or undefined (default behavior)
+  // If auth is explicitly false, don't add any Authorization header
+  if (options.auth !== false) {
+    const token = Cookies.get('token')
+    if (token) headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const url = `${API_BASE_URL}${path}`
+  console.log('Making multipart request to:', url)
+  console.log('Auth option:', options.auth)
+  console.log('Headers:', headers)
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: form,
+    cache: 'no-store',
+  })
+  
+  console.log('Response status:', res.status)
+  console.log('Response headers:', Object.fromEntries(res.headers.entries()))
+  
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('Request failed:', res.status, text)
+    throw new Error(text || `Request failed: ${res.status}`)
+  }
+  
+  try {
+    return (await res.json()) as T
+  } catch {
+    return {} as T
+  }
+}
+
 export const api = {
   // Auth
   register: (body: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body), auth: false }),
@@ -90,6 +128,7 @@ export const api = {
   patients: {
     list: () => apiFetch('/users/patients', { method: 'GET' }),
     myForDoctor: () => apiFetch('/patients/my-patients', { method: 'GET' }),
+    register: (form: FormData) => apiFetchMultipart('/patients/register', form, { auth: false }),
   },
   departments: {
     list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),

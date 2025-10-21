@@ -74,7 +74,7 @@ function LoginInner() {
           setError(null)
           try {
             const idToken = response.credential
-            const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/google`, {
+            const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/auth/google`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
             })
             if (!res.ok) throw new Error('Google login failed')
@@ -131,7 +131,7 @@ function LoginInner() {
       ;(window as any).FB.login(async (response: any) => {
           if (response.authResponse) {
             const accessToken = response.authResponse.accessToken
-            const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/facebook`, {
+            const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/auth/facebook`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accessToken })
             })
             if (!res.ok) throw new Error('Facebook login failed')
@@ -158,7 +158,7 @@ function LoginInner() {
     setError(null); setLoading(true)
     try {
       const idToken = response.tokenId
-      const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/auth/google`, {
+      const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/auth/google`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
       })
       if (!res.ok) throw new Error('Google login failed')

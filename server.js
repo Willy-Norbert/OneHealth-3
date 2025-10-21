@@ -92,7 +92,7 @@ app.use(apiUsageMonitoring);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://onehealthconnekt.onrender.com',
+  'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io',
   'https://dashboard-onehealth.vercel.app',
   'https://onehealthconnect.onrender.com',
   'https://onehealthlineconnectsss.vercel.app',
@@ -169,7 +169,7 @@ const swaggerOptions = {
         url:
           process.env.NODE_ENV === 'production'
             ? 'https://onehealthconnect.onrender.com'
-            : ' https://onehealthconnekt.onrender.com',
+            : ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io',
         description:
           process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
@@ -443,7 +443,7 @@ try {
       const toRemind = await Meeting.find({ status: 'scheduled', reminderSent: false, startTime: { $lte: soon, $gte: now } }).populate(['doctor','patient']);
       for (const m of toRemind) {
         try {
-          const hostUrl = process.env.FRONTEND_URL || 'https://onehealthconnekt.onrender.com';
+          const hostUrl = process.env.FRONTEND_URL || 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io';
           const meetingUrl = `${hostUrl}/meeting/${m.meeting_id}`;
           const subject = 'Reminder: Teleconsultation starting soon';
           const html = baseTemplate('Meeting Reminder', `<p>Your teleconsultation starts at ${new Date(m.startTime).toLocaleString()}.</p><p><a href="${meetingUrl}">Join Meeting</a></p>`);

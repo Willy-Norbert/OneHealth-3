@@ -14,7 +14,7 @@ export default function RecordsPage() {
 
   async function apiFetch(path: string) {
     const token = document.cookie.split('token=')[1]?.split(';')[0]
-    const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}${path}`, { headers: { Authorization: `Bearer ${token}` } })
     return res.json()
   }
 

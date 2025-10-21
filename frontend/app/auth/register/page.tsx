@@ -263,7 +263,7 @@ export default function Register() {
       <div className="absolute top-[30%] right-[5%] w-[400px] h-[400px] rounded-full bg-gradient-to-bl from-purple-200/20 to-transparent blur-2xl" />
       <div className="absolute bottom-[20%] left-[10%] w-[350px] h-[350px] rounded-full bg-gradient-to-tr from-blue-200/15 to-transparent blur-2xl" />
 
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-6 py-12">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 sm:px-6 py-8 sm:py-12">
         {/* Status Modal */}
         {statusOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -306,9 +306,48 @@ export default function Register() {
           </div>
         )}
         <div className="w-full max-w-6xl bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] overflow-hidden">
-          <div className="flex">
-            {/* Left Sidebar - Steps */}
-            <div className="w-[320px] bg-gradient-to-br from-gray-50/80 to-white p-8 border-r border-gray-100">
+          <div className="flex flex-col lg:flex-row">
+            {/* Mobile: Steps at top */}
+            <div className="lg:hidden bg-gradient-to-br from-gray-50/80 to-white p-4 border-b border-gray-100">
+              {/* Logo/Brand */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src="/logo.png" alt="OneHealth Connect" className="w-6 h-6 rounded-lg object-contain" />
+                  <h2 className="text-lg font-bold text-foreground">OneHealthline</h2>
+                </div>
+                <p className="text-xs text-muted-foreground">Complete the 7 steps to get started</p>
+              </div>
+
+              {/* Mobile Progress Steps */}
+              <div className="flex overflow-x-auto gap-2 pb-2">
+                {steps.map((step, index) => (
+                  <div key={step.id} className="flex-shrink-0">
+                    <div 
+                      className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-300 cursor-pointer ${
+                        currentStep > step.id || completedSteps.includes(step.id)
+                          ? "bg-primary text-white shadow-lg shadow-primary/30"
+                          : currentStep === step.id
+                          ? "bg-primary text-white shadow-lg shadow-primary/40 scale-105"
+                          : "bg-gray-200 text-gray-400"
+                      }`}
+                      onClick={() => handleStepClick(step.id)}
+                    >
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full">
+                        {currentStep > step.id || completedSteps.includes(step.id) ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <step.Icon className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span className="text-xs font-medium whitespace-nowrap">{step.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop: Left Sidebar - Steps */}
+            <div className="hidden lg:block w-[320px] bg-gradient-to-br from-gray-50/80 to-white p-8 border-r border-gray-100">
               {/* Logo/Brand */}
               <div className="mb-12">
                 <div className="flex items-center gap-2 mb-2">
@@ -376,38 +415,38 @@ export default function Register() {
             </div>
 
             {/* Right Content - Form */}
-            <div className="flex-1 p-10">
+            <div className="flex-1 p-4 sm:p-6 lg:p-10">
               {/* Header */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to OneHealthline</h1>
-                    <p className="text-muted-foreground">Complete the 7 steps to get started</p>
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2">Welcome to OneHealthline</h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">Complete the 7 steps to get started</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right hidden sm:block">
                     <p className="text-sm text-muted-foreground mb-1">Hi, Guest</p>
                   </div>
                 </div>
 
                 {/* Progress Bar with Percentage */}
-                <div className="mb-6">
+                <div className="mb-4 sm:mb-6">
                   <div className="flex justify-end mb-2">
                     <span className="text-sm font-semibold text-primary">{Math.round(progressPercentage)}%</span>
                   </div>
-                  <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-2 sm:h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
                     <div className="h-full bg-primary" style={{ width: `${progressPercentage}%` }} />
                   </div>
                 </div>
 
                 {/* Current Step Title */}
-                <h2 className="text-2xl font-semibold text-foreground mb-6">{steps[currentStep - 1].name}</h2>
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground mb-4 sm:mb-6">{steps[currentStep - 1].name}</h2>
               </div>
 
               {/* Form Content */}
-              <div className="mb-8 space-y-6">
+              <div className="mb-6 sm:mb-8 space-y-4 sm:space-y-6">
                 {currentStep === 1 && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name *</Label>
                         <Input
@@ -428,9 +467,9 @@ export default function Register() {
                           className="mt-1"
                         />
                       </div>
-        </div>
+                    </div>
         
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="email">Email *</Label>
                         <Input
@@ -453,10 +492,10 @@ export default function Register() {
                           className="mt-1"
                         />
                         <p className="text-xs text-muted-foreground mt-1">Include country code (E.164 format)</p>
-            </div>
-          </div>
+                      </div>
+                    </div>
           
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="password">Password *</Label>
                         <Input
@@ -485,7 +524,7 @@ export default function Register() {
 
                 {currentStep === 2 && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="dob">Date of Birth *</Label>
                         <Input
@@ -494,8 +533,8 @@ export default function Register() {
                           value={formData.dob}
                           onChange={(e) => updateForm("dob", e.target.value)}
                           className="mt-1"
-              />
-            </div>
+                        />
+                      </div>
                       <div>
                         <Label htmlFor="gender">Gender *</Label>
                         <Select value={formData.gender} onValueChange={(value) => updateForm("gender", value)}>
@@ -533,9 +572,9 @@ export default function Register() {
                         placeholder="Street / Cell / Village"
                         className="mt-1"
                       />
-          </div>
+                    </div>
           
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor="district">District *</Label>
                         <Input
@@ -585,9 +624,9 @@ export default function Register() {
                         placeholder="Full name"
                         className="mt-1"
                       />
-        </div>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="emergencyContactRelation">Relationship *</Label>
                         <Input
@@ -972,24 +1011,24 @@ export default function Register() {
               )}
 
               {/* Navigation Buttons */}
-              <div className="flex justify-between items-center gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
                 <Button
                   variant="ghost"
                   onClick={handlePrevious}
                   disabled={currentStep === 1 || loading}
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  <span className="sr-only">Previous</span>
+                  <span className="sm:sr-only">Previous</span>
                 </Button>
 
                 {currentStep < 7 ? (
-                  <Button onClick={handleNext} disabled={loading} className="gap-2 min-w-[120px]">
-                    Submit
+                  <Button onClick={handleNext} disabled={loading} className="gap-2 min-w-[120px] w-full sm:w-auto">
+                    Next
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <Button onClick={handleSubmit} disabled={loading} className="min-w-[140px]">
+                  <Button onClick={handleSubmit} disabled={loading} className="min-w-[140px] w-full sm:w-auto">
                     {loading ? "Submitting..." : "Submit Registration"}
                   </Button>
                 )}

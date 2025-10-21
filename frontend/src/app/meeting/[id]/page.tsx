@@ -34,8 +34,8 @@ export default function MeetingRoom() {
   const statsIntervalRef = useRef<any>(null)
   const iceRestartTimerRef = useRef<any>(null)
 
-  const API_BASE =  ' https://onehealthconnekt.onrender.com'
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL ||  ' https://onehealthconnekt.onrender.com'
+  const API_BASE =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL ||  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
 
   // Fetch meeting meta (optional, for header details)
   const { data: meetingData } = useSWR(() => (id ? `meeting-${id}` : null), () => api.meetings.get(id) as any)

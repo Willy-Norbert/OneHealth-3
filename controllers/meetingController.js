@@ -90,7 +90,7 @@ exports.createMeeting = async (req, res) => {
 
     // Send meeting invitation emails to patient and doctor (and hospital if available)
     try {
-      const hostUrl = process.env.FRONTEND_URL || ' https://onehealthconnekt.onrender.com'
+      const hostUrl = process.env.FRONTEND_URL || ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
       const meetingUrl = `${hostUrl}/meeting/${meeting_id}`
       const subject = 'Teleconsultation Meeting Invitation'
       const htmlBody = `
@@ -361,7 +361,7 @@ exports.rescheduleMeeting = async (req, res) => {
 
     // Emails
     try {
-      const hostUrl = process.env.FRONTEND_URL || 'https://onehealthconnekt.onrender.com';
+      const hostUrl = process.env.FRONTEND_URL || 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io';
       const meetingUrl = `${hostUrl}/meeting/${meeting.meeting_id}`;
       const subject = 'Teleconsultation Meeting Rescheduled';
       const htmlBody = `

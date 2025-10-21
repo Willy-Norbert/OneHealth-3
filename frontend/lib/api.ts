@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // In production, use the backend URL directly
   if (process.env.NODE_ENV === 'production') {
-    return 'https://onehealthconnekt.onrender.com'
+    return 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
   }
   
   // In development, use localhost
-  return 'https://onehealthconnekt.onrender.com'
+  return 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'
 }
 
 export const API_BASE_URL = getApiBaseUrl()
@@ -117,10 +117,6 @@ export const api = {
     list: () => apiFetch('/users/patients', { method: 'GET' }),
     myForDoctor: () => apiFetch('/patients/my-patients', { method: 'GET' }),
     register: (form: FormData) => apiFetchMultipart('/patients/register', form, { auth: false }),
-  } as {
-    list: () => Promise<any>;
-    myForDoctor: () => Promise<any>;
-    register: (form: FormData) => Promise<any>;
   },
   departments: {
     list: (q?: URLSearchParams) => apiFetch(`/departments${q ? `?${q.toString()}` : ''}`, { method: 'GET', auth: false }),

@@ -3,34 +3,34 @@
 ## Current Configuration
 
 ### Backend URLs:
-- **Production**: `https://onehealthconnekt.onrender.com` ✅ (Verified working)
-- **Local**: `https://onehealthconnekt.onrender.com`
+- **Production**: `http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io` ✅ (Verified working)
+- **Local**: `http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io`
 
 ### Frontend API Configuration:
-- **Production**: Automatically uses `https://onehealthconnekt.onrender.com`
-- **Development**: Automatically uses `https://onehealthconnekt.onrender.com`
+- **Production**: Automatically uses `http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io`
+- **Development**: Automatically uses `http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io`
 - **Override**: Set `NEXT_PUBLIC_API_URL` environment variable
 
 ## Test API Calls
 
 ### Production (Vercel):
 ```javascript
-// These will call: https://onehealthconnekt.onrender.com/auth/login
+// These will call: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/auth/login
 api.login({ email: 'test@example.com', password: 'password' })
-api.hospitals.list() // calls: https://onehealthconnekt.onrender.com/hospitals
+api.hospitals.list() // calls: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/hospitals
 ```
 
 ### Development (Localhost):
 ```javascript
-// These will call: https://onehealthconnekt.onrender.com/auth/login
+// These will call: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/auth/login
 api.login({ email: 'test@example.com', password: 'password' })
-api.hospitals.list() // calls: https://onehealthconnekt.onrender.com/hospitals
+api.hospitals.list() // calls: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/hospitals
 ```
 
 ## Verification Steps
 
 1. **Check Backend is Running**:
-   - Visit: https://onehealthconnekt.onrender.com
+   - Visit: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io
    - Should see: "API is running..."
 
 2. **Test CORS**:
@@ -43,5 +43,5 @@ api.hospitals.list() // calls: https://onehealthconnekt.onrender.com/hospitals
    - Should allow up to 20 attempts per 15 minutes
 
 4. **Test Missing Routes**:
-   - Visit: https://onehealthconnekt.onrender.com/favicon.ico (should return 204)
-   - Visit: https://onehealthconnekt.onrender.com/pharmacy (should redirect to /pharmacies)
+   - Visit: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/favicon.ico (should return 204)
+   - Visit: http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/pharmacy (should redirect to /pharmacies)

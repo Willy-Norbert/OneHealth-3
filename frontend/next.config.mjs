@@ -2,7 +2,7 @@ import bundleAnalyzer from '@next/bundle-analyzer'
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
 /** @type {import('next').NextConfig} */
-const BACKEND_URL = (process.env.BACKEND_URL || 'https://onehealthconnekt.onrender.com').trim()
+const BACKEND_URL = (process.env.BACKEND_URL || 'http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io').trim()
 const nextConfig = {
   reactStrictMode: true,
   experimental: {

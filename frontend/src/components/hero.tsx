@@ -88,7 +88,7 @@ export default function HeroSection() {
                 <div className="text-sm text-muted-foreground">Medical Tests Done For Our Patients</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-foreground mb-1">1M+</div>
+                <div className="text-4xl font-bold text-foreground mb-1">1yrs+</div>
                 <div className="text-sm text-muted-foreground">Years Of Experience The Medical Field</div>
               </div>
             </div>

@@ -8,7 +8,7 @@ export default function HospitalDoctorEditPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { data } = useSWR(() => (id ? `doctor-${id}` : null), async () => {
-    const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/doctors/${id}`, { headers: { 'Content-Type': 'application/json' }})
+    const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/doctors/${id}`, { headers: { 'Content-Type': 'application/json' }})
     if (!res.ok) throw new Error('Failed to load doctor')
     return res.json()
   })
@@ -48,7 +48,7 @@ export default function HospitalDoctorEditPage() {
         languages: String(form.languages||'').split(',').map((s:string)=>s.trim()).filter(Boolean),
         bio: form.bio,
       }
-      const res = await fetch(`${ ' https://onehealthconnekt.onrender.com'}/doctors/${id}/hospital-update`, {
+      const res = await fetch(`${ ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io'}/doctors/${id}/hospital-update`, {
         method:'PUT',
         headers:{ 'Content-Type':'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)

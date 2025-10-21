@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, ArrowRight, Check, Hospital, CreditCard, User, Calendar, FileText } from "lucide-react"
 
-const API_URL =  ' https://onehealthconnekt.onrender.com/api'
+const API_URL =  ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/api'
 
 interface Hospital {
   _id: string

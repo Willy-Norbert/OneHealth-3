@@ -22,7 +22,7 @@ export default function HospitalEmergencyPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${ " https://onehealthconnekt.onrender.com"}/emergencies`, {
+        const res = await fetch(`${ " http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io"}/emergencies`, {
           credentials: "include",
           headers: { "Content-Type": "application/json" }
         });
