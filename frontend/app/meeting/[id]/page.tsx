@@ -89,6 +89,44 @@ export default function MeetingRoom() {
       value: originalWebSocket.prototype,
       writable: false
     })
+    
+    // Override WebSocket constructor at the global level
+    const originalWebSocketConstructor = window.WebSocket
+    window.WebSocket = function(url: string | URL, protocols?: string | string[]) {
+      let cleanUrl = url.toString()
+      
+      // Aggressive URL cleaning
+      cleanUrl = cleanUrl.replace(/%20/g, '')
+      cleanUrl = cleanUrl.replace(/^wss:\/\/%20/, 'wss://')
+      cleanUrl = cleanUrl.replace(/^ws:\/\/%20/, 'ws://')
+      cleanUrl = cleanUrl.replace(/^wss:\/\/https/, 'wss://')
+      cleanUrl = cleanUrl.replace(/^ws:\/\/http/, 'ws://')
+      
+      // Socket.IO specific fixes
+      if (cleanUrl.includes('socket.io')) {
+        if (cleanUrl.includes('https://') && !cleanUrl.startsWith('wss://')) {
+          cleanUrl = cleanUrl.replace('https://', 'wss://')
+        } else if (cleanUrl.includes('http://') && !cleanUrl.startsWith('ws://')) {
+          cleanUrl = cleanUrl.replace('http://', 'ws://')
+        }
+      }
+      
+      console.log('🔧 Global WebSocket override:', url.toString(), '->', cleanUrl)
+      
+      return new originalWebSocketConstructor(cleanUrl, protocols)
+    } as any
+    
+    // Copy all properties from original WebSocket
+    Object.setPrototypeOf(window.WebSocket, originalWebSocketConstructor)
+    Object.defineProperty(window.WebSocket, 'prototype', {
+      value: originalWebSocketConstructor.prototype,
+      writable: false
+    })
+    
+    // Override the WebSocket constructor on the global object
+    if (typeof globalThis !== 'undefined') {
+      globalThis.WebSocket = window.WebSocket
+    }
   }
   
   // Ensure proper WebSocket URL format
@@ -429,6 +467,11 @@ export default function MeetingRoom() {
           writable: false
         })
         
+        // Override the global io function as well
+        if (typeof window !== 'undefined') {
+          (window as any).io = cleanIo
+        }
+        
         const io = cleanIo
         const socketURL = getSocketURL()
         console.log('🔌 Connecting to socket:', socketURL)
@@ -498,6 +541,36 @@ export default function MeetingRoom() {
               return originalConnect.call(this, cleanUrl, opts)
             }
           }
+        }
+        
+        // Override Socket.IO's internal WebSocket creation
+        const originalSocketIoModule = await import('socket.io-client')
+        if (originalSocketIoModule.io) {
+          const originalIoFunction = originalSocketIoModule.io
+          
+          // Override the io function globally
+          Object.defineProperty(window, 'io', {
+            value: function(url: string, opts?: any) {
+              let cleanUrl = url.toString()
+              cleanUrl = cleanUrl.replace(/%20/g, '')
+              cleanUrl = cleanUrl.replace(/^wss:\/\/%20/, 'wss://')
+              cleanUrl = cleanUrl.replace(/^ws:\/\/%20/, 'ws://')
+              cleanUrl = cleanUrl.replace(/^wss:\/\/https/, 'wss://')
+              cleanUrl = cleanUrl.replace(/^ws:\/\/http/, 'ws://')
+              
+              console.log('🔧 Global Socket.IO override:', url, '->', cleanUrl)
+              return originalIoFunction(cleanUrl, opts)
+            },
+            writable: true,
+            configurable: true
+          })
+          
+          // Copy all properties
+          Object.setPrototypeOf((window as any).io, originalIoFunction)
+          Object.defineProperty((window as any).io, 'prototype', {
+            value: originalIoFunction.prototype,
+            writable: false
+          })
         }
         
         const socket = io(socketURL, { 
