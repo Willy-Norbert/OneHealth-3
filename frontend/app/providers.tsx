@@ -4,6 +4,7 @@ import { NotificationsProvider } from '@/context/NotificationsContext'
 import { NetworkProvider } from '@/context/NetworkContext'
 import { ThemeProvider } from 'next-themes'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import PersistentMeetingIndicator from '../components/meeting/PersistentMeetingIndicator'
 import Image from 'next/image'
 import { useEffect } from 'react'
 
@@ -43,6 +44,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               
               <div className="relative z-10">
                 {children}
+                <PersistentMeetingIndicator />
               </div>
             </NotificationsProvider>
           </AuthProvider>

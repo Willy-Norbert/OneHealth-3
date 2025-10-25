@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // In production, use the backend URL directly
   if (process.env.NODE_ENV === 'production') {
-    return 'https://onehealthconnekt.onrender.com'
+    return 'http://localhost:5000'
   }
   
   // In development, use localhost
-  return 'https://onehealthconnekt.onrender.com'
+  return 'http://localhost:5000'
 }
 
 export const API_BASE_URL = getApiBaseUrl()
@@ -162,7 +162,16 @@ export const api = {
     create: (body: any) => apiFetch('/emergencies', { method: 'POST', body: JSON.stringify(body) }),
   },
   meetings: {
-    user: (userId: string) => apiFetch(`/meetings/user/${userId}`, { method: 'GET' }),
+    user: (userId: string, params?: Record<string, string | number>) => {
+      const sp = new URLSearchParams()
+      if (params) Object.entries(params).forEach(([k, v]) => sp.append(k, String(v)))
+      const qs = sp.toString()
+      return apiFetch(`/meetings/user/${userId}${qs ? `?${qs}` : ''}`, { method: 'GET' })
+    },
+    getUserMeetings: (userId: string, status?: string) => {
+      const params = status ? { status } : undefined
+      return api.meetings.user(userId, params)
+    },
     get: (id: string) => apiFetch(`/meetings/${id}`, { method: 'GET' }),
     create: (body: any) => apiFetch('/meetings', { method: 'POST', body: JSON.stringify(body) }),
     updateStatus: (id: string, status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled') =>

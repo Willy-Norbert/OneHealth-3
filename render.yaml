@@ -7,7 +7,7 @@ services:
     startCommand: NODE_ENV=production next start -p $PORT
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value:  http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io/api
+        value:  http://localhost:5000/api
       - key: NODE_ENV
         value: production
       - key: NODE_OPTIONS

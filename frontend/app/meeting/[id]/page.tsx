@@ -34,8 +34,8 @@ export default function MeetingRoom() {
   const statsIntervalRef = useRef<any>(null)
   const iceRestartTimerRef = useRef<any>(null)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://onehealthconnekt.onrender.com'
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'https://onehealthconnekt.onrender.com'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000'
 
   // Fetch meeting meta (optional, for header details)
   const { data: meetingData } = useSWR(() => (id ? `meeting-${id}` : null), () => api.meetings.get(id) as any)
@@ -214,6 +214,16 @@ export default function MeetingRoom() {
   if (!token) { setStatus('Not authenticated'); return }
   if (!id) { setStatus('Invalid meeting'); return }
   setMediaError(null)
+
+  // Set meeting status to in-progress when component mounts
+  const setMeetingInProgress = async () => {
+    try {
+      await api.meetings.updateStatus(id, 'in-progress')
+    } catch (error) {
+      console.warn('Failed to update meeting status:', error)
+    }
+  }
+  setMeetingInProgress()
 
     let isMakingOffer = false
     let ignoreOffer = false
@@ -418,6 +428,16 @@ export default function MeetingRoom() {
       localStreamRef.current = null
       screenStreamRef.current = null
       clearRemoteMedia()
+      
+      // Set meeting status to completed when leaving
+      const setMeetingCompleted = async () => {
+        try {
+          await api.meetings.updateStatus(id, 'completed')
+        } catch (error) {
+          console.warn('Failed to update meeting status on leave:', error)
+        }
+      }
+      setMeetingCompleted()
     }
   }, [WS_URL, id, token, defaultIce, dynamicIce])
 
@@ -485,12 +505,30 @@ export default function MeetingRoom() {
     setTimeout(() => setStatus('Ready'), 1500)
   }
 
-  return (
-    <AppShell
-      menu={[
+  // Dynamic menu based on user role
+  const getMenuItems = () => {
+    if (user?.role === 'doctor') {
+      return [
         { href: '/doctor', label: 'Overview' },
         { href: '/doctor/meetings', label: 'Teleconsultations' },
-      ]}
+      ]
+    } else if (user?.role === 'patient') {
+      return [
+        { href: '/patient', label: 'Dashboard' },
+        { href: '/patient/appointments', label: 'My Appointments' },
+      ]
+    } else if (user?.role === 'admin') {
+      return [
+        { href: '/admin', label: 'Admin Dashboard' },
+        { href: '/admin/meetings', label: 'All Meetings' },
+      ]
+    }
+    return []
+  }
+
+  return (
+    <AppShell
+      menu={getMenuItems()}
     >
       <div className="relative -m-6 p-6 bg-gradient-to-br from-blue-50 via-white to-emerald-50 min-h-[calc(100vh-4rem)]">
         {mediaError && (

@@ -4,7 +4,7 @@
 
 ### Base Configuration
 ```javascript
-const API_BASE_URL = ' http://jk4k84k0so8g4ggg4oow4kcs.69.62.122.202.sslip.io';
+const API_BASE_URL = ' http://localhost:5000';
 const getAuthHeaders = () => ({
   'Authorization': `Bearer ${localStorage.getItem('token')}`,
   'Content-Type': 'application/json'
