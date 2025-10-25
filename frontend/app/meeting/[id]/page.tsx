@@ -37,9 +37,9 @@ export default function MeetingRoom() {
   const statsIntervalRef = useRef<any>(null)
   const iceRestartTimerRef = useRef<any>(null)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
   // Force clean WebSocket URL - completely override any environment variables
-  const WS_URL = 'http://localhost:5000'
+  const WS_URL = 'https://api.onehealthline.com'
   
   // Override any malformed environment variables
   if (typeof window !== 'undefined') {
@@ -50,7 +50,7 @@ export default function MeetingRoom() {
   // Ensure proper WebSocket URL format
   const getSocketURL = () => {
     // Force clean URL - ignore any environment variables
-    let url = 'http://localhost:5000'
+    let url = 'https://api.onehealthline.com'
     
     // Additional safety: clean any potential malformed URLs
     url = url.replace(/%20/g, '')
@@ -362,7 +362,7 @@ export default function MeetingRoom() {
         
         // Force override any malformed environment variables
         const originalEnv = process.env.NEXT_PUBLIC_WS_URL
-        process.env.NEXT_PUBLIC_WS_URL = 'http://localhost:5000'
+        process.env.NEXT_PUBLIC_WS_URL = 'https://api.onehealthline.com'
         
         // Clean up any existing socket connections first
         if (socketRef.current) {

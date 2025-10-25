@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie'
 
-export const API_BASE_URL = 'http://localhost:5000'
+export const API_BASE_URL = 'https://api.onehealthline.com'
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
