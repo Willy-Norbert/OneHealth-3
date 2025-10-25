@@ -21,6 +21,9 @@ export default function MeetingRoom() {
   const [micOn, setMicOn] = useState(true)
   const [camOn, setCamOn] = useState(true)
   const [screenOn, setScreenOn] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'poor' | 'disconnected'>('connecting')
+  const [userMessages, setUserMessages] = useState<Array<{id: string, type: 'info' | 'success' | 'warning' | 'error', message: string, timestamp: number}>>([])
+  const [meetingDuration, setMeetingDuration] = useState(0)
 
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -35,7 +38,97 @@ export default function MeetingRoom() {
   const iceRestartTimerRef = useRef<any>(null)
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-  const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000'
+  // Force clean WebSocket URL - completely override any environment variables
+  const WS_URL = 'http://localhost:5000'
+  
+  // Override any malformed environment variables
+  if (typeof window !== 'undefined') {
+    // Clear any cached malformed URLs
+    delete (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_WS_URL
+  }
+  
+  // Ensure proper WebSocket URL format
+  const getSocketURL = () => {
+    // Force clean URL - ignore any environment variables
+    let url = 'http://localhost:5000'
+    
+    // Additional safety: clean any potential malformed URLs
+    url = url.replace(/%20/g, '')
+    url = url.replace(/^ws:\/\/%20/, 'ws://')
+    url = url.replace(/^http:\/\/%20/, 'http://')
+    url = url.replace(/^ws:\/\/http/, 'ws://')
+    url = url.replace(/^http:\/\/http/, 'http://')
+    url = url.replace(/^ws:\/\/%20http/, 'ws://')
+    url = url.replace(/^http:\/\/%20http/, 'http://')
+    
+    // Ensure it starts with http:// (not ws://)
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://' + url
+    }
+    
+    console.log('🔧 Forced clean WebSocket URL:', url)
+    console.log('🔍 Original WS_URL:', WS_URL)
+    console.log('🔍 Environment WS_URL:', process.env.NEXT_PUBLIC_WS_URL)
+    return url
+  }
+
+  // Helper functions for user experience
+  const addUserMessage = (type: 'info' | 'success' | 'warning' | 'error', message: string) => {
+    const id = Date.now().toString()
+    setUserMessages(prev => [...prev.slice(-4), { id, type, message, timestamp: Date.now() }])
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      setUserMessages(prev => prev.filter(msg => msg.id !== id))
+    }, 5000)
+  }
+
+  // Google Meet-style notifications
+  const notifyUserJoined = (userName: string) => {
+    addUserMessage('success', `👋 ${userName} joined the meeting`)
+  }
+
+  const notifyUserLeft = (userName: string) => {
+    addUserMessage('info', `👋 ${userName} left the meeting`)
+  }
+
+  const notifyConnectionIssue = (issue: string) => {
+    addUserMessage('warning', `⚠️ ${issue}`)
+  }
+
+  const notifyReconnecting = () => {
+    addUserMessage('info', '🔄 Reconnecting...')
+  }
+
+  const updateConnectionStatus = (status: 'connecting' | 'connected' | 'poor' | 'disconnected') => {
+    setConnectionStatus(status)
+    
+    switch (status) {
+      case 'connected':
+        addUserMessage('success', '✅ Connected to meeting')
+        break
+      case 'connecting':
+        addUserMessage('info', '🔄 Connecting to meeting...')
+        break
+      case 'poor':
+        addUserMessage('warning', '⚠️ Poor connection detected')
+        break
+      case 'disconnected':
+        addUserMessage('error', '❌ Connection lost')
+        break
+    }
+  }
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`
+  }
 
   // Fetch meeting meta (optional, for header details)
   const { data: meetingData } = useSWR(() => (id ? `meeting-${id}` : null), () => api.meetings.get(id) as any)
@@ -183,7 +276,12 @@ export default function MeetingRoom() {
     // Attach local tracks only once
     if (!localStreamRef.current) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        // Add timeout to prevent hanging
+        const mediaPromise = navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Media access timeout')), 10000)
+        )
+        const stream = await Promise.race([mediaPromise, timeoutPromise]) as MediaStream
         localStreamRef.current = stream
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
       } catch (err) {
@@ -219,8 +317,19 @@ export default function MeetingRoom() {
   const setMeetingInProgress = async () => {
     try {
       await api.meetings.updateStatus(id, 'in-progress')
+      addUserMessage('success', '🎉 Meeting started successfully')
+      
+      // Start duration tracking
+      const startTime = Date.now()
+      const interval = setInterval(() => {
+        setMeetingDuration(Math.floor((Date.now() - startTime) / 1000))
+      }, 1000)
+      
+      // Store interval reference for cleanup
+      statsIntervalRef.current = interval
     } catch (error) {
       console.warn('Failed to update meeting status:', error)
+      addUserMessage('error', '❌ Failed to start meeting')
     }
   }
   setMeetingInProgress()
@@ -246,7 +355,22 @@ export default function MeetingRoom() {
           console.warn('TURN fetch failed, using default STUN only')
         }
         const { io } = await import('socket.io-client')
-        const socket = io(WS_URL, { 
+        const socketURL = getSocketURL()
+        console.log('🔌 Connecting to socket:', socketURL)
+        console.log('🔍 Environment WS_URL:', process.env.NEXT_PUBLIC_WS_URL)
+        console.log('🔍 Final socketURL:', socketURL)
+        
+        // Force override any malformed environment variables
+        const originalEnv = process.env.NEXT_PUBLIC_WS_URL
+        process.env.NEXT_PUBLIC_WS_URL = 'http://localhost:5000'
+        
+        // Clean up any existing socket connections first
+        if (socketRef.current) {
+          socketRef.current.disconnect()
+          socketRef.current = null
+        }
+
+        const socket = io(socketURL, { 
           auth: { token },
           transports: ['websocket', 'polling'],
           upgrade: true,
@@ -254,18 +378,38 @@ export default function MeetingRoom() {
           timeout: 20000,
           forceNew: true,
           reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000
+          reconnectionAttempts: 3,
+          reconnectionDelay: 2000,
+          reconnectionDelayMax: 10000,
+          // Force proper URL construction
+          autoConnect: true,
+          multiplex: false,
+          // Prevent multiple connections
+          withCredentials: false
         })
 
         socket.on('connect_error', (error) => {
           console.error('[Socket] Connection error:', error)
           setStatus('Connection failed. Retrying...')
+          addUserMessage('error', '❌ Connection failed. Retrying...')
         })
+
+        socket.on('connect', () => {
+          console.log('✅ Socket connected successfully')
+          console.log('🔗 Socket connected to:', socketURL)
+          console.log('🔗 Socket transport:', socket.io.engine.transport.name)
+          console.log('🔗 Socket ID:', socket.id)
+          setStatus('Connected')
+          addUserMessage('success', '✅ Connected to meeting server')
+          
+          // Validate the connection is using the correct URL
+          console.log('🔍 Socket connection validated successfully')
+        })
+
         socket.on('disconnect', (reason) => {
-          console.log('[Socket] Disconnected:', reason)
-          setStatus('Connection lost. Reconnecting...')
+          console.log('❌ Socket disconnected:', reason)
+          setStatus('Disconnected')
+          addUserMessage('warning', '⚠️ Connection lost. Reconnecting...')
         })
         socket.on('reconnect', async (attemptNumber) => {
           console.log('[Socket] Reconnected after', attemptNumber, 'attempts')
@@ -537,6 +681,31 @@ export default function MeetingRoom() {
         {iceWarning && (
           <div className="alert alert-warning mb-4">{iceWarning}</div>
         )}
+        
+        {/* Google Meet-style Notifications */}
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {userMessages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`px-4 py-3 rounded-lg shadow-lg border-l-4 transition-all duration-300 ${
+                msg.type === 'success' ? 'bg-green-50 border-green-400 text-green-800' :
+                msg.type === 'warning' ? 'bg-yellow-50 border-yellow-400 text-yellow-800' :
+                msg.type === 'error' ? 'bg-red-50 border-red-400 text-red-800' :
+                'bg-blue-50 border-blue-400 text-blue-800'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{msg.message}</span>
+                <button
+                  onClick={() => setUserMessages(prev => prev.filter(m => m.id !== msg.id))}
+                  className="ml-2 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
         <div className="mx-auto max-w-7xl space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -642,8 +811,8 @@ export default function MeetingRoom() {
                 <div className="p-4 max-h-[50vh] overflow-auto">
                   {participants.length ? (
                     <div className="space-y-2">
-                      {participants.map((p) => (
-                        <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                      {participants.map((p, index) => (
+                        <div key={`${p.id}-${index}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
                           <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center font-semibold">
                             {(p.name || p.id).charAt(0).toUpperCase()}
                           </div>
