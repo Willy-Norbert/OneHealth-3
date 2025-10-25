@@ -101,7 +101,38 @@ export default function RegisterPage() {
       if (files.insuranceBack) formData.append('insuranceBack', files.insuranceBack)
       files.medicalFiles.forEach(f => formData.append('medicalFiles', f))
 
-      await api.patients.register(formData)
+      console.log('🔍 API object:', api)
+      console.log('🔍 API patients:', api.patients)
+      console.log('🔍 API patients register:', (api.patients as any)?.register)
+      console.log('🔍 FormData:', formData)
+      
+      // Always use direct fetch since API structure is not working
+      console.log('⚠️ Using direct fetch for registration')
+      const isProduction = typeof window !== 'undefined' && 
+        (window.location.hostname === 'www.onehealthline.com' || window.location.hostname === 'onehealthline.com')
+      const apiUrl = isProduction 
+        ? 'https://api.onehealthline.com' 
+        : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
+      
+      console.log('🔍 Using API URL:', apiUrl)
+      console.log('🔍 FormData entries:', Array.from(formData.entries()))
+      
+      const response = await fetch(`${apiUrl}/patients/register`, {
+        method: 'POST',
+        body: formData,
+      })
+      
+      console.log('🔍 Response status:', response.status)
+      console.log('🔍 Response headers:', response.headers)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Registration failed:', errorText)
+        throw new Error(errorText || 'Registration failed')
+      }
+      
+      const result = await response.json()
+      console.log('✅ Registration successful:', result)
       router.push('/dashboard')
     } catch (err: any) {
       setError(err?.message || 'Registration failed')

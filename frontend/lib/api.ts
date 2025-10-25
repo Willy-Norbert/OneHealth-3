@@ -7,13 +7,13 @@ const getApiBaseUrl = () => {
     return process.env.NEXT_PUBLIC_API_URL
   }
   
-  // In production, use the backend URL directly
+  // In production, use the production API URL
   if (process.env.NODE_ENV === 'production') {
     return 'https://api.onehealthline.com'
   }
   
   // In development, use localhost
-  return 'https://api.onehealthline.com'
+  return 'http://localhost:5000'
 }
 
 export const API_BASE_URL = getApiBaseUrl()

@@ -37,9 +37,16 @@ export default function MeetingRoom() {
   const statsIntervalRef = useRef<any>(null)
   const iceRestartTimerRef = useRef<any>(null)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
-  // Force clean WebSocket URL - completely override any environment variables
-  const WS_URL = 'https://api.onehealthline.com'
+  // Detect production vs development environment
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname === 'www.onehealthline.com' || window.location.hostname === 'onehealthline.com')
+  const API_BASE = isProduction 
+    ? 'https://api.onehealthline.com' 
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
+  
+  const WS_URL = isProduction 
+    ? 'https://api.onehealthline.com' 
+    : 'http://localhost:5000'
   
   // Override any malformed environment variables
   if (typeof window !== 'undefined') {
@@ -49,24 +56,31 @@ export default function MeetingRoom() {
   
   // Ensure proper WebSocket URL format
   const getSocketURL = () => {
-    // Force clean URL - ignore any environment variables
-    let url = 'https://api.onehealthline.com'
+    // Use the detected URL (production or development)
+    let url = WS_URL
     
     // Additional safety: clean any potential malformed URLs
     url = url.replace(/%20/g, '')
     url = url.replace(/^ws:\/\/%20/, 'ws://')
     url = url.replace(/^http:\/\/%20/, 'http://')
+    url = url.replace(/^https:\/\/%20/, 'https://')
     url = url.replace(/^ws:\/\/http/, 'ws://')
+    url = url.replace(/^ws:\/\/https/, 'wss://')
     url = url.replace(/^http:\/\/http/, 'http://')
+    url = url.replace(/^http:\/\/https/, 'https://')
     url = url.replace(/^ws:\/\/%20http/, 'ws://')
+    url = url.replace(/^ws:\/\/%20https/, 'wss://')
     url = url.replace(/^http:\/\/%20http/, 'http://')
+    url = url.replace(/^http:\/\/%20https/, 'https://')
     
-    // Ensure it starts with http:// (not ws://)
+    // Ensure it starts with http:// or https:// (not ws://)
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'http://' + url
+      url = (isProduction ? 'https://' : 'http://') + url
     }
     
-    console.log('🔧 Forced clean WebSocket URL:', url)
+    console.log('🔧 Cleaned WebSocket URL:', url)
+    console.log('🔍 Is Production:', isProduction)
+    console.log('🔍 Hostname:', typeof window !== 'undefined' ? window.location.hostname : 'server-side')
     console.log('🔍 Original WS_URL:', WS_URL)
     console.log('🔍 Environment WS_URL:', process.env.NEXT_PUBLIC_WS_URL)
     return url
@@ -362,7 +376,7 @@ export default function MeetingRoom() {
         
         // Force override any malformed environment variables
         const originalEnv = process.env.NEXT_PUBLIC_WS_URL
-        process.env.NEXT_PUBLIC_WS_URL = 'https://api.onehealthline.com'
+        process.env.NEXT_PUBLIC_WS_URL = 'http://localhost:5000'
         
         // Clean up any existing socket connections first
         if (socketRef.current) {
@@ -390,6 +404,8 @@ export default function MeetingRoom() {
 
         socket.on('connect_error', (error) => {
           console.error('[Socket] Connection error:', error)
+          console.error('[Socket] Attempted URL:', socketURL)
+          console.error('[Socket] Is Production:', isProduction)
           setStatus('Connection failed. Retrying...')
           addUserMessage('error', '❌ Connection failed. Retrying...')
         })

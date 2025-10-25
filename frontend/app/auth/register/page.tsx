@@ -1038,7 +1038,7 @@ export default function Register() {
               <div className="mt-8 text-center">
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
-                  <a href="/auth/login" className="text-primary hover:underline font-medium">
+                  <a href="/a/login" className="text-primary hover:underline font-medium">
                     Log in
                   </a>
                 </p>

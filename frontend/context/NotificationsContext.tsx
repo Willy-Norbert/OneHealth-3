@@ -37,7 +37,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       const id = setInterval(fetchNotes, 10000)
       // Setup socket for real-time notifications
       try {
-        const s = io( ' https://api.onehealthline.com', {
+        const s = io( ' http://localhost:5000', {
           transports: ['websocket'],
           auth: { token }
         })
