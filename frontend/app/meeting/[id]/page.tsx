@@ -56,6 +56,39 @@ export default function MeetingRoom() {
     // Completely disable the problematic environment variable
     process.env.NEXT_PUBLIC_WS_URL = undefined
     delete process.env.NEXT_PUBLIC_WS_URL
+    
+    // Global WebSocket URL interceptor to catch ALL malformed URLs
+    const originalWebSocket = window.WebSocket
+    window.WebSocket = function(url: string | URL, protocols?: string | string[]) {
+      let cleanUrl = url.toString()
+      
+      // Clean malformed URLs
+      cleanUrl = cleanUrl.replace(/%20/g, '')
+      cleanUrl = cleanUrl.replace(/^wss:\/\/%20/, 'wss://')
+      cleanUrl = cleanUrl.replace(/^ws:\/\/%20/, 'ws://')
+      cleanUrl = cleanUrl.replace(/^wss:\/\/https/, 'wss://')
+      cleanUrl = cleanUrl.replace(/^ws:\/\/http/, 'ws://')
+      
+      // If it's a Socket.IO URL, ensure it uses the correct protocol
+      if (cleanUrl.includes('socket.io')) {
+        if (cleanUrl.includes('https://') && !cleanUrl.startsWith('wss://')) {
+          cleanUrl = cleanUrl.replace('https://', 'wss://')
+        } else if (cleanUrl.includes('http://') && !cleanUrl.startsWith('ws://')) {
+          cleanUrl = cleanUrl.replace('http://', 'ws://')
+        }
+      }
+      
+      console.log('🔧 WebSocket URL interceptor:', url.toString(), '->', cleanUrl)
+      
+      return new originalWebSocket(cleanUrl, protocols)
+    } as any
+    
+    // Copy static properties
+    Object.setPrototypeOf(window.WebSocket, originalWebSocket)
+    Object.defineProperty(window.WebSocket, 'prototype', {
+      value: originalWebSocket.prototype,
+      writable: false
+    })
   }
   
   // Ensure proper WebSocket URL format
@@ -372,7 +405,31 @@ export default function MeetingRoom() {
         } catch (e) {
           console.warn('TURN fetch failed, using default STUN only')
         }
-        const { io } = await import('socket.io-client')
+        // Override Socket.IO import to ensure clean URLs
+        const socketIoModule = await import('socket.io-client')
+        const originalSocketIo = socketIoModule.io
+        
+        // Override the io function to always use clean URLs
+        const cleanIo = function(url: string, opts?: any) {
+          let cleanUrl = url.toString()
+          cleanUrl = cleanUrl.replace(/%20/g, '')
+          cleanUrl = cleanUrl.replace(/^wss:\/\/%20/, 'wss://')
+          cleanUrl = cleanUrl.replace(/^ws:\/\/%20/, 'ws://')
+          cleanUrl = cleanUrl.replace(/^wss:\/\/https/, 'wss://')
+          cleanUrl = cleanUrl.replace(/^ws:\/\/http/, 'ws://')
+          
+          console.log('🔧 Socket.IO import override:', url, '->', cleanUrl)
+          return originalSocketIo(cleanUrl, opts)
+        }
+        
+        // Copy all properties from original io
+        Object.setPrototypeOf(cleanIo, originalSocketIo)
+        Object.defineProperty(cleanIo, 'prototype', {
+          value: originalSocketIo.prototype,
+          writable: false
+        })
+        
+        const io = cleanIo
         const socketURL = getSocketURL()
         console.log('🔌 Connecting to socket:', socketURL)
         console.log('🔍 Environment WS_URL:', process.env.NEXT_PUBLIC_WS_URL)
@@ -399,14 +456,47 @@ export default function MeetingRoom() {
         }
 
         // Override Socket.IO URL construction to prevent malformed URLs
-        const originalIo = (window as any).io
-        if (originalIo) {
-          const originalConnect = originalIo.prototype.connect
-          originalIo.prototype.connect = function(url: string, opts: any) {
-            // Force clean URL
-            const cleanUrl = url.replace(/%20/g, '').replace(/^wss:\/\/%20/, 'wss://').replace(/^ws:\/\/%20/, 'ws://')
-            console.log('🔧 Socket.IO URL override:', url, '->', cleanUrl)
-            return originalConnect.call(this, cleanUrl, opts)
+        const windowIo = (window as any).io
+        if (windowIo) {
+          // Override the Manager constructor
+          const originalManager = (windowIo as any).Manager
+          if (originalManager) {
+            (windowIo as any).Manager = function(uri: string, opts: any) {
+              // Force clean URL
+              let cleanUri = uri.toString()
+              cleanUri = cleanUri.replace(/%20/g, '')
+              cleanUri = cleanUri.replace(/^wss:\/\/%20/, 'wss://')
+              cleanUri = cleanUri.replace(/^ws:\/\/%20/, 'ws://')
+              cleanUri = cleanUri.replace(/^wss:\/\/https/, 'wss://')
+              cleanUri = cleanUri.replace(/^ws:\/\/http/, 'ws://')
+              
+              console.log('🔧 Socket.IO Manager URL override:', uri, '->', cleanUri)
+              return new originalManager(cleanUri, opts)
+            }
+            
+            // Copy static properties
+            Object.setPrototypeOf((windowIo as any).Manager, originalManager)
+            Object.defineProperty((windowIo as any).Manager, 'prototype', {
+              value: originalManager.prototype,
+              writable: false
+            })
+          }
+          
+          // Override the connect method
+          const originalConnect = windowIo.prototype?.connect
+          if (originalConnect) {
+            windowIo.prototype.connect = function(url: string, opts: any) {
+              // Force clean URL
+              let cleanUrl = url.toString()
+              cleanUrl = cleanUrl.replace(/%20/g, '')
+              cleanUrl = cleanUrl.replace(/^wss:\/\/%20/, 'wss://')
+              cleanUrl = cleanUrl.replace(/^ws:\/\/%20/, 'ws://')
+              cleanUrl = cleanUrl.replace(/^wss:\/\/https/, 'wss://')
+              cleanUrl = cleanUrl.replace(/^ws:\/\/http/, 'ws://')
+              
+              console.log('🔧 Socket.IO connect URL override:', url, '->', cleanUrl)
+              return originalConnect.call(this, cleanUrl, opts)
+            }
           }
         }
         
