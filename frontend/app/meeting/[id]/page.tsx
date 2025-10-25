@@ -42,16 +42,20 @@ export default function MeetingRoom() {
     (window.location.hostname === 'www.onehealthline.com' || window.location.hostname === 'onehealthline.com')
   const API_BASE = isProduction 
     ? 'https://api.onehealthline.com' 
-    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
+    : (process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com')
   
   const WS_URL = isProduction 
     ? 'https://api.onehealthline.com' 
-    : 'http://localhost:5000'
+    : 'https://api.onehealthline.com'
   
   // Override any malformed environment variables
   if (typeof window !== 'undefined') {
     // Clear any cached malformed URLs
     delete (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_WS_URL
+    
+    // Completely disable the problematic environment variable
+    process.env.NEXT_PUBLIC_WS_URL = undefined
+    delete process.env.NEXT_PUBLIC_WS_URL
   }
   
   // Ensure proper WebSocket URL format
@@ -376,14 +380,36 @@ export default function MeetingRoom() {
         
         // Force override any malformed environment variables
         const originalEnv = process.env.NEXT_PUBLIC_WS_URL
-        process.env.NEXT_PUBLIC_WS_URL = 'http://localhost:5000'
+        process.env.NEXT_PUBLIC_WS_URL = socketURL
         
         // Clean up any existing socket connections first
         if (socketRef.current) {
           socketRef.current.disconnect()
           socketRef.current = null
         }
+        
+        // Disconnect any existing Socket.IO connections globally
+        if (typeof window !== 'undefined' && (window as any).io) {
+          const existingSockets = (window as any).io.sockets || []
+          existingSockets.forEach((socket: any) => {
+            if (socket && socket.disconnect) {
+              socket.disconnect()
+            }
+          })
+        }
 
+        // Override Socket.IO URL construction to prevent malformed URLs
+        const originalIo = (window as any).io
+        if (originalIo) {
+          const originalConnect = originalIo.prototype.connect
+          originalIo.prototype.connect = function(url: string, opts: any) {
+            // Force clean URL
+            const cleanUrl = url.replace(/%20/g, '').replace(/^wss:\/\/%20/, 'wss://').replace(/^ws:\/\/%20/, 'ws://')
+            console.log('🔧 Socket.IO URL override:', url, '->', cleanUrl)
+            return originalConnect.call(this, cleanUrl, opts)
+          }
+        }
+        
         const socket = io(socketURL, { 
           auth: { token },
           transports: ['websocket', 'polling'],

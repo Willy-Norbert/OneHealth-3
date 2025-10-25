@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
   }
   
   // In development, use localhost
-  return 'http://localhost:5000'
+  return 'https://api.onehealthline.com'
 }
 
 export const API_BASE_URL = getApiBaseUrl()
