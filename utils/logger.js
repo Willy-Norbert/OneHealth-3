@@ -126,6 +126,20 @@ const auditLogger = winston.createLogger({
   ]
 });
 
+// HTTP request logger (file-only, no console output to avoid flooding terminal)
+const httpRequestLogger = winston.createLogger({
+  level: 'http',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: path.join(__dirname, '../logs/combined.log')
+    })
+  ]
+});
+
 // Helper functions for structured logging
 const logRequest = (req, res, responseTime) => {
   const logData = {
@@ -140,10 +154,12 @@ const logRequest = (req, res, responseTime) => {
     timestamp: new Date().toISOString()
   };
 
+  // Only log errors to console, successful requests only to file (to avoid flooding terminal)
   if (res.statusCode >= 400) {
     logger.warn('HTTP Request Error', logData);
   } else {
-    logger.http('HTTP Request', logData);
+    // Log successful requests to file only, not console
+    httpRequestLogger.http('HTTP Request', logData);
   }
 };
 

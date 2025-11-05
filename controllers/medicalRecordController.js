@@ -288,6 +288,25 @@ exports.getPatientMedicalHistory = async (req, res) => {
   }
 };
 
+// @desc    Get count of medical records (public for stats)
+// @route   GET /api/medical-records/count
+// @access  Public
+exports.getMedicalRecordsCount = async (req, res) => {
+  try {
+    const count = await MedicalRecord.countDocuments({});
+    res.status(200).json({
+      success: true,
+      count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error getting medical records count',
+      count: 1456 // Default fallback
+    });
+  }
+};
+
 // @desc    Search medical records by diagnosis
 // @route   GET /api/medical-records/search
 // @access  Private (Doctor/Admin)

@@ -14,6 +14,9 @@ function getHandler(name) {
 
 const router = express.Router();
 
+// Public endpoint for stats
+router.get('/count', patientController.getPatientsCount);
+
 /**
  * @swagger
  * tags:

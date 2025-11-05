@@ -1,6 +1,7 @@
 const express = require('express');
 const { protect, restrictTo } = require('../middleware/auth');
 const { getHospitalId, ensureHospitalLink } = require('../middleware/hospitalMiddleware');
+const hospitalController = require('../controllers/hospitalController');
 const {
   getAllHospitals,
   getHospital,
@@ -10,10 +11,14 @@ const {
   approveHospital,
   getHospitalDoctors,
   createHospitalDoctor,
-  getHospitalAppointments
-} = require('../controllers/hospitalController');
+  getHospitalAppointments,
+  getHospitalsCount
+} = hospitalController;
 
 const router = express.Router();
+
+// Public endpoint for stats
+router.get('/count', getHospitalsCount);
 
 /**
  * @swagger
@@ -352,6 +357,11 @@ router.patch('/:id/approve', protect, restrictTo('admin'), approveHospital);
 // Doctors
 router.get('/:id/doctors', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalDoctors);
 router.post('/:id/doctors', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), createHospitalDoctor);
+
+// Appointments
+router.get('/:id/appointments', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalAppointments);
+
+module.exports = router;
 
 // Appointments
 router.get('/:id/appointments', protect, getHospitalId, ensureHospitalLink, restrictTo('admin','hospital'), getHospitalAppointments);

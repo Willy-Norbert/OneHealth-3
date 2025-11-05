@@ -139,14 +139,15 @@ const compressionConfig = compression({
 });
 
 // Request size limiter
+// Request size limiter - increased for file uploads
 const requestSizeLimiter = (req, res, next) => {
   const contentLength = parseInt(req.headers['content-length'] || '0');
-  const maxSize = 10 * 1024 * 1024; // 10MB
+  const maxSize = 50 * 1024 * 1024; // 50MB (increased from 10MB for file uploads)
 
   if (contentLength > maxSize) {
     return res.status(413).json({
       status: 'error',
-      message: 'Request entity too large. Maximum size is 10MB.'
+      message: `Request entity too large. Maximum size is ${maxSize / (1024 * 1024)}MB.`
     });
   }
   next();

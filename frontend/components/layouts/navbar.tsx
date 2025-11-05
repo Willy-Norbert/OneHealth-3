@@ -3,19 +3,60 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { useLanguage } from '@/contexts/LanguageContext'
 import { ThemeToggleButton } from "../common/ThemeToggleButton"
 import LanguageSwitcher from "../LanguageSwitcher"
+import { MedicalTexture } from "../ui/MedicalTexture"
 
 export default function Navbar() {
   const { t } = useLanguage()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      
+      // Show navbar when scrolling down past 200px
+      if (currentScrollY > 200 && currentScrollY > lastScrollY) {
+        setIsVisible(true)
+      } 
+      // Hide navbar when at top
+      else if (currentScrollY < 100) {
+        setIsVisible(false)
+      }
+      
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY])
+
+  // Show navbar initially
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(true)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
-    <header className="sticky top-0 z-50 p-4">
+    <AnimatePresence>
+      {isVisible && (
+        <motion.header 
+          className="fixed top-0 left-0 right-0 z-50 p-4"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
       <div className="container mx-auto px-4">
-        <div className="bg-gradient-to-r from-green-100 via-green-50 to-white rounded-2xl shadow-lg border border-green-200 p-4 backdrop-blur-sm dark:from-green-900/30 dark:via-green-800/20 dark:to-gray-800 dark:border-green-600">
+        <div className="bg-gradient-to-r from-green-100 via-green-50 to-emerald-50 rounded-2xl shadow-lg border border-green-200 p-4 backdrop-blur-sm dark:from-green-900/30 dark:via-green-800/20 dark:to-gray-800 dark:border-green-600 relative overflow-hidden">
+          <MedicalTexture pattern="hospital" opacity={0.03} className="text-emerald-600 dark:hidden" />
           <div className="flex items-center justify-between h-12">
             <Link href="/" className="flex items-center space-x-2">
               <img src="/irabaruta-logo.png" alt="irabaruta logo" width={80} height={80} />
@@ -52,8 +93,7 @@ export default function Navbar() {
               <ThemeToggleButton />
               <Button 
                 variant="ghost" 
-                size="icon" 
-                className="md:hidden dark:text-gray-100 dark:hover:bg-gray-800"
+                className="md:hidden dark:text-gray-100 dark:hover:bg-gray-800 w-10 h-10 p-0"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 <Menu className="h-6 w-6" />
@@ -117,6 +157,8 @@ export default function Navbar() {
           )}
         </div>
       </div>
-    </header>
+    </motion.header>
+      )}
+    </AnimatePresence>
   )
 }

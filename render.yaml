@@ -7,7 +7,7 @@ services:
     startCommand: NODE_ENV=production next start -p $PORT
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value:  https://api.onehealthline.com/api
+        value:  http://localhost:5000/api
       - key: NODE_ENV
         value: production
       - key: NODE_OPTIONS

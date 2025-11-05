@@ -1,3 +1,5 @@
+import { MedicalTexture } from "@/components/ui/MedicalTexture"
+
 export const metadata = {
   title: 'OneHealthline Connect',
   description: 'Modern healthcare platform with patient, doctor, hospital dashboards',
@@ -6,7 +8,8 @@ export const metadata = {
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-20 border-b bg-white/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b bg-emerald-50/95 backdrop-blur relative overflow-hidden">
+        <MedicalTexture pattern="hospital" opacity={0.03} className="text-emerald-600" />
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 text-gray-900 font-semibold">
             <img src="/logo.png" alt="OneHealthline" className="h-8 w-8" />
@@ -32,5 +35,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+
+
+
 
 

@@ -92,7 +92,7 @@ app.use(apiUsageMonitoring);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://api.onehealthline.com',
+  'http://localhost:5000',
   'https://dashboard-onehealth.vercel.app',
   'https://onehealthconnect.onrender.com',
   'https://onehealthlineconnectsss.vercel.app',
@@ -148,9 +148,9 @@ app.use(
   })
 );
 
-// Body parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Body parser - increased limits for file uploads
+app.use(express.json({ limit: '50mb' })); // Increased from 10mb to 50mb
+app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Added limit for urlencoded
 
 // Cookie parser
 app.use(cookieParser());
@@ -169,7 +169,7 @@ const swaggerOptions = {
         url:
           process.env.NODE_ENV === 'production'
             ? 'https://onehealthconnect.onrender.com'
-            : ' https://api.onehealthline.com',
+            : ' http://localhost:5000',
         description:
           process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
       },
@@ -443,7 +443,7 @@ try {
       const toRemind = await Meeting.find({ status: 'scheduled', reminderSent: false, startTime: { $lte: soon, $gte: now } }).populate(['doctor','patient']);
       for (const m of toRemind) {
         try {
-          const hostUrl = process.env.FRONTEND_URL || 'https://api.onehealthline.com';
+          const hostUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
           const meetingUrl = `${hostUrl}/meeting/${m.meeting_id}`;
           const subject = 'Reminder: Teleconsultation starting soon';
           const html = baseTemplate('Meeting Reminder', `<p>Your teleconsultation starts at ${new Date(m.startTime).toLocaleString()}.</p><p><a href="${meetingUrl}">Join Meeting</a></p>`);

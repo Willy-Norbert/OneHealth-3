@@ -37,9 +37,16 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       const id = setInterval(fetchNotes, 10000)
       // Setup socket for real-time notifications
       try {
-        const s = io( ' https://api.onehealthline.com', {
-          transports: ['websocket'],
-          auth: { token }
+        // Get API base URL from environment or default to localhost
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+        // Remove any leading/trailing spaces and ensure proper URL format
+        const socketUrl = API_BASE_URL.trim().replace(/\/$/, '')
+        const s = io(socketUrl, {
+          transports: ['websocket', 'polling'],
+          auth: { token },
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000
         })
         s.on('connect', () => setSocket(s))
         s.on('notification:new', (payload: any) => {

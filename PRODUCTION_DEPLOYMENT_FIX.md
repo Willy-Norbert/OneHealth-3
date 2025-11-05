@@ -21,13 +21,13 @@
 Set these environment variables in your Vercel dashboard:
 
 ```bash
-NEXT_PUBLIC_API_URL=https://api.onehealthline.com
-BACKEND_URL=https://api.onehealthline.com
+NEXT_PUBLIC_API_URL=http://localhost:5000
+BACKEND_URL=http://localhost:5000
 ```
 
 **OR** leave them empty to use the automatic detection:
-- Production: `https://api.onehealthline.com`
-- Development: `https://api.onehealthline.com`
+- Production: `http://localhost:5000`
+- Development: `http://localhost:5000`
 
 #### For Render Deployment (Backend)
 Set these environment variables in your Render dashboard:
@@ -44,21 +44,21 @@ AUTH_RATE_LIMIT_MAX=20
 1. **CORS**: The backend now properly allows requests from your Vercel domain
 2. **Rate Limiting**: More reasonable limits that won't block legitimate users
 3. **Direct API Calls**: Frontend calls backend directly (no proxy needed)
-   - Production: `https://api.onehealthline.com/auth/login`
-   - Development: `https://api.onehealthline.com/auth/login`
+   - Production: `http://localhost:5000/auth/login`
+   - Development: `http://localhost:5000/auth/login`
 4. **Missing Routes**: Added fallback routes for common 404 errors
 
 ## Testing
 
 ### Local Development
 - Frontend: `http://localhost:3000`
-- Backend: `https://api.onehealthline.com`
-- API calls go directly to backend (`https://api.onehealthline.com/auth/login`)
+- Backend: `http://localhost:5000`
+- API calls go directly to backend (`http://localhost:5000/auth/login`)
 
 ### Production
 - Frontend: `https://onehealthlineconnectsss.vercel.app`
-- Backend: `https://api.onehealthline.com`
-- API calls go directly to backend (`https://api.onehealthline.com/auth/login`)
+- Backend: `http://localhost:5000`
+- API calls go directly to backend (`http://localhost:5000/auth/login`)
 
 ## Deployment Steps
 

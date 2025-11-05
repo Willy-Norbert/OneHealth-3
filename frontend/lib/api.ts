@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // In production, use the production API URL
   if (process.env.NODE_ENV === 'production') {
-    return 'https://api.onehealthline.com'
+    return 'http://localhost:5000'
   }
   
   // In development, use localhost
-  return 'https://api.onehealthline.com'
+  return 'http://localhost:5000'
 }
 
 export const API_BASE_URL = getApiBaseUrl()
@@ -54,20 +54,42 @@ export async function apiFetch<T>(path: string, options: RequestInit & { auth?: 
 }
 
 async function apiFetchMultipart<T>(path: string, form: FormData, options: { auth?: boolean } = {}): Promise<T> {
+  console.log('📤 [API] Starting multipart request...');
+  console.log('   Path:', path);
+  console.log('   API Base URL:', API_BASE_URL);
+  
   const headers: Record<string, string> = {}
   
   // Only add Authorization header if auth is explicitly true or undefined (default behavior)
   // If auth is explicitly false, don't add any Authorization header
   if (options.auth !== false) {
     const token = Cookies.get('token')
-    if (token) headers['Authorization'] = `Bearer ${token}`
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+      console.log('   Auth: Token present (length:', token.length, ')');
+    } else {
+      console.log('   Auth: No token found');
+    }
+  } else {
+    console.log('   Auth: Disabled (auth: false)');
   }
 
   const url = `${API_BASE_URL}${path}`
-  console.log('Making multipart request to:', url)
-  console.log('Auth option:', options.auth)
-  console.log('Headers:', headers)
+  console.log('🌐 [API] Making multipart request to:', url)
+  console.log('   Method: POST');
+  console.log('   Headers:', headers);
+  
+  // Log FormData entries (without file contents)
+  console.log('   FormData entries:');
+  for (const [key, value] of form.entries()) {
+    if (value instanceof File) {
+      console.log(`     ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+    } else {
+      console.log(`     ${key}: ${String(value).substring(0, 100)}${String(value).length > 100 ? '...' : ''}`);
+    }
+  }
 
+  try {
   const res = await fetch(url, {
     method: 'POST',
     headers,
@@ -75,26 +97,41 @@ async function apiFetchMultipart<T>(path: string, form: FormData, options: { aut
     cache: 'no-store',
   })
   
-  console.log('Response status:', res.status)
-  console.log('Response headers:', Object.fromEntries(res.headers.entries()))
+    console.log('📥 [API] Response received');
+    console.log('   Status:', res.status, res.statusText);
+    console.log('   Status OK:', res.ok);
+    console.log('   Response headers:', Object.fromEntries(res.headers.entries()));
   
   if (!res.ok) {
     const text = await res.text()
-    console.error('Request failed:', res.status, text)
+      console.error('❌ [API] Request failed!');
+      console.error('   Status:', res.status);
+      console.error('   Response body:', text);
+      console.error('   Response length:', text.length);
     throw new Error(text || `Request failed: ${res.status}`)
   }
-  try { return (await res.json()) as T } catch { return {} as T }
+    
+    const json = await res.json() as T
+    console.log('✅ [API] Request successful!');
+    console.log('   Response data:', json);
+    return json
+  } catch (error) {
+    console.error('❌ [API] Fetch error:', error);
+    throw error;
+  }
 }
 
 export const api = {
   // Auth
-  register: (body: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body), auth: false }),
-  login: (body: any) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body), auth: false }),
-  verifyOtp: (body: any) => apiFetch('/auth/verify-otp', { method: 'POST', body: JSON.stringify(body), auth: false }),
-  resendOtp: (body: any) => apiFetch('/auth/resend-otp', { method: 'POST', body: JSON.stringify(body), auth: false }),
-  forgotPassword: (body: any) => apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
-  resetPassword: (body: any) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
-  me: () => apiFetch('/auth/me', { method: 'GET' }),
+  auth: {
+    register: (body: any) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body), auth: false }),
+    login: (body: any) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body), auth: false }),
+    verifyOtp: (body: any) => apiFetch('/auth/verify-otp', { method: 'POST', body: JSON.stringify(body), auth: false }),
+    resendOtp: (body: any) => apiFetch('/auth/resend-otp', { method: 'POST', body: JSON.stringify(body), auth: false }),
+    forgotPassword: (body: any) => apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
+    resetPassword: (body: any) => apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body), auth: false }),
+    me: () => apiFetch('/auth/me', { method: 'GET' }),
+  },
 
   // Users
   users: {
@@ -218,6 +255,13 @@ export const api = {
     prescriptionHelper: (body: any) => apiFetch('/ai/prescription-helper', { method: 'POST', body: JSON.stringify(body) }),
     referralSupport: (body: any) => apiFetch('/ai/referral-support', { method: 'POST', body: JSON.stringify(body) }),
     healthTips: (body: any) => apiFetch('/ai/health-tips', { method: 'POST', body: JSON.stringify(body) }),
+    generalChat: (body: any) => apiFetch('/ai/chat-general', { method: 'POST', body: JSON.stringify(body) }),
+    saveMessages: (body: any) => apiFetch('/ai/chat/save', { method: 'POST', body: JSON.stringify(body) }),
+    getHistory: (params?: any) => apiFetch(`/ai/chat/history${params ? `?${new URLSearchParams(params).toString()}` : ''}`, { method: 'GET' }),
+    listConversations: () => apiFetch('/ai/chat/conversations', { method: 'GET' }),
+    createConversation: (body: any) => apiFetch('/ai/chat/conversations', { method: 'POST', body: JSON.stringify(body) }),
+    renameConversation: (id: string, body: any) => apiFetch(`/ai/chat/conversations/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    deleteConversation: (id: string) => apiFetch(`/ai/chat/conversations/${id}`, { method: 'DELETE' }),
   },
   notifications: {
     list: () => apiFetch('/notifications', { method: 'GET' }),

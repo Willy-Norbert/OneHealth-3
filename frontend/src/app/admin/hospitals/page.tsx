@@ -6,7 +6,7 @@ export default function AdminHospitalsPage() {
 
   async function apiFetch(path: string, init?: RequestInit) {
     const token = document.cookie.split('token=')[1]?.split(';')[0]
-    const res = await fetch(`${ ' https://api.onehealthline.com'}${path}`, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${ ' http://localhost:5000'}${path}`, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } })
     return res.json()
   }
   const approve = async (id: string, isApproved: boolean) => {

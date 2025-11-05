@@ -111,7 +111,7 @@ export default function RegisterPage() {
       const isProduction = typeof window !== 'undefined' && 
         (window.location.hostname === 'www.onehealthline.com' || window.location.hostname === 'onehealthline.com')
       const apiUrl = isProduction 
-        ? 'https://api.onehealthline.com' 
+        ? 'http://localhost:5000' 
         : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
       
       console.log('🔍 Using API URL:', apiUrl)

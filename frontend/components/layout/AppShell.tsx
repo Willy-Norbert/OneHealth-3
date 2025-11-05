@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import HealthSpinner from '@/components/ui/HealthSpinner'
 import { useRouter } from 'next/navigation'
+import { MedicalTexture } from '@/components/ui/MedicalTexture'
 
 export function AppShell({ children, menu }: { children: React.ReactNode, menu?: { href: string; label: string }[] }) {
   const { user, logout, loading: authLoading } = useAuth() as any
@@ -144,7 +145,8 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu?:
                   )}
                 </button>
                 {notifOpen && (
-                  <div className="absolute right-0 z-40 mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-xl">
+                  <div className="absolute right-0 z-40 mt-2 w-80 rounded-xl border border-emerald-200 bg-emerald-50/98 backdrop-blur-sm shadow-xl relative overflow-hidden">
+                    <MedicalTexture pattern="healthcare" opacity={0.04} className="text-emerald-600" />
                     <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                       <div className="text-sm font-semibold text-gray-900">Notifications</div>
                       <div className="flex items-center gap-3">
@@ -188,7 +190,8 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu?:
                   })()}
                 </button>
                 {userMenuOpen && (
-                <div className="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl">
+                <div className="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-emerald-200 bg-emerald-50/98 backdrop-blur-sm shadow-xl relative overflow-hidden">
+                  <MedicalTexture pattern="medical-cross" opacity={0.04} className="text-emerald-600" />
                   <div className="py-1">
                     <Link href="/" onClick={()=>setUserMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Home</Link>
                     <Link href="/patient/profile" onClick={()=>setUserMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Profile</Link>
@@ -231,12 +234,17 @@ export function AppShell({ children, menu }: { children: React.ReactNode, menu?:
 // Loading overlay displayed above when logging out
 export function LoadingOverlay() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-50/80 backdrop-blur-sm relative">
+      <MedicalTexture pattern="medical-cross" opacity={0.05} className="text-emerald-600" />
       <div className="flex flex-col items-center">
         <Image src="/logo.png" alt="Loading" width={96} height={96} className="h-24 w-24 animate-pulse" />
         <p className="mt-3 text-sm text-gray-600">Loading…</p>
       </div>
     </div>
+  )
+}
+
+
   )
 }
 

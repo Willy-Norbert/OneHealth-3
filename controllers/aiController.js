@@ -131,18 +131,32 @@ exports.symptomChecker = async (req, res) => {
     // AI enrichment via Gemini
     let aiInsights = null;
     try {
+      console.log('🤖 [SYMPTOM CHECKER] Calling Gemini for AI insights...');
       const schema = '{ "risk_level": "string", "possible_conditions": ["string"], "recommendations": ["string"], "specialists": ["string"], "urgency": "low|moderate|high" }';
-      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} Analyze symptoms: ${JSON.stringify({ symptoms, severity, duration, age, existingConditions })}. Provide medical insights but emphasize this is not a diagnosis.`;
+      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} 
+
+User reported symptoms: ${Array.isArray(symptoms) ? symptoms.join(', ') : symptoms}
+Severity: ${severity || 'not specified'}
+Duration: ${duration || 'not specified'}
+Age: ${age || 'not specified'}
+Existing conditions: ${existingConditions?.join(', ') || 'none'}
+
+Please analyze these symptoms and provide helpful medical insights. This is NOT a diagnosis - provide educational information and recommendations. Be helpful and specific to the symptoms mentioned.`;
       aiInsights = await generateJSON(promptText, schema);
+      console.log('✅ [SYMPTOM CHECKER] AI insights received:', aiInsights);
     } catch (e) {
-      console.error('AI analysis error:', e.message);
+      console.error('❌ [SYMPTOM CHECKER] AI analysis error:', e.message);
+      console.error('   Error stack:', e.stack);
       aiInsights = { note: 'AI analysis unavailable' };
     }
 
-    res.status(200).json({
-      success: true,
-      message: t(lang, 'Symptom analysis completed', 'Isesengura ry\'ibimenyetso rirarangiye'),
-      data: {
+    console.log('📤 [SYMPTOM CHECKER] Sending response...');
+    console.log('   Analysis Results:', analysisResults.length);
+    console.log('   Urgency Level:', highestUrgency);
+    console.log('   Recommendations:', recommendations.length);
+    console.log('   AI Insights:', aiInsights ? 'Present' : 'Missing');
+    
+    const responseData = {
         analysis: analysisResults,
         urgencyLevel: highestUrgency,
         recommendations,
@@ -150,9 +164,28 @@ exports.symptomChecker = async (req, res) => {
         nearbyDoctors,
         aiInsights,
         disclaimer: t(lang, 'This is not a medical diagnosis. Please consult a healthcare professional for proper medical advice.', 'Ibi si ibisubizo by\'ubuvuzi. Nyamuneka bagisha inama umukozi w\'ubuzima kubyerekeye inama nyayo z\'ubuvuzi.')
-      }
+    };
+    
+    console.log('✅ [SYMPTOM CHECKER] Response data prepared');
+    console.log('🔍 ============================================');
+    console.log('🔍 [SYMPTOM CHECKER] Request Completed');
+    console.log('🔍 ============================================\n');
+    
+    res.status(200).json({
+      success: true,
+      message: t(lang, 'Symptom analysis completed', 'Isesengura ry\'ibimenyetso rirarangiye'),
+      data: responseData
     });
   } catch (error) {
+    console.error('\n❌ ============================================');
+    console.error('❌ [SYMPTOM CHECKER] Error');
+    console.error('❌ ============================================');
+    console.error('❌ Error type:', error?.constructor?.name || 'Unknown');
+    console.error('❌ Error message:', error?.message);
+    console.error('❌ Error stack:', error?.stack);
+    console.error('❌ Full error:', error);
+    console.error('❌ ============================================\n');
+    
     res.status(500).json({
       success: false,
       message: t(req.body?.lang||'en', 'Error processing symptom analysis', 'Ikosa ribaye mu isesengura ry\'ibimenyetso'),
@@ -235,11 +268,22 @@ exports.appointmentBookingHelper = async (req, res) => {
     // AI enrichment via Gemini
     let aiGuidance = null;
     try {
+      console.log('🤖 [APPOINTMENT HELPER] Calling Gemini for AI guidance...');
       const schema = '{ "recommended_specializations": ["string"], "priority": "low|normal|high", "advice": ["string"] }';
-      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} Suggest booking guidance for: symptoms: ${symptoms?.join(',') || 'none'}, location: ${preferredLocation}, insurance: ${insuranceType}, urgency: ${urgency}`;
+      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} 
+
+User needs appointment booking guidance:
+- Symptoms: ${symptoms?.join(', ') || 'none'}
+- Preferred location: ${preferredLocation || 'not specified'}
+- Insurance type: ${insuranceType || 'not specified'}
+- Urgency level: ${urgency || 'normal'}
+
+Provide helpful, specific recommendations for which type of doctor/specialist would be most appropriate and practical booking advice.`;
       aiGuidance = await generateJSON(promptText, schema);
+      console.log('✅ [APPOINTMENT HELPER] AI guidance received:', aiGuidance);
     } catch (e) {
-      console.error('AI guidance error:', e.message);
+      console.error('❌ [APPOINTMENT HELPER] AI guidance error:', e.message);
+      console.error('   Error stack:', e.stack);
     }
 
     res.status(200).json({
@@ -335,11 +379,19 @@ exports.prescriptionHelper = async (req, res) => {
     // AI enrichment via Gemini
     let aiMedicationHelp = null;
     try {
+      console.log('🤖 [PRESCRIPTION HELPER] Calling Gemini for AI medication help...');
       const schema = '{ "key_points": ["string"], "warnings": ["string"], "dosage_notes": "string" }';
-      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} Provide patient-safe medication guidance for ${medicationName}. Questions: ${JSON.stringify(questions || [])}`;
+      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} 
+
+User is asking about medication: ${medicationName}
+User's questions: ${questions?.join('; ') || 'General information requested'}
+
+Provide helpful, patient-safe information about this medication. Answer the user's specific questions. Include important safety information, warnings, and dosage guidance.`;
       aiMedicationHelp = await generateJSON(promptText, schema);
+      console.log('✅ [PRESCRIPTION HELPER] AI medication help received:', aiMedicationHelp);
     } catch (e) {
-      console.error('AI medication help error:', e.message);
+      console.error('❌ [PRESCRIPTION HELPER] AI medication help error:', e.message);
+      console.error('   Error stack:', e.stack);
     }
 
     res.status(200).json({
@@ -428,11 +480,14 @@ exports.referralSupport = async (req, res) => {
     // AI enrichment via Gemini
     let aiReferral = null;
     try {
+      console.log('🤖 [REFERRAL SUPPORT] Calling Gemini for AI referral...');
       const schema = '{ "specialties": ["string"], "tests": ["string"], "notes": ["string"] }';
       const promptText = `Suggest referral plan for condition: ${condition}, current treatment: ${currentTreatment}`;
       aiReferral = await generateJSON(promptText, schema);
+      console.log('✅ [REFERRAL SUPPORT] AI referral received:', aiReferral);
     } catch (e) {
-      console.error('AI referral error:', e.message);
+      console.error('❌ [REFERRAL SUPPORT] AI referral error:', e.message);
+      console.error('   Error stack:', e.stack);
     }
 
     res.status(200).json({
@@ -512,11 +567,22 @@ exports.healthTips = async (req, res) => {
     // AI enrichment via Gemini
     let aiHealthTips = null;
     try {
+      console.log('🤖 [HEALTH TIPS] Calling Gemini for AI health tips...');
       const schema = '{ "tips": [{"title": "string", "content": "string", "category": "string"}] }';
-      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} Generate personalized health tips for: category: ${category}, condition: ${condition}, age: ${age}, interests: ${interests?.join(',') || 'general'}`;
+      const promptText = `${lang==='rw' ? 'Sobanura mu Kinyarwanda.' : 'Reply in English.'} 
+
+User is requesting health tips:
+- Category/Topic: ${category || 'general wellness'}
+- Health condition: ${condition || 'general'}
+- Age: ${age || 'not specified'}
+- Interests: ${interests?.join(', ') || 'general'}
+
+Generate personalized, practical health tips that are relevant to the user's request. Make them actionable and helpful.`;
       aiHealthTips = await generateJSON(promptText, schema);
+      console.log('✅ [HEALTH TIPS] AI health tips received:', aiHealthTips);
     } catch (e) {
-      console.error('AI health tips error:', e.message);
+      console.error('❌ [HEALTH TIPS] AI health tips error:', e.message);
+      console.error('   Error stack:', e.stack);
     }
 
     res.status(200).json({
@@ -537,29 +603,132 @@ exports.healthTips = async (req, res) => {
   }
 };
 
-// @desc    General AI chat fallback (free-form Q&A)
+
+// @desc    General AI chat - conversational like ChatGPT
 // @route   POST /api/ai/chat-general
 // @access  Private
 exports.generalChat = async (req, res) => {
+  console.log('\n💬 ============================================');
+  console.log('💬 [AI CHAT] General Chat Request');
+  console.log('💬 ============================================');
+  console.log('📅 Timestamp:', new Date().toISOString());
+  console.log('👤 User ID:', req.user?._id);
+  console.log('📦 Request Body:', JSON.stringify(req.body, null, 2));
+  
   try {
     const { message, context, lang = 'en' } = req.body || {};
+    
+    console.log('📝 Parsed Request:');
+    console.log('   Message:', message);
+    console.log('   Context:', context);
+    console.log('   Language:', lang);
+    
     if (!message || typeof message !== 'string') {
-      return res.status(400).json({ success: false, message: t(lang,'Message is required','Ubutumwa burakenewe'), data: null });
+      console.error('❌ [AI CHAT] Invalid message:', message);
+      return res.status(400).json({ 
+        success: false, 
+        message: t(lang,'Message is required','Ubutumwa burakenewe'), 
+        data: null 
+      });
     }
-    const schema = '{ "answer": "string" }';
-    const safety = lang==='rw'
-      ? 'Sobanura mu Kinyarwanda. Irinde gutanga inama z\'ubuvuzi z\'umwuga; tekereza umutekano w\'umurwayi.'
-      : 'Reply in English. Avoid professional medical, legal, or financial advice; emphasize safety when applicable.';
-    const promptText = `${safety}\nUser message: ${message}\nOptional context: ${context?JSON.stringify(context):'none'}\nReturn an "answer" field with the best short helpful response.`;
-    let out = { answer: '' };
+
+    // Detect if message contains Kinyarwanda characters or common words
+    const kinyarwandaIndicators = [
+      'ni', 'na', 'cyangwa', 'kandi', 'mu', 'ku', 'no', 'nk', 'nka', 'muri', 'kuri',
+      'wowe', 'jewe', 'twebwe', 'mwebwe', 'cya', 'cyo', 'cye', 'za', 'zo', 'ze',
+      'ubwoba', 'kwiyubaka', 'gukabya', 'gutera', 'kwihangana',
+      'umuganga', 'umurwayi', 'ubuzima', 'ubwoba', 'indwara', 'ikimenyetso',
+      'mwiri', 'umutwe', 'agatuza', 'igifu', 'umuhondo', 'agakuba', 'umutima',
+      'soma', 'vuga', 'jya', 'genda', 'komeza', 'tangira', 'gira', 'bona',
+      'murakoze', 'muraho', 'mwiriwe', 'amahoro', 'mwiriweho'
+    ];
+    
+    const messageLower = message.toLowerCase();
+    const hasKinyarwanda = lang === 'rw' ||
+                          kinyarwandaIndicators.some(word => {
+                            const regex = new RegExp(`\\b${word}\\b`, 'i');
+                            return regex.test(messageLower);
+                          }) ||
+                          /[áàâäéèêëíìîïóòôöúùûü]/i.test(message) || // Kinyarwanda accented characters
+                          messageLower.includes('rw') || // Language code in message
+                          (messageLower.includes('kinyarwanda') || messageLower.includes('ikinyarwanda'));
+    
+    // Build conversational prompt with language detection
+    const languageInstruction = hasKinyarwanda
+      ? 'IMPORTANT: You MUST respond ONLY in Kinyarwanda. The user is asking in Kinyarwanda, so you must reply in Kinyarwanda. Do not use English. Use Kinyarwanda language throughout your response. Sobanura mu Kinyarwanda gusa. Witondere kuvugana mu Kinyarwanda nk\'umunyamahanga w\'ubuzima. Irinde gutanga inama z\'ubuvuzi z\'umwuga; tekereza umutekano w\'umurwayi.'
+      : 'Reply in English. Be helpful, conversational, and natural like ChatGPT.';
+    
+    const systemContext = hasKinyarwanda
+      ? 'Ni umuyobozi w\'ubuzima. Wifashisha mu Kinyarwanda GUSA. Sobanura mu Kinyarwanda GUSA. Twunguranye mu Kinyarwanda. Witondere kuvugana mu Kinyarwanda. Ntukoreshe icyongereza.'
+      : 'You are a helpful medical AI assistant. You provide health-related information, answer questions, and offer guidance.';
+    
+    const promptText = `${systemContext}
+
+${languageInstruction}
+
+User's message: "${message}"
+
+${context ? `Context: ${JSON.stringify(context)}` : ''}
+
+${hasKinyarwanda 
+  ? 'IMPORTANT: Answer in Kinyarwanda ONLY. Sobanura mu Kinyarwanda GUSA. Sobanura ikibazo cy\'umurwayi mu Kinyarwanda. Ngaho ubwoba w\'ubuzima, wifashisha mu Kinyarwanda. Witondere kuvugana mu Kinyarwanda. Ntukoreshe icyongereza mu gisubizo cyawe. Gusa ukoreshe ikinyarwanda.'
+  : 'Please provide a helpful, conversational response. Analyze what the user is asking and provide a relevant answer. Be natural and helpful, like a friendly medical assistant.'
+}`;
+    
+    console.log('📤 [AI CHAT] Calling Gemini API for conversational response...');
+    console.log('   Prompt:', promptText.substring(0, 200) + '...');
+    
+    let answer = '';
     try {
-      out = await generateJSON(promptText, schema);
+      const { generateConversationalResponse } = require('../services/geminiService');
+      // Pass language info to help with response
+      const detectedLang = hasKinyarwanda ? 'rw' : lang;
+      answer = await generateConversationalResponse(promptText, { lang: detectedLang });
+      console.log('✅ [AI CHAT] Gemini API call successful');
+      console.log('📥 [AI CHAT] Response length:', answer.length);
+      console.log('🌐 [AI CHAT] Detected language:', hasKinyarwanda ? 'Kinyarwanda' : 'English');
+      
+      if (!answer || answer.trim().length === 0) {
+        console.warn('⚠️  [AI CHAT] Empty response from Gemini');
+        answer = hasKinyarwanda 
+          ? 'Ntumva neza ikibazo cyawe. Ushobora gusobanura neza? Nyamuneka wongereho ubutumwa mu Kinyarwanda cyangwa mu Cyongereza.' 
+          : 'I didn\'t understand your question clearly. Could you clarify?';
+      }
     } catch (e) {
-      // Soft fallback
-      out = { answer: lang==='rw' ? 'Ndakumva. Ushobora gusobanura neza icyo ukeneye?' : 'I hear you. Could you clarify what you need?' };
+      console.error('❌ [AI CHAT] Gemini API call failed:', e.message);
+      console.error('   Error stack:', e.stack);
+      // Soft fallback with language detection
+      answer = hasKinyarwanda 
+        ? 'Ndakumva. Ushobora gusobanura neza icyo ukeneye? Ni ikibazo cy\'ubuzima? Nyamuneka wongereho ubutumwa mu Kinyarwanda, kandi nzagufasha mu Kinyarwanda.' 
+        : 'I hear you. Could you clarify what you need? If you have a health question, please describe your symptoms or concern, and I\'ll do my best to help!';
+      console.log('🔄 [AI CHAT] Using fallback response');
+      console.log('🌐 [AI CHAT] Fallback language:', hasKinyarwanda ? 'Kinyarwanda' : 'English');
     }
-    return res.status(200).json({ success: true, message: 'OK', data: out });
+    
+    console.log('📤 [AI CHAT] Sending response to client');
+    console.log('💬 ============================================');
+    console.log('💬 [AI CHAT] Request Completed');
+    console.log('💬 ============================================\n');
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: 'OK', 
+      data: { answer } 
+    });
   } catch (error) {
-    return res.status(500).json({ success: false, message: t(req.body?.lang||'en','Error processing request','Ikosa mu gutunganya ubusabe'), data: { error: error.message } });
+    console.error('\n❌ ============================================');
+    console.error('❌ [AI CHAT] General Chat Error');
+    console.error('❌ ============================================');
+    console.error('❌ Error type:', error?.constructor?.name || 'Unknown');
+    console.error('❌ Error message:', error?.message);
+    console.error('❌ Error stack:', error?.stack);
+    console.error('❌ Full error:', error);
+    console.error('❌ ============================================\n');
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: t(req.body?.lang||'en','Error processing request','Ikosa mu gutunganya ubusabe'), 
+      data: { error: error.message } 
+    });
   }
 };

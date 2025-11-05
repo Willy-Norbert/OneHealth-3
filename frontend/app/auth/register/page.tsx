@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, User, Home, Phone, Shield, Heart, FileText, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { MedicalTexture } from "@/components/ui/MedicalTexture";
 // Using window.alert instead of an external toast lib to avoid extra deps
 
 interface FormData {
@@ -209,15 +210,27 @@ export default function Register() {
   };
 
   const handleSubmit = async () => {
+    console.log('🚀 [REGISTER] Starting registration process...');
     setLoading(true);
     setError(null);
 
     try {
       // Prepare form data for submission
       const submitData = new FormData();
+      console.log('📝 [REGISTER] Preparing FormData from formData state:', formData);
+      
       Object.entries(formData).forEach(([key, value]) => {
         submitData.append(key, String(value ?? ""));
       });
+      console.log('✅ [REGISTER] Form fields added to FormData');
+
+      // Log file information
+      console.log('📎 [REGISTER] Files to upload:');
+      console.log('   - profileImage:', files.profileImage ? `${files.profileImage.name} (${files.profileImage.size} bytes)` : 'none');
+      console.log('   - idDocument:', files.idDocument ? `${files.idDocument.name} (${files.idDocument.size} bytes)` : 'none');
+      console.log('   - insuranceFront:', files.insuranceFront ? `${files.insuranceFront.name} (${files.insuranceFront.size} bytes)` : 'none');
+      console.log('   - insuranceBack:', files.insuranceBack ? `${files.insuranceBack.name} (${files.insuranceBack.size} bytes)` : 'none');
+      console.log('   - medicalFiles:', files.medicalFiles?.length || 0, 'files');
 
       if (files.profileImage) submitData.append("profileImage", files.profileImage);
       if (files.idDocument) submitData.append("idDocument", files.idDocument);
@@ -225,12 +238,83 @@ export default function Register() {
       if (files.insuranceBack) submitData.append("insuranceBack", files.insuranceBack);
       files.medicalFiles.forEach((f) => submitData.append("medicalFiles", f));
 
+      // Log FormData entries
+      console.log('📦 [REGISTER] FormData entries:');
+      for (const [key, value] of submitData.entries()) {
+        if (value instanceof File) {
+          console.log(`   ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`   ${key}: ${value}`);
+        }
+      }
+
       // Real API call
-      const { api } = await import('@/lib/api');
-      console.log('Submitting registration data...');
-      console.log('FormData contents:', Array.from(submitData.entries()));
-      const result = await api.patients.register(submitData);
-      console.log('Registration result:', result);
+      console.log('📦 [REGISTER] Importing API module...');
+      let result;
+      
+      try {
+        // Try importing the API module
+        const apiModule = await import('@/lib/api');
+        console.log('📦 [REGISTER] API module imported:', apiModule);
+        console.log('📦 [REGISTER] API module keys:', Object.keys(apiModule));
+        
+        // Check if api exists and has the expected structure
+        if (!apiModule || !apiModule.api) {
+          console.error('❌ [REGISTER] API module does not have api export');
+          console.error('   Module:', apiModule);
+          console.log('⚠️ [REGISTER] Falling back to direct fetch...');
+          throw new Error('API module structure is invalid');
+        }
+        
+        const api = apiModule.api;
+        console.log('📦 [REGISTER] API object:', api);
+        console.log('📦 [REGISTER] API.patients:', api.patients);
+        console.log('📦 [REGISTER] API.patients.register:', api.patients?.register);
+        
+        if (!api.patients || typeof api.patients.register !== 'function') {
+          console.error('❌ [REGISTER] api.patients.register is not a function');
+          console.error('   api.patients:', api.patients);
+          console.error('   api.patients type:', typeof api.patients);
+          if (api.patients) {
+            console.error('   api.patients keys:', Object.keys(api.patients));
+          }
+          console.log('⚠️ [REGISTER] Falling back to direct fetch...');
+          throw new Error('api.patients.register is not a function');
+        }
+        
+        console.log('🌐 [REGISTER] Calling API: api.patients.register()');
+        console.log('🔗 [REGISTER] API Base URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
+        
+        result = await api.patients.register(submitData);
+        console.log('✅ [REGISTER] Registration successful! Result:', result);
+      } catch (importError: any) {
+        console.warn('⚠️ [REGISTER] API import/usage failed, using direct fetch as fallback');
+        console.warn('   Error:', importError?.message);
+        
+        // Fallback: Direct fetch approach
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const url = `${API_BASE_URL}/patients/register`;
+        
+        console.log('🌐 [REGISTER] Using direct fetch to:', url);
+        console.log('📦 [REGISTER] FormData entries count:', Array.from(submitData.entries()).length);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          body: submitData,
+          cache: 'no-store',
+        });
+        
+        console.log('📥 [REGISTER] Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ [REGISTER] Direct fetch failed:', errorText);
+          throw new Error(errorText || `Registration failed: ${response.status}`);
+        }
+        
+        result = await response.json();
+        console.log('✅ [REGISTER] Registration successful via direct fetch! Result:', result);
+      }
 
       setStatusKind('success');
       setStatusTitle('Success');
@@ -242,6 +326,12 @@ export default function Register() {
         router.push('/dashboard');
       }, 1200);
     } catch (err: any) {
+      console.error('❌ [REGISTER] Registration failed!');
+      console.error('   Error type:', err?.constructor?.name || 'Unknown');
+      console.error('   Error message:', err?.message);
+      console.error('   Error stack:', err?.stack);
+      console.error('   Full error object:', err);
+      
       const msg = err?.message || "Registration failed. Please try again.";
       setError(msg);
       setStatusKind('error');
@@ -250,6 +340,7 @@ export default function Register() {
       setStatusOpen(true);
     } finally {
       setLoading(false);
+      console.log('🏁 [REGISTER] Registration process completed');
     }
   };
 
@@ -267,7 +358,8 @@ export default function Register() {
         {/* Status Modal */}
         {statusOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 text-center">
+            <div className="w-full max-w-sm bg-emerald-50/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 text-center relative overflow-hidden">
+              <MedicalTexture pattern="healthcare" opacity={0.04} className="text-emerald-600" />
               <div className={`mx-auto mb-4 w-12 h-12 rounded-full flex items-center justify-center ${statusKind==='success' ? 'bg-primary' : 'bg-red-500'}`}>
                 {statusKind==='success' ? (
                   <svg viewBox="0 0 24 24" className="w-7 h-7 text-white"><path fill="currentColor" d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
@@ -294,7 +386,8 @@ export default function Register() {
 
         {isRedirecting && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
-            <div className="bg-white rounded-xl px-6 py-4 shadow">
+            <div className="bg-emerald-50/95 backdrop-blur-sm rounded-xl px-6 py-4 shadow relative overflow-hidden">
+              <MedicalTexture pattern="medical-cross" opacity={0.03} className="text-emerald-600" />
               <div className="flex items-center gap-3">
                 <svg className="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -305,7 +398,8 @@ export default function Register() {
             </div>
           </div>
         )}
-        <div className="w-full max-w-6xl bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] overflow-hidden">
+        <div className="w-full max-w-6xl bg-emerald-50/95 backdrop-blur-sm rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] overflow-hidden relative">
+          <MedicalTexture pattern="hospital" opacity={0.04} className="text-emerald-600" />
           <div className="flex flex-col lg:flex-row">
             {/* Mobile: Steps at top */}
             <div className="lg:hidden bg-gradient-to-br from-gray-50/80 to-white p-4 border-b border-gray-100">

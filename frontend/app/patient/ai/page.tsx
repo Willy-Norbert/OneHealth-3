@@ -1,8 +1,10 @@
 "use client"
 import { AppShell } from '@/components/layout/AppShell'
 import React, { useEffect, useMemo, useState } from 'react'
-import { api } from '@/lib/api'
+import { api, API_BASE_URL } from '@/lib/api'
+import Cookies from 'js-cookie'
 import HealthSpinner from '@/components/ui/HealthSpinner'
+import { MedicalTexture } from '@/components/ui/MedicalTexture'
 
 export default function AIPage() {
   const [symptoms, setSymptoms] = useState('')
@@ -36,12 +38,24 @@ export default function AIPage() {
     return 'symptom-checker';
   };
 
-  // Very lightweight Kinyarwanda detector
+  // Comprehensive Kinyarwanda detector - if user uses Kinyarwanda, they likely don't know English
   const detectLanguage = (text: string): 'rw' | 'en' => {
     const t = (text || '').toLowerCase();
-    const rwHints = [/muraho/, /amakuru/, /mfite/, /ndizwa|ndumva|ndwaye/, /mbabaye/, /icyo|iki/, /uburwayi/, /muganga/, /ku/];
+    // Expanded Kinyarwanda patterns - be more aggressive in detection
+    const rwHints = [
+      /muraho/, /amakuru/, /mfite/, /ndizwa|ndumva|ndwaye/, /mbabaye/, /icyo|iki/, /uburwayi/, /muganga/, /ku/,
+      /murakoze/, /muraho/, /mwiriwe/, /mwaramutse/, /muramuke/, /ndabaramutsa/, /bite/, /ni\s+ikihe/, /cyangwa/, /kandi/,
+      /umurwayi/, /ubuzima/, /indwara/, /ikimenyetso/, /umutwe/, /umutima/, /igifu/, /agakuba/, /umuhondo/,
+      /soma/, /vuga/, /jya/, /genda/, /komeza/, /tangira/, /gira/, /bona/, /amahoro/, /mwiriweho/,
+      /ni\s+/, /na\s+/, /cya\s+/, /cyo\s+/, /mu\s+/, /ku\s+/, /no\s+/, /nk\s+/, /nka\s+/, /muri/, /kuri/,
+      /wowe/, /jewe/, /twebwe/, /mwebwe/, /cya/, /cyo/, /cye/, /za/, /zo/, /ze/,
+      /ubwoba/, /kwiyubaka/, /gukabya/, /gutera/, /kwihangana/
+    ];
     const isRw = rwHints.some((r) => r.test(t));
-    return isRw ? 'rw' : 'en';
+    // Also check for Kinyarwanda accented characters
+    const hasRwAccents = /[áàâäéèêëíìîïóòôöúùûü]/.test(text);
+    // If any Kinyarwanda pattern is found, respond in Kinyarwanda
+    return (isRw || hasRwAccents) ? 'rw' : 'en';
   };
 
   const getCachedUserName = (): string | null => {
@@ -63,7 +77,8 @@ export default function AIPage() {
     const cached = getCachedUserName();
     if (cached) return cached;
     try {
-      const res = await fetch(`${ ' https://api.onehealthline.com'}/auth/me`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const res = await fetch(`${API_BASE_URL.trim()}/auth/me`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -150,10 +165,23 @@ export default function AIPage() {
   const run = async (e: React.FormEvent) => {
     e.preventDefault()
     // Ensure conversation id exists before sending
-    if (!conversationId) {
-      const id = `conv_${Date.now()}`
-      setConversationId(id)
-      try { localStorage.setItem('ai_conversation_id', id) } catch {}
+    let currentConvId = conversationId;
+    if (!currentConvId) {
+      const existing = typeof window !== 'undefined' ? localStorage.getItem('ai_conversation_id') : null;
+      if (existing) {
+        currentConvId = existing;
+        setConversationId(existing);
+      } else {
+        currentConvId = `conv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        setConversationId(currentConvId);
+        try { localStorage.setItem('ai_conversation_id', currentConvId) } catch {}
+        // Create conversation in database
+        try {
+          await api.ai.createConversation({ conversationId: currentConvId, title: 'New conversation' });
+        } catch (err) {
+          console.warn('⚠️  [AI FRONTEND] Could not create conversation:', err);
+        }
+      }
     }
     setLoading(true)
     try {
@@ -165,9 +193,11 @@ export default function AIPage() {
         )}
       ]))
       // Handle greetings immediately without calling backend
+      // IMPORTANT: If user uses Kinyarwanda, always respond in Kinyarwanda (they likely don't know English)
       if (isGreeting(symptoms)) {
         const name = await fetchUserName();
-        const lang = detectLanguage(symptoms)
+        const lang = detectLanguage(symptoms); // Detect language from user's greeting
+        // Always respond in the language the user used - if Kinyarwanda detected, respond in Kinyarwanda
         const assistantBlock = (
           <div>
             <div className="mb-1">{lang==='rw' ? `Muraho ${name}! 👋` : `Hello ${name}! 👋`}</div>
@@ -177,20 +207,71 @@ export default function AIPage() {
         setMessages(prev => ([...prev, { role: 'assistant', content: assistantBlock }]))
         // Save greeting exchange
         try {
-          const base =  ' https://api.onehealthline.com'
-          await fetch(`${base}/ai/chat/save`, {
+          const currentConvId = conversationId || localStorage.getItem('ai_conversation_id') || `conv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+          if (!conversationId) {
+            setConversationId(currentConvId);
+            try { localStorage.setItem('ai_conversation_id', currentConvId) } catch {}
+            // Create conversation in database
+            try {
+              if (api?.ai?.createConversation && typeof api.ai.createConversation === 'function') {
+                await api.ai.createConversation({ conversationId: currentConvId, title: 'New conversation' });
+              } else {
+                console.warn('⚠️  [AI FRONTEND] createConversation not available, using direct fetch');
+                const token = Cookies.get('token');
+                const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations`, {
             method: 'POST',
             credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversationId: conversationId || localStorage.getItem('ai_conversation_id'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                  },
+                  body: JSON.stringify({ conversationId: currentConvId, title: 'New conversation' })
+                });
+                if (!res.ok) {
+                  throw new Error(`Failed to create: ${res.status}`);
+                }
+              }
+            } catch (err) {
+              console.warn('⚠️  [AI FRONTEND] Could not create conversation:', err);
+            }
+          }
+          // Save messages using API client or direct fetch
+          if (api?.ai?.saveMessages && typeof api.ai.saveMessages === 'function') {
+            await api.ai.saveMessages({
+              conversationId: currentConvId,
               messages: [
-                { role: 'user', service: selectedService, content: symptoms, analysis: 'greeting' },
-                { role: 'assistant', service: selectedService, content: (lang==='rw' ? ('Muraho ' + name + '! Nigute nagufasha uyu munsi?') : ('Hello ' + name + '! How can I help you today?')), analysis: 'greeting' }
+                { role: 'user', service: 'general-chat', content: symptoms, analysis: 'greeting' },
+                { role: 'assistant', service: 'general-chat', content: (lang==='rw' ? ('Muraho ' + name + '! Nigute nagufasha uyu munsi?') : ('Hello ' + name + '! How can I help you today?')), analysis: 'greeting' }
+              ]
+            });
+          } else {
+            console.warn('⚠️  [AI FRONTEND] saveMessages not available, using direct fetch');
+            const token = Cookies.get('token');
+            const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const resSave = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/save`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
+            body: JSON.stringify({
+                conversationId: currentConvId,
+              messages: [
+                  { role: 'user', service: 'general-chat', content: symptoms, analysis: 'greeting' },
+                  { role: 'assistant', service: 'general-chat', content: (lang==='rw' ? ('Muraho ' + name + '! Nigute nagufasha uyu munsi?') : ('Hello ' + name + '! How can I help you today?')), analysis: 'greeting' }
               ]
             })
-          })
-        } catch {}
+            });
+            if (!resSave.ok) {
+              throw new Error(`Failed to save: ${resSave.status}`);
+            }
+          }
+          console.log('✅ [AI FRONTEND] Greeting messages saved');
+        } catch (saveErr) {
+          console.error('❌ [AI FRONTEND] Failed to save greeting messages:', saveErr);
+        }
         setLoading(false)
         setSymptoms('')
         return
@@ -199,13 +280,126 @@ export default function AIPage() {
       // Choose service based on input analysis (with transparency)
       const a = analyzeInput(symptoms)
       const serviceForThisQuery = a.intent === 'medication' ? 'prescription-helper' : a.intent === 'tips' ? 'health-tips' : 'symptom-checker'
+      const lang = detectLanguage(symptoms)
+      
+      console.log('🤖 [AI FRONTEND] Analyzing input...');
+      console.log('   Input:', symptoms);
+      console.log('   Detected intent:', a.intent);
+      console.log('   Confidence:', a.confidence);
+      console.log('   Selected service:', serviceForThisQuery);
+      console.log('   Language:', lang);
+      
       setMessages(prev => ([...prev, { role: 'assistant', content: (
         <div className="text-xs text-gray-500">
           Detected intent: <span className="font-medium">{a.intent}</span> · {a.rationale}
         </div>
       ) }]))
       let res
-      const lang = detectLanguage(symptoms)
+      
+      // Always use general chat for conversational ChatGPT-like experience
+      console.log('💬 [AI FRONTEND] Using general chat for conversational response');
+      console.log('   api:', api);
+      console.log('   api.ai:', api.ai);
+      console.log('   api.ai.generalChat:', api.ai?.generalChat);
+      console.log('   typeof api.ai.generalChat:', typeof api.ai?.generalChat);
+      
+      try {
+        // Check if generalChat exists, if not use direct fetch
+        if (!api.ai || typeof api.ai.generalChat !== 'function') {
+          console.warn('⚠️  [AI FRONTEND] generalChat not available, using direct fetch');
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const token = Cookies.get('token');
+          const fetchRes = await fetch(`${API_BASE_URL.trim()}/ai/chat-general`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              message: symptoms,
+              context: { detectedIntent: a.intent, entities: a.entities },
+              lang
+            })
+          });
+          if (fetchRes.ok) {
+            res = await fetchRes.json();
+          } else {
+            throw new Error(`Failed to fetch: ${fetchRes.status}`);
+          }
+        } else {
+          res = await api.ai.generalChat({
+            message: symptoms,
+            context: { detectedIntent: a.intent, entities: a.entities },
+            lang
+          });
+        }
+        console.log('✅ [AI FRONTEND] General chat response:', res);
+        
+        if (res?.data?.answer) {
+          setResponse({ data: { analysis: res.data.answer, recommendations: [], urgency: 'low' } });
+          setMessages(prev => ([...prev, { role: 'assistant', content: (
+            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">{res.data.answer}</div>
+          ) }]));
+          // Save messages
+          try {
+            const currentConvId = conversationId || localStorage.getItem('ai_conversation_id') || `conv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+            if (!conversationId) {
+              setConversationId(currentConvId);
+              try { localStorage.setItem('ai_conversation_id', currentConvId) } catch {}
+            }
+            // Save messages using API client or direct fetch
+            if (api?.ai?.saveMessages && typeof api.ai.saveMessages === 'function') {
+              await api.ai.saveMessages({
+                conversationId: currentConvId,
+                messages: [
+                  { role: 'user', service: 'general-chat', content: symptoms, analysis: a.rationale },
+                  { role: 'assistant', service: 'general-chat', content: res.data.answer, analysis: 'general' }
+                ]
+              });
+            } else {
+              console.warn('⚠️  [AI FRONTEND] saveMessages not available, using direct fetch');
+              const token = Cookies.get('token');
+              const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+              const resSave = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/save`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                  conversationId: currentConvId,
+                  messages: [
+                    { role: 'user', service: 'general-chat', content: symptoms, analysis: a.rationale },
+                    { role: 'assistant', service: 'general-chat', content: res.data.answer, analysis: 'general' }
+                  ]
+                })
+              });
+              if (!resSave.ok) {
+                throw new Error(`Failed to save: ${resSave.status}`);
+              }
+            }
+            console.log('✅ [AI FRONTEND] Messages saved successfully');
+          } catch (saveErr) {
+            console.error('❌ [AI FRONTEND] Failed to save messages:', saveErr);
+          }
+          setLoading(false);
+          setSymptoms('');
+          return;
+        }
+      } catch (generalChatError) {
+        console.error('❌ [AI FRONTEND] General chat failed:', generalChatError);
+        // Fallback to error message
+        const errorText = 'I apologize, but I\'m having trouble processing your request right now. Please try again in a moment.';
+        setMessages(prev => ([...prev, { role: 'assistant', content: (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">{errorText}</div>
+        ) }]));
+        setLoading(false);
+        setSymptoms('');
+        return;
+      }
+      
       switch (serviceForThisQuery) {
         case 'symptom-checker':
           res = await api.ai.symptomChecker({
@@ -264,18 +458,13 @@ export default function AIPage() {
         ) }]))
         // Persist failed exchange for history
         try {
-          const base =  ' https://api.onehealthline.com'
-          await fetch(`${base}/ai/chat/save`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          // Save messages using API client
+          await api.ai.saveMessages({
               conversationId,
               messages: [
                 { role: 'user', service: serviceForThisQuery, content: symptoms, analysis: 'error' },
                 { role: 'assistant', service: serviceForThisQuery, content: errorText, analysis: 'error' }
               ]
-            })
           })
         } catch {}
       } else if ((res as any)?.data) {
@@ -289,18 +478,13 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={d.recommendations} urgency={d.urgencyLevel || d.urgency} />
           ) }]))
           try {
-            const base =  ' https://api.onehealthline.com'
-            await fetch(`${base}/ai/chat/save`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            // Save messages using API client
+            await api.ai.saveMessages({
                 conversationId,
                 messages: [
                   { role: 'user', service: serviceForThisQuery, content: symptoms, analysis: a.rationale },
                   { role: 'assistant', service: serviceForThisQuery, content: [analysisText, ...(d.recommendations || [])].filter(Boolean).join('\n'), analysis: (d.urgencyLevel || d.urgency || '') }
                 ]
-              })
             })
           } catch {}
         } else if (serviceForThisQuery === 'health-tips') {
@@ -312,18 +496,13 @@ export default function AIPage() {
             <AIResponseBlock analysis={`Personalized tips (${recs.length})`} recommendations={recs} urgency={'low'} />
           ) }]))
           try {
-            const base =  ' https://api.onehealthline.com'
-            await fetch(`${base}/ai/chat/save`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            // Save messages using API client
+            await api.ai.saveMessages({
                 conversationId,
                 messages: [
                   { role: 'user', service: serviceForThisQuery, content: symptoms, analysis: a.rationale },
                   { role: 'assistant', service: serviceForThisQuery, content: recs.join('\n'), analysis: 'tips' }
                 ]
-              })
             })
           } catch {}
         } else if (serviceForThisQuery === 'prescription-helper') {
@@ -335,18 +514,13 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={recs} urgency={'medium'} />
           ) }]))
           try {
-            const base =  ' https://api.onehealthline.com'
-            await fetch(`${base}/ai/chat/save`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            // Save messages using API client
+            await api.ai.saveMessages({
                 conversationId,
                 messages: [
                   { role: 'user', service: serviceForThisQuery, content: symptoms, analysis: a.rationale },
                   { role: 'assistant', service: serviceForThisQuery, content: [analysisText, ...recs].join('\n'), analysis: 'medication' }
                 ]
-              })
             })
           } catch {}
         } else {
@@ -364,18 +538,13 @@ export default function AIPage() {
         setMessages(prev => ([...prev, { role: 'assistant', content: assistantBlock }]))
         // Save mock exchange as well
         try {
-          const base =  ' https://api.onehealthline.com'
-          await fetch(`${base}/ai/chat/save`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          // Save messages using API client
+          await api.ai.saveMessages({
               conversationId,
               messages: [
                 { role: 'user', service: serviceForThisQuery, content: symptoms, analysis: 'mock' },
                 { role: 'assistant', service: serviceForThisQuery, content: [mock.data.analysis, ...(mock.data.recommendations || [])].filter(Boolean).join('\n'), analysis: mock.data.urgency }
               ]
-            })
           })
         } catch {}
       }
@@ -388,18 +557,13 @@ export default function AIPage() {
       ) }]))
       // Persist exception exchange
       try {
-        const base =  ' https://api.onehealthline.com'
-        await fetch(`${base}/ai/chat/save`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        // Save messages using API client
+        await api.ai.saveMessages({
             conversationId,
             messages: [
               { role: 'user', service: selectedService, content: symptoms, analysis: 'exception' },
               { role: 'assistant', service: selectedService, content: errText, analysis: 'exception' }
             ]
-          })
         })
       } catch {}
     } finally {
@@ -501,23 +665,54 @@ export default function AIPage() {
     }
   }, [])
 
-  // Load recent history
+  // Load recent history when conversation changes
   useEffect(() => {
     const loadHistory = async () => {
-      if (!conversationId) return
+      if (!conversationId) {
+        setMessages([]);
+        return;
+      }
       try {
-        const base =  ' https://api.onehealthline.com'
-        const res = await fetch(`${base}/ai/chat/history?limit=30&conversationId=${encodeURIComponent(conversationId)}`, { credentials: 'include' })
-        if (!res.ok) return
-        const data = await res.json()
-        const msgs = (data?.data || []).reverse().map((m: any) => ({
+        console.log('📖 [AI FRONTEND] Loading history for conversation:', conversationId);
+        // Load history using API client or direct fetch
+        let data;
+        if (api?.ai?.getHistory && typeof api.ai.getHistory === 'function') {
+          data = await api.ai.getHistory({ limit: 100, conversationId });
+        } else {
+          console.warn('⚠️  [AI FRONTEND] getHistory not available, using direct fetch');
+          const token = Cookies.get('token');
+          const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/history?conversationId=${encodeURIComponent(conversationId)}&limit=100`, {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+        }
+        console.log('📖 [AI FRONTEND] History loaded:', data?.data?.length || 0, 'messages');
+        
+        const msgs = (data?.data || []).map((m: any) => ({
           role: (m.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
-          content: <div className="whitespace-pre-wrap">{m.content}</div>
-        }))
-        setMessages(msgs)
-      } catch {}
-    }
-    loadHistory()
+          content: (
+            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+              {m.content || ''}
+            </div>
+          )
+        }));
+        setMessages(msgs);
+        console.log('✅ [AI FRONTEND] Messages loaded:', msgs.length);
+      } catch (err) {
+        console.error('❌ [AI FRONTEND] Error loading history:', err);
+        setMessages([]);
+      }
+    };
+    loadHistory();
   }, [conversationId])
 
   return (
@@ -540,22 +735,44 @@ export default function AIPage() {
             <h2 className="text-xl font-semibold">Conversations</h2>
             <button
               onClick={async () => {
-                const id = `conv_${Date.now()}`
-                setConversationId(id)
+                const id = `conv_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+                console.log('🆕 [AI FRONTEND] Creating new conversation:', id);
+                setConversationId(id);
                 try { localStorage.setItem('ai_conversation_id', id) } catch {}
-                setMessages([])
+                setMessages([]);
                 try {
-                  const base =  ' https://api.onehealthline.com'
-                  await fetch(`${base}/ai/chat/conversations`, {
+                  // Create conversation using API client or direct fetch
+                  if (api?.ai?.createConversation && typeof api.ai.createConversation === 'function') {
+                    await api.ai.createConversation({ conversationId: id, title: 'New conversation' });
+                    console.log('✅ [AI FRONTEND] New conversation created');
+                  } else {
+                    console.warn('⚠️  [AI FRONTEND] createConversation not available, using direct fetch');
+                    const token = Cookies.get('token');
+                    const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations`, {
                     method: 'POST',
                     credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                      },
                     body: JSON.stringify({ conversationId: id, title: 'New conversation' })
-                  })
-                } catch {}
+                    });
+                    if (res.ok) {
+                      console.log('✅ [AI FRONTEND] New conversation created via fallback');
+                    } else {
+                      throw new Error(`Failed to create: ${res.status}`);
+                    }
+                  }
+                } catch (err) {
+                  console.error('❌ [AI FRONTEND] Failed to create conversation:', err);
+                }
               }}
-              className="btn-primary text-sm"
+              className="btn-primary text-sm flex items-center gap-2"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
               New Chat
             </button>
           </div>
@@ -563,8 +780,10 @@ export default function AIPage() {
           <ConversationList
             activeId={conversationId}
             onSelect={async (id) => {
-              setConversationId(id)
+              console.log('🔄 [AI FRONTEND] Selecting conversation:', id);
+              setConversationId(id);
               try { localStorage.setItem('ai_conversation_id', id) } catch {}
+              // History will be loaded automatically by useEffect
             }}
           />
 
@@ -640,13 +859,17 @@ function AIResponseBlock({ analysis, recommendations, urgency }: { analysis?: st
       {analysis && (
         <div>
           <div className="text-sm font-semibold mb-1">Analysis</div>
-          <div className="bg-white text-gray-800 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">{analysis}</div>
+                  <div className="bg-emerald-50/95 backdrop-blur-sm text-gray-800 p-3 rounded-lg border border-emerald-200 whitespace-pre-wrap relative overflow-hidden">
+                    <MedicalTexture pattern="healthcare" opacity={0.03} className="text-emerald-600" />
+                    <span className="relative z-10">{analysis}</span>
+                  </div>
         </div>
       )}
       {Array.isArray(recommendations) && recommendations.length > 0 && (
         <div>
           <div className="text-sm font-semibold mb-1">Recommendations</div>
-          <ul className="list-disc list-inside space-y-1 bg-white text-gray-800 p-3 rounded-lg border border-gray-200">
+                  <ul className="list-disc list-inside space-y-1 bg-emerald-50/95 backdrop-blur-sm text-gray-800 p-3 rounded-lg border border-emerald-200 relative overflow-hidden">
+                    <MedicalTexture pattern="pills" opacity={0.03} className="text-emerald-600" />
             {recommendations.map((rec, idx) => (<li key={idx}>{rec}</li>))}
           </ul>
         </div>
@@ -673,11 +896,41 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   const refresh = async () => {
     try {
       setLoading(true)
-      const base =  ' https://api.onehealthline.com'
-      const res = await fetch(`${base}/ai/chat/conversations`, { credentials: 'include' })
-      if (!res.ok) return
-      const data = await res.json()
-      setItems(data?.data || [])
+      // Load conversations using API client
+      try {
+        if (api?.ai?.listConversations && typeof api.ai.listConversations === 'function') {
+          console.log('📋 [AI FRONTEND] Loading conversations via API client...');
+          const data = await api.ai.listConversations();
+          console.log('✅ [AI FRONTEND] Conversations loaded:', data?.data?.length || 0);
+          setItems(data?.data || []);
+        } else {
+          // Fallback: direct fetch if API client doesn't have the method
+          console.warn('⚠️ [AI] listConversations not available, using direct fetch');
+          const token = Cookies.get('token');
+          const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations`, {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            console.log('✅ [AI FRONTEND] Conversations loaded via fallback:', data?.data?.length || 0);
+            setItems(data?.data || []);
+          } else {
+            console.error('❌ [AI] Failed to fetch conversations:', res.status, res.statusText);
+            setItems([]);
+          }
+        }
+      } catch (fetchError) {
+        console.error('❌ [AI] Error loading conversations:', fetchError);
+        setItems([]);
+      }
+    } catch (error) {
+      console.error('❌ [AI] Error in refresh:', error)
+      setItems([])
     } finally {
       setLoading(false)
     }
@@ -686,31 +939,51 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   useEffect(() => { refresh() }, [])
 
   const rename = async (id: string) => {
-    const title = prompt('Rename conversation to:')
-    if (!title) return
+    const title = prompt('Rename conversation to:');
+    if (!title || !title.trim()) return;
     try {
-      const base =  ' https://api.onehealthline.com'
-      await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title })
-      })
-      refresh()
-    } catch {}
+      console.log('✏️  [AI FRONTEND] Renaming conversation:', id, 'to:', title);
+      // Rename conversation using API client
+      await api.ai.renameConversation(id, { title: title.trim() });
+      console.log('✅ [AI FRONTEND] Conversation renamed successfully');
+      refresh();
+    } catch (err) {
+      console.error('❌ [AI FRONTEND] Failed to rename conversation:', err);
+      alert('Failed to rename conversation. Please try again.');
+    }
   }
 
   const del = async (id: string) => {
-    if (!confirm('Delete this conversation? This cannot be undone.')) return
+    if (!confirm('Delete this conversation? This cannot be undone.')) return;
     try {
-      const base =  ' https://api.onehealthline.com'
-      await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
+      console.log('🗑️  [AI FRONTEND] Deleting conversation:', id);
+      // Delete conversation using API client or direct fetch
+      if (api?.ai?.deleteConversation && typeof api.ai.deleteConversation === 'function') {
+        await api.ai.deleteConversation(id);
+        console.log('✅ [AI FRONTEND] Conversation deleted successfully');
+      } else {
+        console.warn('⚠️  [AI FRONTEND] deleteConversation not available, using direct fetch');
+        const token = Cookies.get('token');
+        const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        credentials: 'include'
-      })
-      refresh()
-      if (id === activeId) onSelect('')
-    } catch {}
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
+        if (!res.ok) {
+          throw new Error(`Failed to delete: ${res.status}`);
+        }
+        console.log('✅ [AI FRONTEND] Conversation deleted via fallback');
+      }
+      refresh();
+      if (id === activeId) onSelect('');
+    } catch (err) {
+      console.error('❌ [AI FRONTEND] Failed to delete conversation:', err);
+      alert('Failed to delete conversation. Please try again.');
+    }
   }
 
   return (
@@ -721,7 +994,10 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
           <div className="flex items-center justify-between">
             <button onClick={() => onSelect(c.conversationId)} className="text-left flex-1">
               <div className="font-medium text-sm truncate">{c.title || 'Conversation'}</div>
-              <div className="text-xs text-gray-500">{new Date(c.updatedAt || c.createdAt).toLocaleString()}</div>
+              <div className="text-xs text-gray-500">
+                {new Date(c.updatedAt || c.createdAt).toLocaleString()}
+                {c.messageCount !== undefined ? ` · ${c.messageCount} messages` : ''}
+              </div>
             </button>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
               <button onClick={() => rename(c.conversationId)} className="text-xs text-blue-600 hover:underline">Rename</button>

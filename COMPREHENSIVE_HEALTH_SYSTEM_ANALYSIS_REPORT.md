@@ -323,7 +323,7 @@ restrictTo('doctor') // Can create prescriptions
 
 ### Current System Metrics:
 - **User Roles**: 4 comprehensive roles implemented
-- **API Endpoints**: 50+ endpoints across all modules
+- **API Endpoints**: 10+ endpoints across all modules
 - **Integrations**: 6 major external services integrated
 - **Real-time Features**: WebSocket and WebRTC implemented
 - **Security**: JWT authentication with role-based access

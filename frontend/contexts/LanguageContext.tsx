@@ -285,7 +285,7 @@ const translations = {
       image_alt: "Pharmacy and medication delivery services",
       free_delivery: "Free Delivery",
       stats: [
-        { value: "50+", label: "Pharmacies" },
+        { value: "10+", label: "Pharmacies" },
         { value: "3 hrs", label: "Delivery Time" },
         { value: "1000+", label: "Medications" }
       ]
@@ -2997,9 +2997,9 @@ const translations = {
       availability: "Availability",
       patientsServed: "Patients Served",
       partnerHospitalsCount: "10+",
-      medicalSpecialistsCount: "50+",
+      medicalSpecialistsCount: "10+",
       availabilityCount: "24/7",
-      patientsServedCount: "5000+",
+      patientsServedCount: "300+",
     },
     doctorsSection: {
       title: "Meet Our Specialists",
@@ -3942,7 +3942,7 @@ const translations = {
       image_alt: "Farumasi n'ibikorwa byo kugeza imiti",
       free_delivery: "Kohereza Buntu",
       stats: [
-        { value: "50+", label: "Farumasi" },
+        { value: "10+", label: "Farumasi" },
         { value: "3 hrs", label: "Igihe cyo Gutanga" },
         { value: "1000+", label: "Imiti" }
       ]
@@ -6895,9 +6895,9 @@ const translations = {
       availability: "Igihe Serivisi iboneka",
       patientsServed: "Abakiriya twitayeho",
       partnerHospitalsCount: "10+",
-      medicalSpecialistsCount: "50+",
+      medicalSpecialistsCount: "10+",
       availabilityCount: "Amasaha 24/7",
-      patientsServedCount: "5000+",
+      patientsServedCount: "300+",
     },
     doctorsSection: {
       title: "Hura n’Abaganga b’Inzobere",

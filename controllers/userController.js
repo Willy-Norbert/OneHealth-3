@@ -193,13 +193,15 @@ exports.updateUserProfile = async (req, res) => {
       });
     }
 
-    const { name, email, phone, avatar, address, dateOfBirth, gender, bloodType, emergencyContact, specialization, experience, bio, consultationFee } = req.body;
+    const { name, email, phone, avatar, profileImageUrl, address, dateOfBirth, gender, bloodType, emergencyContact, specialization, experience, bio, consultationFee } = req.body;
     const updateData = {};
     
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
-    if (avatar) updateData.profileImage = avatar;
+    // Support both 'avatar' and 'profileImageUrl' - map to profileImageUrl in User model
+    if (avatar) updateData.profileImageUrl = avatar;
+    if (profileImageUrl) updateData.profileImageUrl = profileImageUrl;
     if (address) updateData.address = address;
     if (dateOfBirth) updateData.dateOfBirth = dateOfBirth;
     if (gender) updateData.gender = gender;

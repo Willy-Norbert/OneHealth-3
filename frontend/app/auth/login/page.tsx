@@ -7,6 +7,7 @@ import Image from 'next/image'
 
 import { Suspense } from 'react'
 import HealthSpinner from '@/components/ui/HealthSpinner'
+import { MedicalTexture } from '@/components/ui/MedicalTexture'
 
 function CurvedDivider() {
   return (
@@ -74,7 +75,7 @@ function LoginInner() {
           setError(null)
           try {
             const idToken = response.credential
-            const res = await fetch(`${ ' https://api.onehealthline.com'}/auth/google`, {
+            const res = await fetch(`${ ' http://localhost:5000'}/auth/google`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
             })
             if (!res.ok) throw new Error('Google login failed')
@@ -131,7 +132,7 @@ function LoginInner() {
       ;(window as any).FB.login(async (response: any) => {
           if (response.authResponse) {
             const accessToken = response.authResponse.accessToken
-            const res = await fetch(`${ ' https://api.onehealthline.com'}/auth/facebook`, {
+            const res = await fetch(`${ ' http://localhost:5000'}/auth/facebook`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accessToken })
             })
             if (!res.ok) throw new Error('Facebook login failed')
@@ -158,7 +159,7 @@ function LoginInner() {
     setError(null); setLoading(true)
     try {
       const idToken = response.tokenId
-      const res = await fetch(`${ ' https://api.onehealthline.com'}/auth/google`, {
+      const res = await fetch(`${ ' http://localhost:5000'}/auth/google`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
       })
       if (!res.ok) throw new Error('Google login failed')
@@ -204,7 +205,8 @@ function LoginInner() {
       {/* Background image from public with subtle overlay */}
       <Image src="/bg_auth.png" alt="Background" fill priority sizes="100vw" className="object-cover opacity-60 z-0" />
       <div className="absolute inset-0 bg-emerald-600/30 z-10" />
-      <div className="relative z-20 w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-20 w-full max-w-5xl bg-emerald-50/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden">
+        <MedicalTexture pattern="medical-cross" opacity={0.04} className="text-emerald-600" />
         {/* Mobile: Single column layout */}
         <div className="lg:hidden">
           {/* Mobile header */}
@@ -447,4 +449,6 @@ export default function LoginPage() {
     </Suspense>
   )
 }
+
+
 

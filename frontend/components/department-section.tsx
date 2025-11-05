@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { motion } from "framer-motion";
 
 export default function DepartmentSection() {
   const { t } = useLanguage();
@@ -18,20 +19,32 @@ export default function DepartmentSection() {
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             {t("departments.title")}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-2xl mx-auto">
             {t("departments.subtitle")}
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {departments.map((dept, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
             <Link
               href={`/departments/${dept.name.toLowerCase()}`}
-              key={index}
               className="group"
             >
               <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1">
@@ -48,6 +61,7 @@ export default function DepartmentSection() {
                 </div>
               </div>
             </Link>
+            </motion.div>
           ))}
         </div>
 

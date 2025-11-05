@@ -90,7 +90,7 @@ exports.createMeeting = async (req, res) => {
 
     // Send meeting invitation emails to patient and doctor (and hospital if available)
     try {
-      const hostUrl = process.env.FRONTEND_URL || ' https://api.onehealthline.com'
+      const hostUrl = process.env.FRONTEND_URL || ' http://localhost:5000'
       const meetingUrl = `${hostUrl}/meeting/${meeting_id}`
       const subject = 'Teleconsultation Meeting Invitation'
       const htmlBody = `
@@ -361,7 +361,7 @@ exports.rescheduleMeeting = async (req, res) => {
 
     // Emails
     try {
-      const hostUrl = process.env.FRONTEND_URL || 'https://api.onehealthline.com';
+      const hostUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
       const meetingUrl = `${hostUrl}/meeting/${meeting.meeting_id}`;
       const subject = 'Teleconsultation Meeting Rescheduled';
       const htmlBody = `

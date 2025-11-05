@@ -7,9 +7,13 @@ const {
   updateMedicalRecord,
   getPatientMedicalHistory,
   searchMedicalRecords,
+  getMedicalRecordsCount,
 } = require('../controllers/medicalRecordController');
 
 const router = express.Router();
+
+// Public endpoint for stats
+router.get('/count', getMedicalRecordsCount);
 
 /**
  * @swagger
@@ -68,6 +72,10 @@ router.put('/:id', restrictTo('doctor'), updateMedicalRecord);
  *     tags: [Medical Records]
  *     security: [{ bearerAuth: [] }]
  */
+router.get('/patients/:patientId', getPatientMedicalHistory);
+
+module.exports = router;
+
 router.get('/patients/:patientId', getPatientMedicalHistory);
 
 module.exports = router;

@@ -7,9 +7,9 @@ export default function StatsSection() {
 
   const stats = [
     { value: "10+", label: t("stats.partnerHospitals"), color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-    { value: "50+", label: t("stats.medicalSpecialists"), color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
+    { value: "10+", label: t("stats.medicalSpecialists"), color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
     { value: "24/7", label: t("stats.availability"), color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
-    { value: "5000+", label: t("stats.patientsServed"), color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" },
+    { value: "300+", label: t("stats.patientsServed"), color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" },
   ];
 
   return (

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Video, Calendar, Phone, Pill, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { motion } from "framer-motion";
 
 export default function ServiceCards() {
   const { t } = useLanguage();
@@ -10,10 +11,16 @@ export default function ServiceCards() {
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+        >
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t("services2.title")}</h2>
           <p className="text-gray-600 mt-2 max-w-2xl mx-auto dark:text-gray-400">{t("services2.subtitle")}</p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <ServiceCard
@@ -54,7 +61,13 @@ export default function ServiceCards() {
         </div>
 
         {/* AI Doctor Feature Card */}
-        <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+        <motion.div 
+          className="mt-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="p-8 lg:p-12 flex flex-col justify-center">
               <div className="inline-flex items-center w-fit px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-sm font-medium mb-6">
@@ -86,7 +99,7 @@ export default function ServiceCards() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-green-600/20"></div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -104,6 +117,12 @@ interface ServiceCardProps {
 function ServiceCard({ icon, iconBg, title, description, image, href }: ServiceCardProps) {
   const { t } = useLanguage();
   return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5 }}
+    >
     <Link href={href} className="group">
       <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
         <div className="relative h-48">
@@ -122,5 +141,6 @@ function ServiceCard({ icon, iconBg, title, description, image, href }: ServiceC
         </div>
       </div>
     </Link>
+    </motion.div>
   );
 }

@@ -4,6 +4,25 @@ const User = require('../models/User'); // Import User model
 const { sendHospitalApprovalEmail, sendWelcomeEmail } = require('../services/emailService');
 const { createNotification } = require('../utils/notificationService'); // Import notification service
 
+// @desc    Get count of hospitals (public for stats)
+// @route   GET /api/hospitals/count
+// @access  Public
+exports.getHospitalsCount = async (req, res) => {
+  try {
+    const count = await Hospital.countDocuments({ isActive: true, isApproved: true });
+    res.status(200).json({
+      success: true,
+      count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error getting hospitals count',
+      count: 10 // Default fallback
+    });
+  }
+};
+
 // Get all hospitals
 exports.getAllHospitals = async (req, res) => {
   try {

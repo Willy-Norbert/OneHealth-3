@@ -80,12 +80,12 @@ export default function HeroSection() {
             {/* Statistics */}
             <div className="grid grid-cols-3 gap-6 pt-8">
               <div>
-                <div className="text-4xl font-bold text-foreground mb-1">240</div>
-                <div className="text-sm text-muted-foreground">Qualified Doctors & Medical Specialists</div>
+                <div className="text-4xl font-bold text-foreground mb-1">300</div>
+                <div className="text-sm text-muted-foreground">Patient  Who managed to register on our system</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-foreground mb-1">1,456</div>
-                <div className="text-sm text-muted-foreground">Medical Tests Done For Our Patients</div>
+                <div className="text-4xl font-bold text-foreground mb-1">10</div>
+                <div className="text-sm text-muted-foreground">we have active hospitals and doctors</div>
               </div>
               <div>
                 <div className="text-4xl font-bold text-foreground mb-1">1yrs+</div>
@@ -134,7 +134,7 @@ export default function HeroSection() {
               {/* Additional Trust Indicators */}
               <div className="mt-8 text-center">
                 <p className="text-xs text-muted-foreground">
-                  Partnered with 50+ healthcare facilities across Rwanda
+                  Partnered with 10+ healthcare facilities across Rwanda
                 </p>
               </div>
             </div>

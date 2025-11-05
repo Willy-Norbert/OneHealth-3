@@ -10,10 +10,36 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { sendOTPEmail } = require('../services/emailService');
 
+// @desc    Get count of patients (public for stats)
+// @route   GET /api/patients/count
+// @access  Public
+exports.getPatientsCount = async (req, res) => {
+  try {
+    const count = await Patient.countDocuments({});
+    res.status(200).json({
+      success: true,
+      count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error getting patients count',
+      count: 300 // Default fallback
+    });
+  }
+};
+
 // Multer storage to temp disk
+// Increased limits: 15MB per file, 50MB total form size
 const upload = multer({
   dest: path.join(__dirname, '..', 'uploads', 'tmp'),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { 
+    fileSize: 15 * 1024 * 1024, // 15MB per file (increased from 5MB)
+    fieldSize: 10 * 1024 * 1024, // 10MB for text fields
+    fieldNameSize: 100, // Field name size
+    fields: 50, // Max number of non-file fields
+    files: 15, // Max number of file fields
+  },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg','image/png','application/pdf','image/jpg'];
     if (allowed.includes(file.mimetype)) return cb(null, true);
@@ -28,6 +54,77 @@ exports.patientRegisterUpload = upload.fields([
   { name: 'insuranceBack', maxCount: 1 },
   { name: 'medicalFiles', maxCount: 10 }
 ]);
+
+// Add logging middleware wrapper
+const originalUpload = exports.patientRegisterUpload;
+exports.patientRegisterUpload = (req, res, next) => {
+  console.log('\n📎 ============================================');
+  console.log('📎 [BACKEND] Multer Upload Middleware');
+  console.log('📎 ============================================');
+  console.log('📅 Timestamp:', new Date().toISOString());
+  console.log('🌐 Method:', req.method);
+  console.log('🔗 URL:', req.originalUrl);
+  console.log('📋 Content-Type:', req.headers['content-type']);
+  console.log('📏 Content-Length:', req.headers['content-length']);
+  console.log('📋 Content-Disposition:', req.headers['content-disposition']);
+  
+  // Log when files are received
+  const originalEnd = res.end;
+  res.end = function(...args) {
+    console.log('📎 [BACKEND] Upload middleware completed');
+    console.log('   req.files:', req.files ? 'Present' : 'Missing');
+    console.log('   req.body keys:', Object.keys(req.body || {}));
+    console.log('📎 ============================================\n');
+    return originalEnd.apply(this, args);
+  };
+  
+  // Call original middleware
+  originalUpload(req, res, (err) => {
+    if (err) {
+      console.error('❌ [BACKEND] Multer upload error:', err);
+      console.error('   Error message:', err.message);
+      console.error('   Error code:', err.code);
+      console.error('   Error field:', err.field);
+      
+      // Handle specific error types with user-friendly messages
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        const maxSizeMB = 15;
+        const fileSizeMB = err.field ? `File "${err.field}"` : 'A file';
+        console.error(`   ${fileSizeMB} exceeds the maximum size of ${maxSizeMB}MB`);
+        // Create a user-friendly error
+        const friendlyError = new Error(`${fileSizeMB} exceeds the maximum size of ${maxSizeMB}MB. Please compress or resize your file.`);
+        friendlyError.code = err.code;
+        friendlyError.field = err.field;
+        return next(friendlyError);
+      }
+      
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        const friendlyError = new Error(`Unexpected file field: ${err.field}. Please check your file uploads.`);
+        friendlyError.code = err.code;
+        return next(friendlyError);
+      }
+    } else {
+      console.log('✅ [BACKEND] Multer upload successful');
+      if (req.files) {
+        console.log('   Files processed:', Object.keys(req.files).length, 'field(s)');
+        // Log file sizes
+        Object.keys(req.files).forEach(key => {
+          const files = req.files[key];
+          if (Array.isArray(files)) {
+            files.forEach((file, idx) => {
+              const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+              console.log(`     [${idx}] ${key}: ${file.originalname} (${sizeMB} MB)`);
+            });
+          } else {
+            const sizeMB = (files.size / (1024 * 1024)).toFixed(2);
+            console.log(`     ${key}: ${files.originalname} (${sizeMB} MB)`);
+          }
+        });
+      }
+    }
+    next(err);
+  });
+};
 
 function isE164(phone) {
   return /^\+[1-9]\d{6,14}$/.test(phone);
@@ -186,9 +283,41 @@ exports.getPatient = async (req, res) => {
 // @route   POST /api/patients/register
 // @access  Public
 exports.publicRegisterPatient = async (req, res) => {
+  console.log('\n🔵 ============================================');
+  console.log('🔵 [BACKEND] Patient Registration Started');
+  console.log('🔵 ============================================');
+  console.log('📅 Timestamp:', new Date().toISOString());
+  console.log('🌐 Method:', req.method);
+  console.log('🔗 URL:', req.originalUrl);
+  console.log('📋 Content-Type:', req.headers['content-type']);
+  console.log('📏 Content-Length:', req.headers['content-length']);
+  
   try {
-    // Minimal logging for registration attempt
-    console.log(`📝 Registration attempt for: ${req.body.email || 'unknown email'}`);
+    // Log request body (excluding password)
+    console.log('📦 [BACKEND] Request body received:');
+    const bodyToLog = { ...req.body };
+    if (bodyToLog.password) bodyToLog.password = '[REDACTED]';
+    console.log('   Body keys:', Object.keys(req.body));
+    console.log('   Body values (sanitized):', bodyToLog);
+    
+    // Log files
+    console.log('📎 [BACKEND] Files received:');
+    console.log('   req.files:', req.files ? 'Present' : 'Missing');
+    if (req.files) {
+      Object.keys(req.files).forEach(key => {
+        const files = req.files[key];
+        console.log(`   ${key}:`, Array.isArray(files) ? `${files.length} file(s)` : '1 file');
+        if (Array.isArray(files)) {
+          files.forEach((file, idx) => {
+            console.log(`     [${idx}] ${file.originalname} (${file.size} bytes, ${file.mimetype})`);
+          });
+        } else {
+          console.log(`     ${files.originalname} (${files.size} bytes, ${files.mimetype})`);
+        }
+      });
+    }
+
+    console.log(`📝 [BACKEND] Registration attempt for: ${req.body.email || 'unknown email'}`);
 
     const {
       firstName, lastName, email, phone, password,
@@ -197,11 +326,21 @@ exports.publicRegisterPatient = async (req, res) => {
       insuranceType, insurerName, policyNumber, policyHolderName, policyExpiry,
       bloodGroup, allergies, medications, pastMedicalHistory, chronicConditions, currentSymptoms
     } = req.body;
+    
+    console.log('✅ [BACKEND] Extracted form fields from req.body');
 
     // Enhanced validation to match frontend
+    console.log('🔍 [BACKEND] Starting validation...');
     if (!firstName || !lastName || !email || !phone || !password) {
+      console.error('❌ [BACKEND] Validation failed: Missing required personal information fields');
+      console.error('   firstName:', firstName ? '✓' : '✗');
+      console.error('   lastName:', lastName ? '✓' : '✗');
+      console.error('   email:', email ? '✓' : '✗');
+      console.error('   phone:', phone ? '✓' : '✗');
+      console.error('   password:', password ? '✓' : '✗');
       return res.status(400).json({ status: 'fail', message: 'Missing required personal information fields' });
     }
+    console.log('✅ [BACKEND] Required personal info fields present');
     
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -247,41 +386,65 @@ exports.publicRegisterPatient = async (req, res) => {
       return res.status(400).json({ status: 'fail', message: 'Please fill in all medical history fields (enter "None" if not applicable)' });
     }
 
+    console.log('🔍 [BACKEND] Checking for existing user...');
     const existing = await User.findOne({ $or: [{ email }, { phone }] });
     if (existing) {
       const field = existing.email === email ? 'email' : 'phone';
+      console.error(`❌ [BACKEND] User already exists with ${field}:`, field === 'email' ? email : phone);
       return res.status(400).json({ 
         status: 'fail', 
         message: `This ${field} is already registered. Please use a different ${field} or try logging in.` 
       });
     }
+    console.log('✅ [BACKEND] No existing user found, proceeding with registration');
 
     // File validation (required files)
+    console.log('🔍 [BACKEND] Validating required files...');
     if (!req.files?.profileImage?.[0]) {
+      console.error('❌ [BACKEND] Validation failed: Profile image is required');
+      console.error('   req.files:', req.files ? 'Present' : 'Missing');
+      console.error('   req.files.profileImage:', req.files?.profileImage);
       return res.status(400).json({ status: 'fail', message: 'Profile image is required' });
     }
+    console.log('✅ [BACKEND] Profile image present');
+    
     if (!req.files?.idDocument?.[0]) {
+      console.error('❌ [BACKEND] Validation failed: National ID scan is required');
+      console.error('   req.files.idDocument:', req.files?.idDocument);
       return res.status(400).json({ status: 'fail', message: 'National ID scan is required' });
     }
+    console.log('✅ [BACKEND] ID document present');
     if (insuranceType && insuranceType !== 'None' && !req.files?.insuranceFront?.[0]) {
       return res.status(400).json({ status: 'fail', message: 'Insurance card front is required' });
     }
 
     // Upload files
+    console.log('☁️ [BACKEND] Starting file uploads to Cloudinary...');
+    try {
     const profileImageUrl = await uploadToCloud(req.files.profileImage[0]);
+      console.log('✅ [BACKEND] Profile image uploaded:', profileImageUrl);
+      
     const idDocumentUrl = await uploadToCloud(req.files.idDocument[0]);
+      console.log('✅ [BACKEND] ID document uploaded:', idDocumentUrl);
+      
     const insuranceFrontUrl = req.files?.insuranceFront?.[0] ? await uploadToCloud(req.files.insuranceFront[0]) : undefined;
+      if (insuranceFrontUrl) console.log('✅ [BACKEND] Insurance front uploaded:', insuranceFrontUrl);
+      
     const insuranceBackUrl = req.files?.insuranceBack?.[0] ? await uploadToCloud(req.files.insuranceBack[0]) : undefined;
+      if (insuranceBackUrl) console.log('✅ [BACKEND] Insurance back uploaded:', insuranceBackUrl);
 
     const additionalDocuments = [];
     if (req.files?.medicalFiles) {
+        console.log(`📎 [BACKEND] Uploading ${req.files.medicalFiles.length} medical file(s)...`);
       for (const f of req.files.medicalFiles) {
         const url = await uploadToCloud(f);
         additionalDocuments.push({ fileName: f.originalname, url });
+          console.log(`✅ [BACKEND] Medical file uploaded: ${f.originalname}`);
       }
     }
 
     // Create User with all patient data (auto-activated)
+      console.log('👤 [BACKEND] Creating user account...');
     const userData = {
       firstName, lastName,
       name: `${firstName} ${lastName}`.trim(),
@@ -324,6 +487,12 @@ exports.publicRegisterPatient = async (req, res) => {
     };
 
     const user = await User.create(userData);
+      console.log('✅ [BACKEND] User account created successfully');
+      console.log('   User ID:', user._id.toString());
+      console.log('   Email:', user.email.replace(/(^.).+(@.*$)/, (m, a, b) => a + '***' + b));
+      console.log('   Role:', user.role);
+      console.log('   Is Active:', user.isActive);
+      console.log('   Is Verified:', user.isVerified);
 
     // Skip OTP generation and email verification for testing
     console.log(`[PATIENT REGISTRATION] User registered and auto-activated:`, { 
@@ -333,6 +502,7 @@ exports.publicRegisterPatient = async (req, res) => {
     });
 
     // Generate unique patient ID
+      console.log('🆔 [BACKEND] Generating unique patient ID...');
     let patientId;
     let attempts = 0;
     do {
@@ -348,8 +518,10 @@ exports.publicRegisterPatient = async (req, res) => {
         throw new Error('Unable to generate unique patient ID');
       }
     } while (true);
+      console.log('✅ [BACKEND] Patient ID generated:', patientId);
 
     // Also create Patient profile shell
+      console.log('🏥 [BACKEND] Creating patient profile...');
     const patient = await Patient.create({
       user: user._id,
       patientId,
@@ -373,15 +545,14 @@ exports.publicRegisterPatient = async (req, res) => {
     });
 
     // Development logging for new registrations
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`🎉 New Patient Registered Successfully!`);
+      console.log(`🎉 [BACKEND] New Patient Registered Successfully!`);
       console.log(`   👤 User: ${user.firstName} ${user.lastName}`);
       console.log(`   📧 Email: ${user.email}`);
       console.log(`   📱 Phone: ${user.phone}`);
       console.log(`   🆔 Patient ID: ${patientId}`);
       console.log(`   ✅ Status: ${user.isActive ? 'Active' : 'Pending Verification'}`);
-    }
 
+      console.log('📤 [BACKEND] Sending success response...');
     res.status(201).json({
       status: 'success', 
       data: { 
@@ -391,8 +562,42 @@ exports.publicRegisterPatient = async (req, res) => {
         message: 'Registration successful. Your account is now active and ready to use.'
       } 
     });
+      console.log('✅ [BACKEND] Response sent successfully');
+      console.log('🔵 ============================================');
+      console.log('🔵 [BACKEND] Patient Registration Completed');
+      console.log('🔵 ============================================\n');
+    } catch (uploadError) {
+      console.error('❌ [BACKEND] File upload error:', uploadError);
+      throw uploadError;
+    }
   } catch (error) {
-    console.error('Public patient register error:', error);
+    console.error('\n🔴 ============================================');
+    console.error('🔴 [BACKEND] Patient Registration Error');
+    console.error('🔴 ============================================');
+    console.error('❌ Error type:', error?.constructor?.name || 'Unknown');
+    console.error('❌ Error message:', error?.message);
+    console.error('❌ Error code:', error?.code);
+    console.error('❌ Error field:', error?.field);
+    console.error('❌ Error stack:', error?.stack);
+    console.error('❌ Full error:', error);
+    console.error('🔴 ============================================\n');
+    
+    // Handle multer errors specifically
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      const maxSizeMB = 15;
+      const fieldName = error.field || 'file';
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: `File "${fieldName}" exceeds the maximum size of ${maxSizeMB}MB. Please compress or resize your file.` 
+      });
+    }
+    
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: `Unexpected file field: ${error.field}. Please check your file uploads.` 
+      });
+    }
     
     // Clean up uploaded files if user creation failed
     try {
@@ -705,6 +910,15 @@ exports.getDoctorPatients = async (req, res) => {
     });
   }
 };
+
+// module.exports = {
+//   getAllPatients,
+//   getPatient,
+//   createPatient,
+//   updatePatient,
+//   getPatientsByHospital,
+//   addHospitalVisit
+// };
 
 // module.exports = {
 //   getAllPatients,

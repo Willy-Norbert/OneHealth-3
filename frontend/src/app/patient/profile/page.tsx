@@ -51,8 +51,8 @@ export default function ProfilePage() {
     try {
       const res: any = await api.uploads.image(file)
       if (res?.url) {
-        // Optimistically update local UI before server confirms
-        await api.users.updateProfile({ avatar: res.url })
+        // Update backend profile image URL using profileImageUrl field
+        await api.users.updateProfile({ profileImageUrl: res.url })
         await refreshProfile()
         setToastMsg('Profile photo updated')
         setTimeout(()=>setToastMsg(undefined), 3000)

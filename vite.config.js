@@ -9,7 +9,7 @@ export default defineConfig({
     port: 8080,
     proxy: {
       '': {
-        target: ' https://api.onehealthline.com',
+        target: ' http://localhost:5000',
         changeOrigin: true,
       }
     }
