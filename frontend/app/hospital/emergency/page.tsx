@@ -22,7 +22,7 @@ export default function HospitalEmergencyPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${ " http://localhost:5000"}/emergencies`, {
+        const res = await fetch(`${ " https://api.onehealthline.com"}/emergencies`, {
           credentials: "include",
           headers: { "Content-Type": "application/json" }
         });

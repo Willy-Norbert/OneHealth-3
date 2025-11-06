@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // In production, use the production API URL
   if (process.env.NODE_ENV === 'production') {
-    return 'http://localhost:5000'
+    return 'https://api.onehealthline.com'
   }
   
   // In development, use localhost
-  return 'http://localhost:5000'
+  return 'https://api.onehealthline.com'
 }
 
 export const API_BASE_URL = getApiBaseUrl()

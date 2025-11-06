@@ -131,11 +131,11 @@ export default function AppointmentForm() {
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <select className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     <option value="">Select a hospital or clinic</option>
-                    <option value="kuh">Kigali University Hospital</option>
+                    <option value="kuh">Baho International Hospital</option>
                     <option value="rmh">Rwanda Military Hospital</option>
                     <option value="kfh">King Faisal Hospital</option>
                     <option value="butaro">Butaro Hospital</option>
-                    <option value="chuk">CHUK</option>
+                    <option value="Sangwa Polyclinic Ltd">Sangwa Polyclinic Ltd</option>
                   </select>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 # OneHealth Connect - Comprehensive Healthcare Management System
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://drive.google.com/drive/folders/1WF-NFJunWWYjeyWBCAkxUl7E5OwADwiU)
-[![Backend API](https://img.shields.io/badge/Backend%20API-Render-green?style=for-the-badge&logo=render)](http://localhost:5000/api-docs)
+[![Backend API](https://img.shields.io/badge/Backend%20API-Render-green?style=for-the-badge&logo=render)](https://api.onehealthline.com/api-docs)
 [![Video Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue?style=for-the-badge&logo=vercel)](https://drive.google.com/drive/folders/1WF-NFJunWWYjeyWBCAkxUl7E5OwADwiU)
 ## Project Overview
 
@@ -469,10 +469,10 @@ node seed.js  # Creates realistic test data
    Configure the following environment variables:
    ```env
    # API Configuration
-   NEXT_PUBLIC_API_URL=http://localhost:5000
+   NEXT_PUBLIC_API_URL=https://api.onehealthline.com
    
    # Socket.io Configuration
-   NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+   NEXT_PUBLIC_SOCKET_URL=https://api.onehealthline.com
    
    # Feature Flags
    NEXT_PUBLIC_ENABLE_AI=true
@@ -550,8 +550,8 @@ Patient: patient1@onehealth.rw | Patient#123
 
 ### Live Application
 - **Frontend**: [https://onehealthlineconnectsss.vercel.app/](https://onehealthlineconnectsss.vercel.app/)
-- **Backend API**: [http://localhost:5000](http://localhost:5000)
-- **API Documentation**: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
+- **Backend API**: [https://api.onehealthline.com](https://api.onehealthline.com)
+- **API Documentation**: [https://api.onehealthline.com/api-docs](https://api.onehealthline.com/api-docs)
 
 ### Video Demonstration
 A comprehensive screen recording demonstrating all system features is available at the live application URL, showcasing:
@@ -576,7 +576,7 @@ The OneHealth Connect system utilizes a comprehensive, structured medical datase
 **Size**: 4 hospitals with complete operational data
 
 **Data Points**:
-- Hospital profiles (Kigali University Hospital, Rwanda Children's Hospital, Hope Valley Hospital, Sunrise Medical Center)
+- Hospital profiles (Baho International Hospital, Kabutare Hospital, Hope Valley Hospital, Sunrise Medical Center)
 - Location data (addresses, contact information, service offerings)
 - Working hours and operational schedules
 - Service capabilities and specializations

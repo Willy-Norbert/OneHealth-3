@@ -41,12 +41,12 @@ export default function MeetingRoom() {
   const isProduction = typeof window !== 'undefined' && 
     (window.location.hostname === 'www.onehealthline.com' || window.location.hostname === 'onehealthline.com')
   const API_BASE = isProduction 
-    ? 'http://localhost:5000' 
-    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
+    ? 'https://api.onehealthline.com' 
+    : (process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com')
   
   const WS_URL = isProduction 
-    ? 'http://localhost:5000' 
-    : 'http://localhost:5000'
+    ? 'https://api.onehealthline.com' 
+    : 'https://api.onehealthline.com'
   
   // Override any malformed environment variables
   if (typeof window !== 'undefined') {

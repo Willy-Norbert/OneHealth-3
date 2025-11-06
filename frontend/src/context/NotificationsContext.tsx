@@ -38,7 +38,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       // Setup socket for real-time notifications
       try {
         // Get API base URL from environment or default to localhost
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
         // Remove any leading/trailing spaces and ensure proper URL format
         const socketUrl = API_BASE_URL.trim().replace(/\/$/, '')
         const s = io(socketUrl, {

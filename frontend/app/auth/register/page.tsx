@@ -283,7 +283,7 @@ export default function Register() {
         }
         
         console.log('🌐 [REGISTER] Calling API: api.patients.register()');
-        console.log('🔗 [REGISTER] API Base URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
+        console.log('🔗 [REGISTER] API Base URL:', process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com');
         
         result = await api.patients.register(submitData);
         console.log('✅ [REGISTER] Registration successful! Result:', result);
@@ -292,7 +292,7 @@ export default function Register() {
         console.warn('   Error:', importError?.message);
         
         // Fallback: Direct fetch approach
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
         const url = `${API_BASE_URL}/patients/register`;
         
         console.log('🌐 [REGISTER] Using direct fetch to:', url);

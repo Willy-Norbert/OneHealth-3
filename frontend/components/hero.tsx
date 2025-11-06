@@ -27,7 +27,7 @@ export default function HeroSection() {
         const doctorCount = (doctorsRes as any)?.data?.doctors?.length || (doctorsRes as any)?.doctors?.length || 240;
         
         // Fetch medical records count (medical tests)
-        const medicalRecordsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/medical-records/count`, {
+        const medicalRecordsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'}/api/medical-records/count`, {
           credentials: 'include'
         });
         let medicalTestCount = 1456;
@@ -37,7 +37,7 @@ export default function HeroSection() {
         }
         
         // Fetch patient count
-        const patientsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/patients/count`, {
+        const patientsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'}/api/patients/count`, {
           credentials: 'include'
         });
         let patientCount = 300;
@@ -195,13 +195,13 @@ export default function HeroSection() {
                   <span className="text-xs text-center font-medium text-foreground">King Faisal Hospital</span>
                 </div>
 
-                {/* CHUK - University Teaching Hospital */}
+                {/* Sangwa Polyclinic Ltd - University Teaching Hospital */}
                 <div className="flex flex-col items-center p-4 bg-emerald-50/60 backdrop-blur-sm rounded-lg hover:bg-emerald-100/80 transition-all duration-300 hover:scale-105 shadow-sm relative overflow-hidden">
                   <MedicalTexture pattern="medical-cross" opacity={0.08} className="text-emerald-600" />
                   <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-white font-bold text-sm">CHUK</span>
+                    <span className="text-white font-bold text-sm">Sangwa Polyclinic Ltd</span>
                   </div>
-                  <span className="text-xs text-center font-medium text-foreground">CHUK Hospital</span>
+                  <span className="text-xs text-center font-medium text-foreground">Sangwa Polyclinic Ltd Hospital</span>
                 </div>
 
                 {/* Rwanda Military Hospital */}

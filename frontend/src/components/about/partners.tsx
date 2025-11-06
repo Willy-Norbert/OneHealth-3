@@ -5,7 +5,7 @@ export default function Partners() {
   const { t } = useLanguage()
 
   const partners = [
-    { name: "Kigali University Hospital", logo: "/placeholder.svg?height=100&width=200&text=KUH", type: "Hospital" },
+    { name: "Baho International Hospital", logo: "/placeholder.svg?height=100&width=200&text=KUH", type: "Hospital" },
     { name: "Rwanda Ministry of Health", logo: "/placeholder.svg?height=100&width=200&text=RMoH", type: "Government" },
     { name: "Rwanda Biomedical Center", logo: "/placeholder.svg?height=100&width=200&text=RBC", type: "Research" },
     { name: "Butaro Hospital", logo: "/placeholder.svg?height=100&width=200&text=Butaro", type: "Hospital" },

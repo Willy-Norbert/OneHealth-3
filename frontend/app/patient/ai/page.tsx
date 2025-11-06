@@ -77,7 +77,7 @@ export default function AIPage() {
     const cached = getCachedUserName();
     if (cached) return cached;
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
       const res = await fetch(`${API_BASE_URL.trim()}/auth/me`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
@@ -218,7 +218,7 @@ export default function AIPage() {
               } else {
                 console.warn('⚠️  [AI FRONTEND] createConversation not available, using direct fetch');
                 const token = Cookies.get('token');
-                const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
                 const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations`, {
             method: 'POST',
             credentials: 'include',
@@ -248,7 +248,7 @@ export default function AIPage() {
           } else {
             console.warn('⚠️  [AI FRONTEND] saveMessages not available, using direct fetch');
             const token = Cookies.get('token');
-            const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
             const resSave = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -307,7 +307,7 @@ export default function AIPage() {
         // Check if generalChat exists, if not use direct fetch
         if (!api.ai || typeof api.ai.generalChat !== 'function') {
           console.warn('⚠️  [AI FRONTEND] generalChat not available, using direct fetch');
-          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
           const token = Cookies.get('token');
           const fetchRes = await fetch(`${API_BASE_URL.trim()}/ai/chat-general`, {
             method: 'POST',
@@ -360,7 +360,7 @@ export default function AIPage() {
             } else {
               console.warn('⚠️  [AI FRONTEND] saveMessages not available, using direct fetch');
               const token = Cookies.get('token');
-              const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+              const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
               const resSave = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/save`, {
                 method: 'POST',
                 credentials: 'include',
@@ -681,7 +681,7 @@ export default function AIPage() {
         } else {
           console.warn('⚠️  [AI FRONTEND] getHistory not available, using direct fetch');
           const token = Cookies.get('token');
-          const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
           const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/history?conversationId=${encodeURIComponent(conversationId)}&limit=100`, {
             credentials: 'include',
             headers: {
@@ -748,7 +748,7 @@ export default function AIPage() {
                   } else {
                     console.warn('⚠️  [AI FRONTEND] createConversation not available, using direct fetch');
                     const token = Cookies.get('token');
-                    const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
                     const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations`, {
                     method: 'POST',
                     credentials: 'include',
@@ -907,7 +907,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
           // Fallback: direct fetch if API client doesn't have the method
           console.warn('⚠️ [AI] listConversations not available, using direct fetch');
           const token = Cookies.get('token');
-          const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+          const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
           const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations`, {
             credentials: 'include',
             headers: {
@@ -964,7 +964,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
       } else {
         console.warn('⚠️  [AI FRONTEND] deleteConversation not available, using direct fetch');
         const token = Cookies.get('token');
-        const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const API_BASE_URL_VALUE = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com';
         const res = await fetch(`${API_BASE_URL_VALUE.trim()}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'DELETE',
           credentials: 'include',

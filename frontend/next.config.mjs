@@ -2,7 +2,7 @@ import bundleAnalyzer from '@next/bundle-analyzer'
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
 /** @type {import('next').NextConfig} */
-const BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:5000').trim()
+const BACKEND_URL = (process.env.BACKEND_URL || 'https://api.onehealthline.com').trim()
 const nextConfig = {
   reactStrictMode: true,
   experimental: {

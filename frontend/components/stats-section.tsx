@@ -17,7 +17,7 @@ export default function StatsSection() {
     const fetchStats = async () => {
       try {
         // Fetch hospital count
-        const hospitalsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/hospitals/count`, {
+        const hospitalsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'}/api/hospitals/count`, {
           credentials: 'include'
         });
         let hospitalCount = 10;
@@ -27,7 +27,7 @@ export default function StatsSection() {
         }
 
         // Fetch doctor count
-        const doctorsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/doctors`, {
+        const doctorsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'}/api/doctors`, {
           credentials: 'include'
         });
         let doctorCount = 50;
@@ -37,7 +37,7 @@ export default function StatsSection() {
         }
 
         // Fetch patient count
-        const patientsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/patients/count`, {
+        const patientsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'}/api/patients/count`, {
           credentials: 'include'
         });
         let patientCount = 300;

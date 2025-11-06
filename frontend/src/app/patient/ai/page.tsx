@@ -277,7 +277,7 @@ export default function AIPage() {
         ) }]))
         // Persist failed exchange for history
         try {
-          const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+          const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
           await fetch(`${base}/ai/chat/save`, {
             method: 'POST',
             credentials: 'include',
@@ -302,7 +302,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={d.recommendations} urgency={d.urgencyLevel || d.urgency} />
           ) }]))
           try {
-            const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+            const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -325,7 +325,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={`Personalized tips (${recs.length})`} recommendations={recs} urgency={'low'} />
           ) }]))
           try {
-            const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+            const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -348,7 +348,7 @@ export default function AIPage() {
             <AIResponseBlock analysis={analysisText} recommendations={recs} urgency={'medium'} />
           ) }]))
           try {
-            const base =  ' http://localhost:5000'
+            const base =  ' https://api.onehealthline.com'
             await fetch(`${base}/ai/chat/save`, {
               method: 'POST',
               credentials: 'include',
@@ -377,7 +377,7 @@ export default function AIPage() {
         setMessages(prev => ([...prev, { role: 'assistant', content: assistantBlock }]))
         // Save mock exchange as well
         try {
-          const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+          const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
           await fetch(`${base}/ai/chat/save`, {
             method: 'POST',
             credentials: 'include',
@@ -401,7 +401,7 @@ export default function AIPage() {
       ) }]))
       // Persist exception exchange
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+        const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
         await fetch(`${base}/ai/chat/save`, {
           method: 'POST',
           credentials: 'include',
@@ -586,7 +586,7 @@ export default function AIPage() {
                 try { localStorage.setItem('ai_conversation_id', id) } catch {}
                 setMessages([])
                 try {
-                  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+                  const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
                   await fetch(`${base}/ai/chat/conversations`, {
                     method: 'POST',
                     credentials: 'include',
@@ -714,7 +714,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   const refresh = async () => {
     try {
       setLoading(true)
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
       const res = await fetch(`${base}/ai/chat/conversations`, { credentials: 'include' })
       if (!res.ok) return
       const data = await res.json()
@@ -730,7 +730,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
     const title = prompt('Rename conversation to:')
     if (!title) return
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -744,7 +744,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
   const del = async (id: string) => {
     if (!confirm('Delete this conversation? This cannot be undone.')) return
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.onehealthline.com'
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         credentials: 'include'
@@ -818,7 +818,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
       try {
 
-        const base =  ' http://localhost:5000'
+        const base =  ' https://api.onehealthline.com'
 
         await fetch(`${base}/ai/chat/save`, {
 
@@ -1054,7 +1054,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
       try {
 
-        const base =  ' http://localhost:5000'
+        const base =  ' https://api.onehealthline.com'
 
         const res = await fetch(`${base}/ai/chat/history?limit=30&conversationId=${encodeURIComponent(conversationId)}`, { credentials: 'include' })
 
@@ -1132,7 +1132,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
                 try {
 
-                  const base =  ' http://localhost:5000'
+                  const base =  ' https://api.onehealthline.com'
 
                   await fetch(`${base}/ai/chat/conversations`, {
 
@@ -1388,7 +1388,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
       setLoading(true)
 
-      const base =  ' http://localhost:5000'
+      const base =  ' https://api.onehealthline.com'
 
       const res = await fetch(`${base}/ai/chat/conversations`, { credentials: 'include' })
 
@@ -1420,7 +1420,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
     try {
 
-      const base =  ' http://localhost:5000'
+      const base =  ' https://api.onehealthline.com'
 
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
 
@@ -1448,7 +1448,7 @@ function ConversationList({ activeId, onSelect }: { activeId: string, onSelect: 
 
     try {
 
-      const base =  ' http://localhost:5000'
+      const base =  ' https://api.onehealthline.com'
 
       await fetch(`${base}/ai/chat/conversations/${encodeURIComponent(id)}`, {
 

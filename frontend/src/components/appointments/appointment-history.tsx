@@ -24,7 +24,7 @@ export default function AppointmentHistory() {
       date: "May 20, 2025",
       time: "02:30 PM",
       type: "in-person" as const,
-      location: "Rwanda Children's Hospital",
+      location: "Kabutare Hospital",
       status: "confirmed" as const,
     },
   ]
@@ -46,7 +46,7 @@ export default function AppointmentHistory() {
       date: "April 10, 2025",
       time: "11:00 AM",
       type: "in-person" as const,
-      location: "CHUK",
+      location: "Sangwa Polyclinic Ltd",
       status: "completed" as const,
     },
     {

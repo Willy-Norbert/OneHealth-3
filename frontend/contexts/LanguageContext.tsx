@@ -1797,7 +1797,7 @@ const translations = {
   "justNow": "Just now",
   "userAlineMukamana": "Aline Mukamana",
   "uploadedLabResultsTo": "uploaded lab results to",
-  "chuk": "CHUK",
+  "Sangwa Polyclinic Ltd": "Sangwa Polyclinic Ltd",
   "medicalReport": "Medical Report",
   "minutesAgo": "{{count}} min ago",
   "userEricHabimana": "Eric Habimana",
@@ -2082,7 +2082,7 @@ const translations = {
       {
         "year": "2023",
         "title": "First Hospital Partnership",
-        "description": "Partnered with Kigali University Hospital to offer teleconsultation services."
+        "description": "Partnered with Baho International Hospital to offer teleconsultation services."
       },
       {
         "year": "2024",
@@ -2583,12 +2583,12 @@ const translations = {
     ],
     "partnerHospitalsTitle": "Partner Hospitals",
     "hospitals": [
-      "Kigali University Hospital",
+      "Baho International Hospital",
       "Rwanda Military Hospital",
       "King Faisal Hospital",
       "Butaro Hospital",
       "Kibagabaga Hospital",
-      "CHUK"
+      "Sangwa Polyclinic Ltd"
     ],
     "buttons": {
       "book": "Book an Appointment",
@@ -3019,28 +3019,28 @@ const translations = {
       doctor1: {
         name: "Dr. Jean Mugabo",
         specialty: "Cardiologist",
-        hospital: "Kigali University Hospital",
+        hospital: "Baho International Hospital",
         reviewsCount: 120,
         rating: 4.9,
       },
       doctor2: {
         name: "Dr. Marie Uwase",
         specialty: "Pediatrician",
-        hospital: "Rwanda Children's Hospital",
+        hospital: "Kabutare Hospital",
         reviewsCount: 120,
         rating: 4.9,
       },
       doctor3: {
         name: "Dr. Eric Ndayishimiye",
         specialty: "Neurologist",
-        hospital: "CHUK",
+        hospital: "Sangwa Polyclinic Ltd",
         reviewsCount: 120,
         rating: 4.9,
       },
       doctor4: {
         name: "Claire Mutesi",
         specialty: "Dentist",
-        hospital: "Gakwerere's Dental Clinic",
+        hospital: "Clinique Médicale de Huye",
         reviewsCount: 120,
         rating: 4.9,
       },
@@ -5431,7 +5431,7 @@ const translations = {
   "justNow": "Ubu hashize akanya gato",
   "userAlineMukamana": "Aline Mukamana",
   "uploadedLabResultsTo": "yohereje ibisubizo by'ibizamini kuri",
-  "chuk": "CHUK",
+  "Sangwa Polyclinic Ltd": "Sangwa Polyclinic Ltd",
   "medicalReport": "Raporo y'ubuvuzi",
   "minutesAgo": "Hashize iminota {{count}}",
   "userEricHabimana": "Eric Habimana",
@@ -5721,7 +5721,7 @@ const translations = {
       {
         "year": "2023",
         "title": "Ubufatanye bwa Mbere na Ibitaro",
-        "description": "Twagiranye ubufatanye na Kigali University Hospital mu gutanga serivisi za teleconsultation."
+        "description": "Twagiranye ubufatanye na Baho International Hospital mu gutanga serivisi za teleconsultation."
       },
       {
         "year": "2024",
@@ -6327,7 +6327,7 @@ const translations = {
       "Ibitaro bya King Faisal",
       "Ibitaro bya Butaro",
       "Ibitaro bya Kibagabaga",
-      "CHUK"
+      "Sangwa Polyclinic Ltd"
     ],
     "buttons": {
       "book": "Fata Rendez-vous",
@@ -6931,7 +6931,7 @@ const translations = {
       doctor3: {
         name: "Dr. Eric Ndayishimiye",
         specialty: "Umuganga w’ubwonko",
-        hospital: "CHUK",
+        hospital: "Sangwa Polyclinic Ltd",
         reviewsCount: 120,
         rating: 4.9,
       },

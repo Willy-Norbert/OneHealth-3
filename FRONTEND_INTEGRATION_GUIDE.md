@@ -4,7 +4,7 @@
 
 ### Base Configuration
 ```javascript
-const API_BASE_URL = ' http://localhost:5000';
+const API_BASE_URL = ' https://api.onehealthline.com';
 const getAuthHeaders = () => ({
   'Authorization': `Bearer ${localStorage.getItem('token')}`,
   'Content-Type': 'application/json'
