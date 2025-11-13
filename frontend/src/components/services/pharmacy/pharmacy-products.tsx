@@ -6,7 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export default function PharmacyProducts() {
   const { t } = useLanguage();
 
-  const categories = [
+  const categoriesRaw: any = [
     t("pharmacy_products.categories.prescription"),
     t("pharmacy_products.categories.otc"),
     t("pharmacy_products.categories.chronic"),
@@ -15,7 +15,8 @@ export default function PharmacyProducts() {
     t("pharmacy_products.categories.devices"),
     t("pharmacy_products.categories.first_aid"),
     t("pharmacy_products.categories.baby_maternal"),
-  ];
+  ]
+  const categories = Array.isArray(categoriesRaw) ? categoriesRaw : []
 
   const featuredProducts = [
     {

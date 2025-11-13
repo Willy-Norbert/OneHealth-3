@@ -1,0 +1,112 @@
+  ▲ Next.js 14.2.10
+  - Environments: .env.local, .env
+  - Experiments (use with caution):
+    · typedRoutes
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/75) ...
+   Generating static pages (18/75) 
+   Generating static pages (37/75) 
+ReferenceError: location is not defined
+    at c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\chunks\4316.js:1:17428
+    at c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\chunks\4316.js:1:18293
+    at t.startTransition (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:108989)
+    at Object.push (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\chunks\4316.js:1:18281)
+    at d (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\offline\page.js:1:3365)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nI (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47010)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47717)
+   Generating static pages (56/75) 
+TypeError: t.map is not a function
+    at m (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\services\page.js:1:18232)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nD (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:66680)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64853)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:58560) {
+  digest: '1844070093'
+}
+TypeError: t.map is not a function
+    at n (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\services\teleconsultation\page.js:1:15197)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nD (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:66680)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64853)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:58560) {
+  digest: '164090762'
+}
+
+Error occurred prerendering page "/services/teleconsultation". Read more: https://nextjs.org/docs/messages/prerender-error
+
+TypeError: t.map is not a function
+    at n (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\services\teleconsultation\page.js:1:15197)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nD (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:66680)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64853)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:58560)
+
+Error occurred prerendering page "/services". Read more: https://nextjs.org/docs/messages/prerender-error
+
+TypeError: t.map is not a function
+    at m (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\services\page.js:1:18232)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:61546)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nD (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:66680)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64853)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:58560)
+TypeError: a.map is not a function
+    at d (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\services\pharmacy\page.js:1:5844)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nD (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:66680)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64853)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:58560)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546) {
+  digest: '1243347092'
+}
+
+Error occurred prerendering page "/services/pharmacy". Read more: https://nextjs.org/docs/messages/prerender-error
+
+TypeError: a.map is not a function
+    at d (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\.next\server\app\services\pharmacy\page.js:1:5844)
+    at nj (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:46251)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:47571)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nD (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:66680)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64853)
+    at nB (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:67538)
+    at nM (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:58560)
+    at nN (c:\Users\lenovo\Desktop\Myproject\OneHealth-3-main\OneHealth-3-main\frontend\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:12:64546)
+ ✓ Generating static pages (75/75)
+
+> Export encountered errors on following paths:
+	/services/page: /services
+	/services/pharmacy/page: /services/pharmacy
+	/services/teleconsultation/page: /services/teleconsultation

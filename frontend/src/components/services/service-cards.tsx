@@ -68,7 +68,7 @@ export default function ServiceCards() {
                   t("services2.ai.features.lifestyle"),
                   t("services2.ai.features.medication"),
                   t("services2.ai.features.symptom"),
-                ].map((feature, index) => (
+                ].filter(Boolean).map((feature, index) => (
                   <span key={index} className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm dark:bg-gray-700 dark:text-gray-200">
                     {feature}
                   </span>

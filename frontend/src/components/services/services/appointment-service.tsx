@@ -7,8 +7,15 @@ import { useLanguage } from "@/contexts/LanguageContext"
 export default function AppointmentService() {
   const { t } = useLanguage()
 
-  const features = t("appointment.features")
-  const hospitals = t("appointment.hospitals")
+  const features = t<string[]>("appointment.features", {
+    returnObjects: true,
+    fallback: [] as string[],
+  })
+
+  const hospitals = t<string[]>("appointment.hospitals", {
+    returnObjects: true,
+    fallback: [] as string[],
+  })
 
   return (
     <section id="appointments" className="py-20 bg-gray-50 dark:bg-gray-900">

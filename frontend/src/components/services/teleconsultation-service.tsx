@@ -9,7 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext"
 export default function TeleconsultationService() {
   const { t } = useLanguage()
 
-  const features = [
+  const featuresRaw = [
     t("features.consultations"),
     t("features.high_quality_video"),
     t("features.secure_messaging"),
@@ -17,6 +17,7 @@ export default function TeleconsultationService() {
     t("features.medical_records"),
     t("features.followup_scheduling"),
   ]
+  const features = Array.isArray(featuresRaw) ? featuresRaw : []
 
   const specialties = [
     { name: t("specialties.general_medicine"), availability: "24/7" },

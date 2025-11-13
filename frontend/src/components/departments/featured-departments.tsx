@@ -26,16 +26,25 @@ export default function FeaturedDepartments() {
     }
   };
 
-  const featuredDepartments = Object.entries(departmentData).map(([id, data]) => ({
-    id,
-    name: t(`departments1.departments_list.${id}.name`),
-    description: t(`departments1.departments_list.${id}.description`),
-    image: data.image,
-    icon: data.icon,
-    color: data.color,
-    services: t(`departments1.departments_list.${id}.services`, { returnObjects: true }),
-    specialists: id === 'cardiology' ? 8 : id === 'neurology' ? 6 : 10
-  }));
+  const featuredDepartments = Object.entries(departmentData).map(([id, data]) => {
+    const services = t<string[]>(
+      `departments1.departments_list.${id}.services`,
+      {
+        returnObjects: true,
+        fallback: [] as string[],
+      }
+    );
+    return {
+      id,
+      name: t(`departments1.departments_list.${id}.name`),
+      description: t(`departments1.departments_list.${id}.description`),
+      image: data.image,
+      icon: data.icon,
+      color: data.color,
+      services,
+      specialists: id === 'cardiology' ? 8 : id === 'neurology' ? 6 : 10
+    }
+  });
 
   return (
     <section className="py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -68,7 +77,7 @@ export default function FeaturedDepartments() {
                     <h3 className="text-white text-xl font-bold">{dept.name}</h3>
                   </div>
                   <div className="absolute bottom-6 right-6 bg-white/90 dark:bg-gray-800/90 px-4 py-2 rounded-full text-sm font-medium text-gray-900 dark:text-white">
-                    {t("departments1.specialists_available", { count: dept.specialists })}
+                    {(t as any)("departments1.specialists_available", { count: dept.specialists })}
                   </div>
                 </div>
               </div>
@@ -91,7 +100,7 @@ export default function FeaturedDepartments() {
                   </ul>
                 </div>
 
-                <Link href={`/departments/${dept.id}`}>
+                <Link href={`/departments/${String(dept.id)}` as any}>
                   <Button className="bg-green-600 hover:bg-green-700">
                     {t("departments1.learn_more")} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>

@@ -6,7 +6,13 @@ import { useLanguage } from "@/contexts/LanguageContext" // or your i18n hook
 export default function TeleconsultationHowItWorks() {
   const { t } = useLanguage()
 
-  const steps = t("teleconsultationHowItWorks.steps")
+  const steps = t<Array<{ title: string; description: string }>>(
+    "teleconsultationHowItWorks.steps",
+    {
+      returnObjects: true,
+      fallback: [],
+    }
+  )
 
   return (
     <section className="py-20 bg-white">

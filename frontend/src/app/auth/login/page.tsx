@@ -3,7 +3,9 @@ import { useState, useEffect, useRef } from 'react'
 // Google Identity Services and Facebook JS SDK will be used directly
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import Image from 'next/image'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 import { Suspense } from 'react'
 import HealthSpinner from '@/components/ui/HealthSpinner'
@@ -50,6 +52,7 @@ function GridIcon() {
 
 function LoginInner() {
   const { login, loginPending, loginCooldownUntil } = useAuth()
+  const { t } = useLanguage()
   const router = useRouter()
   const search = useSearchParams()
   const [email, setEmail] = useState('')
@@ -243,10 +246,8 @@ function LoginInner() {
         <div className="ml-auto w-3/5 p-12">
           {/* Top bar: Home link + Language selector */}
           <div className="flex items-center justify-between mb-8">
-            <a href="/" className="text-emerald-700 hover:text-emerald-600 font-medium">Home</a>
-            <select className="text-sm text-gray-600 bg-transparent border-none outline-none">
-              <option>English (US)</option>
-            </select>
+            <a href="/" className="text-emerald-700 hover:text-emerald-600 font-medium">{t('nav.home') || 'Home'}</a>
+            <LanguageSwitcher variant="header" />
           </div>
 
           {/* Form header */}

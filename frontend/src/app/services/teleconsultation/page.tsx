@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import TeleconsultationHero from "@/components/services/teleconsultation/teleconsultation-hero"
 import TeleconsultationFeatures from "@/components/services/teleconsultation/teleconsultation-features"
 import TeleconsultationHowItWorks from "@/components/services/teleconsultation/teleconsultation-how-it-works"

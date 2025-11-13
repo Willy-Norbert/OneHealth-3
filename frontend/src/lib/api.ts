@@ -5,7 +5,8 @@ export const API_BASE_URL = 'https://api.onehealthline.com'
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export async function apiFetch<T>(path: string, options: RequestInit & { auth?: boolean } = {}): Promise<T> {
-  const token = Cookies.get('token')
+  // js-cookie and window are only available in the browser — guard for SSR
+  const token = (typeof window !== 'undefined') ? Cookies.get('token') : undefined
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (options.headers) Object.assign(headers, options.headers as Record<string, string>)
   if (options.auth !== false && token) headers['Authorization'] = `Bearer ${token}`
@@ -27,10 +28,19 @@ export async function apiFetch<T>(path: string, options: RequestInit & { auth?: 
 
   // Handle 401 specifically - clear token and redirect
   if (res.status === 401) {
-    Cookies.remove('token')
     if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login'
+      Cookies.remove('token')
+      try {
+        // prefer Next router client navigation if present, otherwise fall back
+        ;(window as any).__next_router?.push?.('/auth/login')
+      } catch {
+        window.location.href = '/auth/login'
+      }
     }
+    // If on server, just throw an auth error so prerender/build can handle it
+    const err401: any = new Error('Unauthorized')
+    err401.status = 401
+    throw err401
   }
 
   // Surface 429 retry-after info if present (body.retryAfter or Retry-After header)

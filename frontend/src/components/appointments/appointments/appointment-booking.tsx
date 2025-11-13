@@ -572,7 +572,11 @@ export default function AppointmentBooking() {
             </div>
             <p className="text-lg">Your appointment has been confirmed and you will receive an email shortly.</p>
             <Button onClick={() => {
-              try { (window as any).__next_router?.push?.('/appointments/my-appointments') } catch { window.location.href = '/appointments/my-appointments' }
+              if (typeof window !== 'undefined') {
+                const r = (window as any).__next_router
+                if (r?.push) r.push('/appointments/my-appointments')
+                else window.location.href = '/appointments/my-appointments'
+              }
             }}>
               View My Appointments
             </Button>

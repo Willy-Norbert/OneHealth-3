@@ -36,7 +36,11 @@ export default function ProfilePage() {
     setDeleteError(undefined)
     try {
       await api.users.deleteAccount()
-      try { (window as any).__next_router?.push?.('/auth/login') } catch { window.location.href = '/auth/login' }
+      if (typeof window !== 'undefined') {
+        const r = (window as any).__next_router
+        if (r?.push) r.push('/auth/login')
+        else window.location.href = '/auth/login'
+      }
     } catch (err: any) {
       setDeleteError(err?.message || 'Failed to delete account')
     } finally {

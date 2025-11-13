@@ -4,8 +4,20 @@ import { useLanguage } from "@/contexts/LanguageContext"
 export default function Achievements() {
   const { t } = useLanguage()
 
-  const milestones = t("achievements.milestones", [], { returnObjects: true })
-  const awards = t("achievements.awards", [], { returnObjects: true })
+  const milestones = t<Array<{ year: string; title: string; description: string }>>(
+    "achievements.milestones",
+    {
+      returnObjects: true,
+      fallback: [] as Array<{ year: string; title: string; description: string }>,
+    }
+  )
+  const awards = t<Array<{ title: string; year: string; description: string }>>(
+    "achievements.awards",
+    {
+      returnObjects: true,
+      fallback: [] as Array<{ title: string; year: string; description: string }>,
+    }
+  )
 
   return (
     <section className="py-20 bg-gray-50 dark:bg-gray-900">

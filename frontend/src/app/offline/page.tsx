@@ -1,19 +1,28 @@
-"use client"
+'use client'
+
+export const dynamic = "force-dynamic"
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { WifiOff, RefreshCw, Home, ArrowLeft, Wifi } from 'lucide-react'
+import { WifiOff, RefreshCw, Home, ArrowLeft } from 'lucide-react'
 
 export default function OfflinePage() {
   const router = useRouter()
-  const [isOnline, setIsOnline] = useState(true)
+  const [isOnline, setIsOnline] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
+    setIsClient(true)
+
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return
+    }
+
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
 
-    // Check initial status
-    setIsOnline(navigator.onLine)
+    setIsOnline(Boolean(navigator.onLine))
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
@@ -24,9 +33,15 @@ export default function OfflinePage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (isClient && isOnline) {
+      router.replace('/')
+    }
+  }, [isClient, isOnline, router])
+
   const handleRetry = () => {
     setRetryCount(prev => prev + 1)
-    if (navigator.onLine) {
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
       router.refresh()
     }
   }
@@ -39,11 +54,7 @@ export default function OfflinePage() {
     router.push('/')
   }
 
-  if (isOnline) {
-    // If back online, redirect to home
-    router.push('/')
-    return null
-  }
+  const showOfflineContent = !isClient || !isOnline
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-orange-500 to-red-600">
@@ -113,10 +124,12 @@ export default function OfflinePage() {
                     <span className="text-white">Connection Status:</span>
                     <div className="flex items-center">
                       <div className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-                      <span className="text-red-200 font-medium">Disconnected</span>
+                      <span className="text-red-200 font-medium">
+                        {showOfflineContent ? 'Disconnected' : 'Connected'}
+                      </span>
                     </div>
                   </div>
-                  {retryCount > 0 && (
+                  {retryCount > 0 && showOfflineContent && (
                     <div className="mt-2 text-sm text-white/70">
                       Retry attempts: {retryCount}
                     </div>
@@ -124,31 +137,33 @@ export default function OfflinePage() {
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="space-y-3 mb-6">
-                  <button
-                    onClick={handleRetry}
-                    className="flex items-center text-white hover:text-orange-200 transition-colors duration-200 group"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform" />
-                    Try Again
-                  </button>
-                  
-                  <button
-                    onClick={handleGoBack}
-                    className="flex items-center text-white hover:text-orange-200 transition-colors duration-200 group ml-4"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    Go Back
-                  </button>
-                  
-                  <button
-                    onClick={handleGoHome}
-                    className="flex items-center text-white hover:text-orange-200 transition-colors duration-200 group ml-4"
-                  >
-                    <Home className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                    Go Home
-                  </button>
-                </div>
+                {showOfflineContent && (
+                  <div className="space-y-3 mb-6">
+                    <button
+                      onClick={handleRetry}
+                      className="flex items-center text-white hover:text-orange-200 transition-colors duration-200 group"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform" />
+                      Try Again
+                    </button>
+                    
+                    <button
+                      onClick={handleGoBack}
+                      className="flex items-center text-white hover:text-orange-200 transition-colors duration-200 group ml-4"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                      Go Back
+                    </button>
+                    
+                    <button
+                      onClick={handleGoHome}
+                      className="flex items-center text-white hover:text-orange-200 transition-colors duration-200 group ml-4"
+                    >
+                      <Home className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                      Go Home
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

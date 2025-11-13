@@ -373,7 +373,7 @@ export default function HospitalDepartmentsPage() {
                     <div className="mb-4">
                       <p className="text-sm font-medium text-gray-700 mb-2">Services:</p>
                       <div className="flex flex-wrap gap-1">
-                        {department.services?.map((service: string, index: number) => (
+                        {(Array.isArray(department.services) ? department.services : []).map((service: string, index: number) => (
                           <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                             {service}
                           </span>
@@ -463,14 +463,14 @@ export default function HospitalDepartmentsPage() {
               </div>
               <div>
                 <label className="form-label">Services</label>
-                {selectedDepartment.services.map((service: string, idx: number) => (
+                {(Array.isArray(selectedDepartment.services) ? selectedDepartment.services : []).map((service: string, idx: number) => (
                   <div key={idx} className="flex items-center mb-2">
                     <input
                       className="input flex-1"
                       type="text"
                       value={service}
                       onChange={e => {
-                        const newServices = [...selectedDepartment.services];
+                        const newServices = [...(Array.isArray(selectedDepartment.services) ? selectedDepartment.services : [])];
                         newServices[idx] = e.target.value;
                         setSelectedDepartment((d: any) => ({ ...d, services: newServices }));
                       }}
@@ -479,8 +479,8 @@ export default function HospitalDepartmentsPage() {
                       type="button"
                       className="ml-2 btn-outline btn-xs"
                       onClick={() => {
-                        if (selectedDepartment.services.length > 1) {
-                          setSelectedDepartment((d: any) => ({ ...d, services: d.services.filter((_: any, i: number) => i !== idx) }));
+                        if ((Array.isArray(selectedDepartment.services) ? selectedDepartment.services : []).length > 1) {
+                          setSelectedDepartment((d: any) => ({ ...d, services: (Array.isArray(d.services) ? d.services : []).filter((_: any, i: number) => i !== idx) }));
                         }
                       }}
                     >
@@ -491,7 +491,7 @@ export default function HospitalDepartmentsPage() {
                 <button
                   type="button"
                   className="btn-outline btn-xs mt-2"
-                  onClick={() => setSelectedDepartment((d: any) => ({ ...d, services: [...d.services, ''] }))}
+                  onClick={() => setSelectedDepartment((d: any) => ({ ...d, services: [...(Array.isArray(d.services) ? d.services : []), ''] }))}
                 >
                   Add Service
                 </button>
@@ -516,7 +516,7 @@ export default function HospitalDepartmentsPage() {
             <p><b>Name:</b> {selectedDepartment.name}</p>
             <p><b>Description:</b> {selectedDepartment.description}</p>
             <p><b>Fee:</b> {selectedDepartment.consultationFee?.toLocaleString()} RWF</p>
-            <p><b>Services:</b> {selectedDepartment.services?.join(', ')}</p>
+            <p><b>Services:</b> {Array.isArray(selectedDepartment.services) ? selectedDepartment.services.join(', ') : ''}</p>
             <p><b>Status:</b> {selectedDepartment.isActive ? 'Active' : 'Inactive'}</p>
             <button className="btn-outline mt-4" onClick={()=>setShowViewModal(false)}>Close</button>
           </div>

@@ -2,12 +2,18 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Heart, ChevronLeft, ChevronRight, Mail } from "lucide-react"
+import { useLanguage } from "@/contexts/LanguageContext"
+import LanguageSwitcher from "@/components/LanguageSwitcher"
+
+const EXTERNAL_PORTAL_URL = "https://www.onehealthline.com/"
 
 export default function HeroSection() {
+  const { t } = useLanguage()
   // images must be placed in your project's public/assets folder:
   // public/assets/doctor-main.jpg
   // public/assets/doctor-avatar.jpg
@@ -30,6 +36,44 @@ export default function HeroSection() {
     { name: "Dr. John Olson", specialty: "Cardiology", image: doctorJohn }
   ]
 
+  const stats = [
+    {
+      value: t('hero.stats.patientsValue', { fallback: '300' }),
+      label: t('hero.stats.patients', { fallback: "Patient Who managed to register on our system" }),
+    },
+    {
+      value: t('hero.stats.hospitalsValue', { fallback: '10' }),
+      label: t('hero.stats.hospitals', { fallback: "we have active hospitals and doctors" }),
+    },
+    {
+      value: t('hero.stats.experienceValue', { fallback: '1yrs+' }),
+      label: t('hero.stats.experience', { fallback: "Years Of Experience The Medical Field" }),
+    },
+  ]
+
+  const partners = [
+    {
+      key: 'premiumMedical',
+      href: 'https://premiumedical.com/',
+      image: 'https://premiumedical.com/wp-content/uploads/2022/10/log-e1666540406920.jpg',
+    },
+    {
+      key: 'dentalExpertsClinic',
+      href: 'https://www.facebook.com/dentalexpertsrw/',
+      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZoduySQPqsR12D66iJvu-VX7ilJlNSVyuSQ&s',
+    },
+    {
+      key: 'westerwelleFoundation',
+      href: 'https://westerwelle-foundation.com/',
+      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvArwo7G-zPI7DojV6VEHWD3jDZ7MmedblkHldcgAlG6vw0CUOPow8xUL8hLXLxir5j48&usqp=CAU',
+    },
+    {
+      key: 'getway',
+      href: 'https://getwayconnection.vercel.app/',
+      image: 'https://getwayconnection.vercel.app/favicon.ico',
+    },
+  ]
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-950 dark:to-black">
       {/* Decorative curved circular blobs - background layer */}
@@ -45,105 +89,145 @@ export default function HeroSection() {
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-12 md:py-16">
+        {/* Language Switcher and Auth Links - Top Right */}
+        {/* <div className="flex items-center justify-end gap-4 mb-6">
+          <LanguageSwitcher variant="header" />
+          <Link href="/auth/login">
+            <Button variant="outline" className="hidden md:flex">
+              {t('nav.login') || 'Login'}
+            </Button>
+          </Link>
+          <Link href="/auth/register">
+            <Button className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 hidden md:flex">
+              {t('nav.register') || 'Register'}
+            </Button>
+          </Link>
+        </div> */}
+
         <div className="grid md:grid-cols-2 gap-12 items-start relative">
           {/* Left Column */}
-          <div className="space-y-8 pt-8">
-            <div>
+          <div className="space-y-8 pt-8 animate-fade-in-up">
+            <div className="animate-fade-in-up">
               <p className="text-accent text-sm font-medium mb-4">
-                Booking of doctor's appointment
+                {t('hero1.badge') || 'Booking of doctor\'s appointment'}
               </p>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-                Outstanding<br />
-                High Quality Care<br />
-                & Patient Safety!
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 animation-delay-100 animate-fade-in-up">
+                {t('hero1.title') ? (
+                  <span dangerouslySetInnerHTML={{ __html: t('hero1.title') }} />
+                ) : (
+                  <>
+                    Outstanding<br />
+                    High Quality Care<br />
+                    & Patient Safety!
+                  </>
+                )}
               </h1>
-              <p className="text-muted-foreground text-lg max-w-lg leading-relaxed">
-                From specialty condition and treatment to everyday needs. Our doctors include highly.
+              <p className="text-muted-foreground text-lg max-w-lg leading-relaxed animate-fade-in-up animation-delay-200">
+                {t('hero1.description') || 'From specialty condition and treatment to everyday needs. Our doctors include highly.'}
               </p>
             </div>
 
-            {/* Email Signup */}
-            <div className="flex gap-2 max-w-md">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="pl-10 h-12 bg-white border-border"
-                />
+            {/* Auth Buttons and Email Signup */}
+            <div className="flex flex-col gap-4">
+              {/* Auth Action Buttons */}
+              <div className="flex gap-3 animate-fade-in-up animation-delay-200">
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white h-12 px-6 flex-1">
+                  <Link href={EXTERNAL_PORTAL_URL} target="_blank" rel="noopener noreferrer">
+                    {t('hero1.cta_get_started') || 'Get Started - It\'s Free'}
+                  </Link>
+                </Button>
+                <Link href="/auth/login" className="flex-1">
+                  <Button variant="outline" className="w-full h-12 px-6">
+                    {t('nav.login') || 'Login'}
+                  </Button>
+                </Link>
               </div>
-              <Button className="bg-primary hover:bg-primary/90 text-white h-12 px-6 whitespace-nowrap">
-                Get Started - It's Free
-              </Button>
+
+              {/* Email Signup */}
+              <div className="flex gap-2 max-w-md animate-fade-in-up animation-delay-300">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input 
+                    type="email" 
+                    placeholder={t('hero.emailPlaceholder') || 'Enter your email'} 
+                    className="pl-10 h-12 bg-white border-border"
+                  />
+                </div>
+                <Button asChild className="bg-primary hover:bg-primary/90 text-white h-12 px-6 whitespace-nowrap">
+                  <Link href={EXTERNAL_PORTAL_URL} target="_blank" rel="noopener noreferrer">
+                    {t('hero1.cta_get_started') || 'Get Started'}
+                  </Link>
+                </Button>
+              </div>
             </div>
 
             {/* Statistics */}
-            <div className="grid grid-cols-3 gap-6 pt-8">
-              <div>
-                <div className="text-4xl font-bold text-foreground mb-1">300</div>
-                <div className="text-sm text-muted-foreground">Patient  Who managed to register on our system</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-foreground mb-1">10</div>
-                <div className="text-sm text-muted-foreground">we have active hospitals and doctors</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-foreground mb-1">1yrs+</div>
-                <div className="text-sm text-muted-foreground">Years Of Experience The Medical Field</div>
-              </div>
+            <div className="grid grid-cols-3 gap-6 pt-8 animate-fade-in-up animation-delay-300">
+              {stats.map((stat, index) => (
+                <div key={index}>
+                  <div className="text-4xl font-bold text-foreground mb-1">{stat.value}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Recognized by Section */}
-            <div className="pt-12">
-              <div className="text-center mb-8">
-                <h3 className="text-lg font-semibold text-muted-foreground mb-2">Recognized by</h3>
-                <p className="text-sm text-muted-foreground">Trusted by leading organizations</p>
+            <div className="pt-12 animate-fade-in-up animation-delay-400">
+              <div className="text-center mb-8 animate-fade-in-up animation-delay-400">
+                <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                  {t('hero.partners.title') || 'Recognized by'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('hero.partners.subtitle') || 'Trusted by leading organizations'}
+                </p>
               </div>
               
               {/* Partners Logos Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 items-center justify-items-center">
-                {/* Premium Medical */}
-                <a href="https://premiumedical.com/" target="_blank" rel="noopener noreferrer" aria-label="Premium Medical" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
-                  <div className="w-36 h-20 flex items-center justify-center">
-                    <img src="https://premiumedical.com/wp-content/uploads/2022/10/log-e1666540406920.jpg" alt="Premium Medical" className="object-contain w-full h-full" />
-                  </div>
-                </a>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 items-center justify-items-center animate-fade-in-scale animation-delay-500">
+                {partners.map(({ key, href, image }) => {
+                  const name = t(`hero.partners.logos.${key}`, {
+                    fallback:
+                      key === 'premiumMedical'
+                        ? 'Premium Medical'
+                        : key === 'dentalExpertsClinic'
+                        ? 'Dental Experts Clinic'
+                        : key === 'westerwelleFoundation'
+                        ? 'Westerwelle Foundation'
+                        : 'Getway',
+                  })
 
-                {/* Dental Experts Clinic */}
-                <a href="https://www.facebook.com/dentalexpertsrw/" target="_blank" rel="noopener noreferrer" aria-label="Dental Experts Clinic" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
-                  <div className="w-44 h-24 flex items-center justify-center">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZoduySQPqsR12D66iJvu-VX7ilJlNSVyuSQ&s" alt="Dental Experts Clinic" className="object-contain w-full h-full" />
-                  </div>
-                </a>
-
-                {/* Westerwelle Foundation */}
-                <a href="https://westerwelle-foundation.com/" target="_blank" rel="noopener noreferrer" aria-label="Westerwelle Foundation" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
-                  <div className="w-44 h-24 flex items-center justify-center">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvArwo7G-zPI7DojV6VEHWD3jDZ7MmedblkHldcgAlG6vw0CUOPow8xUL8hLXLxir5j48&usqp=CAU" alt="Westerwelle Foundation" className="object-contain w-full h-full" />
-                  </div>
-                </a>
-
-                {/* Getway */}
-                <a href="https://getwayconnection.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Getway" className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full">
-                  <div className="w-36 h-20 flex items-center justify-center">
-                    <img src="https://media.licdn.com/dms/image/v2/D4E0BAQEoGO6xjnMmuA/company-logo_200_200/B4EZaRqYJpHcAI-/0/1746200528347?e=1762387200&v=beta&t=tqKOXkLIoH4bKvCZNGz8UzMDwRa9s3jlKuBnWqauPiA" alt="Getway" className="object-contain w-full h-full" />
-                  </div>
-                </a>
+                  return (
+                    <a
+                      key={key}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={name}
+                      className="flex flex-col items-center p-4 bg-white/50 rounded-lg hover:bg-white/80 transition-all duration-300 hover:scale-105 shadow-sm w-full"
+                    >
+                      <div className="w-36 h-20 md:w-44 md:h-24 flex items-center justify-center">
+                        <img src={image} alt={name} className="object-contain w-full h-full" />
+                      </div>
+                    </a>
+                  )
+                })}
               </div>
 
               {/* Additional Trust Indicators */}
-              <div className="mt-8 text-center">
+              <div className="mt-8 text-center animate-fade-in-up animation-delay-500">
                 <p className="text-xs text-muted-foreground">
-                  Partnered with 10+ healthcare facilities across Rwanda
+                  {t('hero.partners.description') || 'Partnered with 10+ healthcare facilities across Rwanda'}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Right Column */}
-          <div className="relative">
+          <div className="relative animate-fade-in-right animation-delay-300">
             {/* Main Doctor Card */}
-            <Card className="overflow-hidden border-8 border-white/50 relative bg-white dark:bg-gray-800 dark:border-gray-700/60">
+            <Card className="overflow-hidden border-8 border-white/50 relative bg-white dark:bg-gray-800 dark:border-gray-700/60 animate-fade-in-scale animation-delay-400">
               <div className="aspect-[3/4] relative bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
                 {/* More decorative blobs inside card */}
                 <div className="absolute top-12 right-12 w-32 h-32 bg-pink-300/40 rounded-full blur-2xl" />
@@ -243,8 +327,18 @@ export default function HeroSection() {
                           <div className="text-xs text-muted-foreground dark:text-gray-300">{doctor.specialty}</div>
                         </div>
                       </div>
-                      <Button className="bg-accent hover:bg-accent/90 text-white text-sm h-8 px-4">
-                        Select
+                      <Button
+                        asChild
+                        className="bg-accent hover:bg-accent/90 text-white text-sm h-8 px-4"
+                      >
+                        <Link
+                          href={EXTERNAL_PORTAL_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center"
+                        >
+                          {t('hero.select') || 'Select'}
+                        </Link>
                       </Button>
                     </Card>
                   ))}
@@ -261,8 +355,18 @@ export default function HeroSection() {
                         <div className="font-bold text-foreground dark:text-gray-100">{selectedTime}</div>
                       </div>
                       <div className="flex items-end justify-end">
-                        <Button className="bg-primary hover:bg-primary/90 text-white text-sm h-8 px-4">
-                          Edit
+                        <Button
+                          asChild
+                          className="bg-primary hover:bg-primary/90 text-white text-sm h-8 px-4"
+                        >
+                          <Link
+                            href={EXTERNAL_PORTAL_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center"
+                          >
+                            {t('hero.edit') || 'Edit'}
+                          </Link>
                         </Button>
                       </div>
                     </div>
@@ -270,8 +374,19 @@ export default function HeroSection() {
                       <div className="text-xs text-muted-foreground dark:text-gray-300 mb-1">Doctor</div>
                       <div className="font-bold text-foreground dark:text-gray-100">Dr. Robert Long</div>
                       <div className="text-xs text-muted-foreground dark:text-gray-300">Radiology</div>
-                      <Button variant="outline" className="w-full mt-2 text-sm h-8 dark:border-gray-700 dark:text-gray-100">
-                        Cancel
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full mt-2 text-sm h-8 dark:border-gray-700 dark:text-gray-100"
+                      >
+                        <Link
+                          href={EXTERNAL_PORTAL_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center"
+                        >
+                          {t('hero.cancel') || 'Cancel'}
+                        </Link>
                       </Button>
                     </div>
                   </Card>

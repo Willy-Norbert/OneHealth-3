@@ -14,7 +14,11 @@ export default function AccessDeniedPage() {
   }
 
   const handleRefresh = () => {
-    try { (window as any).__next_router?.refresh?.() } catch { window.location.reload() }
+    if (typeof window !== 'undefined') {
+      const r = (window as any).__next_router
+      if (r?.refresh) r.refresh()
+      else window.location.reload()
+    }
   }
 
   return (

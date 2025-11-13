@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import { api } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+import { useLanguage } from '@/contexts/LanguageContext'
 import Image from 'next/image'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 import HealthSpinner from '@/components/ui/HealthSpinner'
 
 function CurvedDivider() {
@@ -47,6 +49,7 @@ function GridIcon() {
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -174,10 +177,8 @@ export default function RegisterPage() {
           <div className="p-6">
             {/* Top bar: Home link + Language selector */}
             <div className="flex items-center justify-between mb-6">
-              <a href="/" className="text-emerald-700 hover:text-emerald-600 font-medium text-sm">Home</a>
-              <select className="text-xs text-gray-600 bg-transparent border-none outline-none">
-                <option>English (US)</option>
-              </select>
+              <a href="/" className="text-emerald-700 hover:text-emerald-600 font-medium text-sm">{t('nav.home') || 'Home'}</a>
+              <LanguageSwitcher variant="header" />
             </div>
 
             {/* Form header */}
@@ -345,10 +346,8 @@ export default function RegisterPage() {
           <div className="ml-auto w-3/5 p-12">
             {/* Top bar: Home link + Language selector */}
             <div className="flex items-center justify-between mb-8">
-              <a href="/" className="text-emerald-700 hover:text-emerald-600 font-medium">Home</a>
-              <select className="text-sm text-gray-600 bg-transparent border-none outline-none">
-                <option>English (US)</option>
-              </select>
+              <a href="/" className="text-emerald-700 hover:text-emerald-600 font-medium">{t('nav.home') || 'Home'}</a>
+              <LanguageSwitcher variant="header" />
             </div>
 
             {/* Form header */}

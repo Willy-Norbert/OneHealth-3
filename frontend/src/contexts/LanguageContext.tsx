@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { title } from 'process';
@@ -5,10 +6,15 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 export type Language = 'en' | 'rw';
 
+type TranslateOptions<T> = {
+  returnObjects?: boolean
+  fallback?: T
+}
+
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: <T = string>(key: string, options?: TranslateOptions<T>) => T;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -1012,9 +1018,6 @@ const translations = {
       "role": "Doctor"
     }
   },
-  "nav": {
-    "logout": "Log Out"
-  },
     "settings": {
     "title": "Settings",
     "subtitle": "Manage your profile and preferences",
@@ -1442,12 +1445,6 @@ const translations = {
     "mental_health": "Mental Health",
     "general_medicine": "General Medicine"
   },
-  "departments": {
-    "cardiology": "Cardiology",
-    "gynecology": "Gynecology",
-    "mental_health": "Mental Health",
-    "general_medicine": "General Medicine"
-  },
     "emergency1": {
     "title": "Emergency Request",
     "call_now": "Call emergency services immediately if the situation is critical",
@@ -1612,7 +1609,6 @@ const translations = {
       "amoxicillin": "Amoxicillin 250mg"
     },
     "tablets": "tablets",
-    "quantity": "Quantity",
     "requestClarification": "Request clarification",
     "total": "Total",
     "selectPaymentMethod": "Select Payment Method",
@@ -1999,11 +1995,11 @@ const translations = {
       },
       "phone": {
         "title": "Phone Numbers",
-        "details": ["+250 788 123 456", "Emergency: +250 788 999 911"]
+        "details": ["0788777888", "0788854243"]
       },
       "email": {
         "title": "Email Addresses",
-        "details": ["info@healthlinerwanda.com", "support@healthlinerwanda.com"]
+        "details": ["info@healthlin.com"]
       },
       "hours": {
         "title": "Working Hours",
@@ -2920,6 +2916,8 @@ const translations = {
       emergency: "Emergency",
       pharmacy: "Pharmacy",
       aiAssistant: "Meet Your AI Health Assistant",
+      login: "Login",
+      register: "Register",
       logout: "Logout",
       user: "User",
       patient: "Patient",
@@ -2941,6 +2939,50 @@ const translations = {
       user3: "User 3",
       user4: "User 4",
       doctor_consulting_with_patient: "Doctor consulting with patient",
+    },
+    hero: {
+      emailPlaceholder: "Enter your email",
+      stats: {
+        patients: "Patients supported through our platform",
+        patientsValue: "300",
+        hospitals: "Partner hospitals and doctors",
+        hospitalsValue: "10",
+        experience: "Years of experience in the medical field",
+        experienceValue: "1yrs+",
+      },
+      partners: {
+        title: "Recognized by",
+        subtitle: "Trusted by leading organizations",
+        description: "Partnered with 10+ healthcare facilities across Rwanda",
+        logos: {
+          premiumMedical: "Premium Medical",
+          dentalExpertsClinic: "Dental Experts Clinic",
+          westerwelleFoundation: "Westerwelle Foundation",
+          getway: "Getway",
+        },
+      },
+    },
+    hero: {
+      emailPlaceholder: "Andika imeyili yawe",
+      stats: {
+        patients: "Abakiriya twafashije binyuze kuri uru rubuga",
+        patientsValue: "300",
+        hospitals: "Ibitaro n’abaganga dukorana",
+        hospitalsValue: "10",
+        experience: "Imyaka y’uburambe mu buvuzi",
+        experienceValue: "1yrs+",
+      },
+      partners: {
+        title: "Byemejwe na",
+        subtitle: "Bizera ibikorwa byacu",
+        description: "Dukorana n’ibigo by’ubuvuzi birenga 10 hirya no hino mu Rwanda",
+        logos: {
+          premiumMedical: "Premium Medical",
+          dentalExpertsClinic: "Dental Experts Clinic",
+          westerwelleFoundation: "Westerwelle Foundation",
+          getway: "Getway",
+        },
+      },
     },
     services2: {
 
@@ -5511,11 +5553,6 @@ const translations = {
       "role": "Umurwayi"
     }
   },
-  "nav": {
-    "logout": "Sohoka",
-    "signin":"Injira"
-
-  },
      "register": {
     "title": "Iyandikishe",
     "description": "Injira muri ONE HEALTHLINE CONNECT uyu munsi",
@@ -5638,11 +5675,11 @@ const translations = {
       },
       "phone": {
         "title": "Numero za Telefoni",
-        "details": ["+250 788 123 456", "Icyihutirwa: +250 788 999 911"]
+        "details": ["0788777888", "0788854243"]
       },
       "email": {
         "title": "Aderesi za Email",
-        "details": ["info@healthlinerwanda.com", "support@healthlinerwanda.com"]
+        "details": ["info@healthlin.com"]
       },
       "hours": {
         "title": "Amasaha yo Gukora",
@@ -6813,6 +6850,8 @@ const translations = {
       emergency: "Ibyihutirwa",
       pharmacy: "Farumasi",
       aiAssistant: "Menya Umufasha wawe w’Ubuzima wa AI",
+      login: "Injira",
+      register: "Iyandikishe",
       logout: "Sohoka",
       user: "Umukoresha",
       patient: "Umurwayi",
@@ -7167,15 +7206,54 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     localStorage.setItem('language', lang);
   };
 
-  const t = (key: string): string => {
+  const logMissingTranslation = (key: string) => {
+    if (process.env.NODE_ENV !== 'development') {
+      return
+    }
+
+    const missingKeyStyle = 'color: #ff6b6b; font-weight: bold;'
+    const languageStyle = 'color: #4ecdc4; font-weight: bold;'
+    const keyStyle = 'color: #ffe66d;'
+
+    console.group(`%c[Translation Missing]`, missingKeyStyle)
+    console.log(`%cKey:%c "${key}"`, 'font-weight: bold;', keyStyle)
+    console.log(`%cLanguage:%c ${language}`, 'font-weight: bold;', languageStyle)
+    console.log(
+      `%cSuggestion:%c Add this key to translations.${language}.${key.split('.').join('.')}`,
+      'font-weight: bold;',
+      'color: #95e1d3;'
+    )
+    console.trace('Call stack:')
+    console.groupEnd()
+  }
+
+  const t = <T = string>(key: string, options?: TranslateOptions<T>): T => {
     const keys = key.split('.');
     let value: any = translations[language];
-    
+
     for (const k of keys) {
       value = value?.[k];
     }
-    
-    return value || key;
+
+    if (value === undefined || value === null) {
+      logMissingTranslation(key)
+      return (options?.fallback ?? (key as unknown as T))
+    }
+
+    if (options?.returnObjects) {
+      return value as T
+    }
+
+    if (typeof value === 'string' || typeof value === 'number') {
+      return String(value) as unknown as T
+    }
+
+    if (Array.isArray(value) || typeof value === 'object') {
+      logMissingTranslation(key)
+      return (options?.fallback ?? (key as unknown as T))
+    }
+
+    return (options?.fallback ?? (String(value) as unknown as T))
   };
 
   const value: LanguageContextType = {

@@ -200,8 +200,12 @@ export default function AppointmentForm() {
               <Button 
                 className="bg-green-600 hover:bg-green-700 px-8"
                 onClick={() => {
-                  try { (window as any).__next_router?.push?.('/appointments/book') } catch { window.location.href = '/appointments/book' }
-                }}
+                    if (typeof window !== 'undefined') {
+                      const r = (window as any).__next_router
+                      if (r?.push) r.push('/appointments/book')
+                      else window.location.href = '/appointments/book'
+                    }
+                  }}
               >
                 Book Appointment
               </Button>

@@ -6,6 +6,17 @@ import { JSX } from "react"
 export default function ContactInfo() {
   const { t } = useLanguage()
 
+  const getDetails = (key: string) =>
+    t<string[]>(key, {
+      returnObjects: true,
+      fallback: [] as string[],
+    })
+
+  const locationDetails = getDetails("contactInfo.cards.location.details")
+  const phoneDetails = getDetails("contactInfo.cards.phone.details")
+  const emailDetails = getDetails("contactInfo.cards.email.details")
+  const hoursDetails = getDetails("contactInfo.cards.hours.details")
+
   return (
     <section className="py-20 bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4">
@@ -18,28 +29,28 @@ export default function ContactInfo() {
           <ContactCard
             icon={<MapPin className="h-6 w-6 text-white" />}
             title={t("contactInfo.cards.location.title")}
-            details={t("contactInfo.cards.location.details")}
+            details={locationDetails}
             color="bg-blue-600"
           />
 
           <ContactCard
             icon={<Phone className="h-6 w-6 text-white" />}
             title={t("contactInfo.cards.phone.title")}
-            details={t("contactInfo.cards.phone.details")}
+            details={phoneDetails}
             color="bg-green-600"
           />
 
           <ContactCard
             icon={<Mail className="h-6 w-6 text-white" />}
             title={t("contactInfo.cards.email.title")}
-            details={t("contactInfo.cards.email.details")}
+            details={emailDetails}
             color="bg-purple-600"
           />
 
           <ContactCard
             icon={<Clock className="h-6 w-6 text-white" />}
             title={t("contactInfo.cards.hours.title")}
-            details={t("contactInfo.cards.hours.details")}
+            details={hoursDetails}
             color="bg-amber-600"
             footer={t("contactInfo.cards.hours.footer")}
           />

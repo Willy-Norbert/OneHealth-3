@@ -7,7 +7,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export default function PharmacyHero() {
   const { t } = useLanguage();
 
-  const stats = t("pharmacy_hero.stats");
+  const statsRaw: any = t("pharmacy_hero.stats")
+  const stats = Array.isArray(statsRaw)
+    ? statsRaw
+    : (typeof statsRaw === 'string' ? [] : [])
 
   return (
     <section className="relative pt-20 pb-24 overflow-hidden">

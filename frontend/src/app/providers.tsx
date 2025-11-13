@@ -4,8 +4,8 @@ import { NotificationsProvider } from '@/context/NotificationsContext'
 import { NetworkProvider } from '@/context/NetworkContext'
 import { ThemeProvider } from 'next-themes'
 import { LanguageProvider } from '@/contexts/LanguageContext'
-import Image from 'next/image'
 import { useEffect } from 'react'
+import FloatingLanguageSwitcher from '@/components/floating-language-switcher'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -43,6 +43,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               
               <div className="relative z-10">
                 {children}
+                <FloatingLanguageSwitcher />
               </div>
             </NotificationsProvider>
           </AuthProvider>

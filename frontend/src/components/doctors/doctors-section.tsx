@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MessageSquare } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext"; // Adjust path as needed
 
+const EXTERNAL_PORTAL_URL = "https://www.onehealthline.com/";
+
 export default function DoctorsSection() {
   const { t } = useLanguage();
 
@@ -107,15 +109,34 @@ export default function DoctorsSection() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end">
                     <div className="p-6 w-full">
                       <div className="flex gap-2">
-                        <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
-                          <Calendar className="h-4 w-4 mr-1" /> {t("doctorsSection.book", "Book")}
+                        <Button
+                          asChild
+                          size="sm"
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          <Link
+                            href={EXTERNAL_PORTAL_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center"
+                          >
+                            <Calendar className="h-4 w-4 mr-1" /> {t("doctorsSection.book", "Book")}
+                          </Link>
                         </Button>
                         <Button
+                          asChild
                           size="sm"
                           variant="outline"
                           className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20"
                         >
-                          <MessageSquare className="h-4 w-4 mr-1" /> {t("doctorsSection.chat", "Chat")}
+                          <Link
+                            href={EXTERNAL_PORTAL_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center"
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" /> {t("doctorsSection.chat", "Chat")}
+                          </Link>
                         </Button>
                       </div>
                     </div>

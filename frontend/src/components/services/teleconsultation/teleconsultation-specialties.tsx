@@ -1,8 +1,11 @@
 "use client";
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { useLanguage } from "@/contexts/LanguageContext" // your translation hook
+
+const EXTERNAL_BOOKING_URL = "https://onehealthlin.com"
 
 export default function TeleconsultationSpecialties() {
   const { t } = useLanguage()
@@ -50,8 +53,10 @@ export default function TeleconsultationSpecialties() {
                   </span>
                 </div>
                 <p className="text-gray-600 mb-4">{description}</p>
-                <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 mt-2">
-                  {t("teleconsultationSpecialties.button.findSpecialists")} <ArrowRight className="ml-2 h-4 w-4" />
+                <Button asChild variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50 mt-2">
+                  <Link href={EXTERNAL_BOOKING_URL} target="_blank" rel="noopener noreferrer">
+                    {t("teleconsultationSpecialties.button.findSpecialists")} <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -59,8 +64,10 @@ export default function TeleconsultationSpecialties() {
         </div>
 
         <div className="text-center mt-12">
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            {t("teleconsultationSpecialties.button.viewAll")} <ArrowRight className="ml-2 h-4 w-4" />
+          <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Link href={EXTERNAL_BOOKING_URL} target="_blank" rel="noopener noreferrer">
+              {t("teleconsultationSpecialties.button.viewAll")} <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
         </div>
       </div>

@@ -17,7 +17,16 @@ export default function ServicesPricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((planKey, index) => {
-            const plan = t(`pricing.plans.${planKey}`, { returnObjects: true })
+            const plan = t<Record<string, any>>(
+              `pricing.plans.${planKey}`,
+              {
+                returnObjects: true,
+                fallback: {} as Record<string, any>,
+              }
+            )
+            const features: string[] = Array.isArray(plan.features)
+              ? plan.features
+              : (typeof plan.features === 'string' ? plan.features.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
             const isPopular = planKey === "premium"
             const color = planKey === "basic" ? "border-gray-200 dark:border-gray-700" :
                           planKey === "premium" ? "border-green-600" :
@@ -38,14 +47,14 @@ export default function ServicesPricing() {
                     {t("pricing.mostPopular")}
                   </div>
                 )}
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{plan.name || t(`pricing.plans.${planKey}.name`)}</h3>
                 <div className="mb-4">
-                  <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{plan.price}</span>
+                  <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{plan.price || t(`pricing.plans.${planKey}.price`)}</span>
                   {plan.period && <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">{plan.period}</span>}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">{plan.description}</p>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">{plan.description || t(`pricing.plans.${planKey}.description`)}</p>
                 <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, idx) => (
+                  {features.map((feature, idx) => (
                     <li key={idx} className="flex items-start">
                       <div className="bg-green-100 dark:bg-green-900 p-1 rounded-full mr-3 mt-1">
                         <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
